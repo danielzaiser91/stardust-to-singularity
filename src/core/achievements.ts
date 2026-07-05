@@ -45,7 +45,11 @@ export const ACHIEVEMENT_CHECKS: Check[] = [
   s => s.stats.collapses >= 1,
   s => s.sing.totalEntropy.gte(100),
   s => s.sing.universes >= 1,
+  // 60: Overflow — 1e308 Plasma (die Grenze normaler Floats)
+  s => s.stats.bestPlasma.gte(D('1e308')),
 ];
+
+export const ACH_COUNT = ACHIEVEMENT_CHECKS.length;
 
 /** Anzeige-Metadaten je Achievement: i18n-Template 'achd.<k>' mit Wert v */
 export const ACHIEVEMENT_META: { k: string; v: string }[] = [
@@ -64,6 +68,7 @@ export const ACHIEVEMENT_META: { k: string; v: string }[] = [
   { k: 'coalescences', v: '1' }, { k: 'coalescences', v: '3' },
   { k: 'nodes', v: '5' }, { k: 'keystone', v: '' }, { k: 'nodes', v: '45' },
   { k: 'collapse', v: '' }, { k: 'entropy', v: '' }, { k: 'universe', v: '' },
+  { k: 'plasma', v: '1e308' },
 ];
 
 export function checkAchievements(s: GameState, m: Mults): void {

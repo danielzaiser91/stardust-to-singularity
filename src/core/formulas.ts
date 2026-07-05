@@ -313,6 +313,11 @@ function clampGain(raw: Decimal, total: Decimal, mult: number = C.GAIN_CLAMP_MUL
   return Decimal.min(raw, total.mul(mult).add(C.GAIN_CLAMP_FLOOR)).floor();
 }
 
+/** Ist der angezeigte Gain am Clamp-Deckel? (→ UI: „jetzt resetten, mehr geht nicht") */
+export function isGainCapped(gain: Decimal, total: Decimal, mult: number = C.GAIN_CLAMP_MULT): boolean {
+  return gain.gt(0) && gain.gte(total.mul(mult).add(C.GAIN_CLAMP_FLOOR).floor());
+}
+
 export function shardGain(s: GameState, m: Mults): Decimal {
   const fe = s.star.elements[5];
   const req = novaReq(s);

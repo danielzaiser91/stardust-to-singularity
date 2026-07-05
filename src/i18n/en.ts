@@ -196,6 +196,11 @@ export const en: Record<string, string> = {
   'achd.nodes': 'Light {v} constellation nodes', 'achd.keystone': 'Reach any keystone constellation',
   'achd.collapse': 'Collapse into a singularity', 'achd.entropy': 'Reach 100 Entropy', 'achd.universe': 'Begin a new universe',
 
+  // — Gain-Cap —
+  'cap.title': 'Gain cap',
+  'cap.body': 'This gain is at its per-reset maximum (×{v} of your current total). Gathering more will NOT increase it — reset now!',
+  'cap.hint': 'Each reset can multiply your total by at most ×{v}. When this line glows gold, the cap is reached.',
+
   // — Update-Banner —
   'update.banner': '✦ New version available — click to save & reload',
   'update.reloading': '✦ Saving & reloading…',

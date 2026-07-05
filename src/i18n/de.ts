@@ -196,6 +196,11 @@ export const de: Record<string, string> = {
   'achd.nodes': 'Entzünde {v} Konstellations-Nodes', 'achd.keystone': 'Erreiche einen Schlussstein',
   'achd.collapse': 'Kollabiere zur Singularität', 'achd.entropy': 'Erreiche 100 Entropie', 'achd.universe': 'Beginne ein neues Universum',
 
+  // — Gain-Cap —
+  'cap.title': 'Maximalgewinn',
+  'cap.body': 'Dieser Gewinn ist am Pro-Reset-Maximum (×{v} deiner aktuellen Summe). Mehr sammeln erhöht ihn NICHT — jetzt resetten!',
+  'cap.hint': 'Jeder Reset kann deine Summe höchstens ver-{v}-fachen. Leuchtet diese Zeile golden, ist das Maximum erreicht.',
+
   // — Update-Banner —
   'update.banner': '✦ Neue Version verfügbar — klicken zum Speichern & Neuladen',
   'update.reloading': '✦ Speichern & Neuladen…',

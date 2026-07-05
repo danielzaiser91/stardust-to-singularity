@@ -163,7 +163,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       collapsesU: 0,
       endgame: false,
     },
-    achievements: Array.from({ length: 60 }, () => false),
+    achievements: Array.from({ length: 61 }, () => false),
     loreSeen: Array.from({ length: 32 }, () => false),
     pending: { lore: [], ach: [] },
     ui: { scene: 0, helpSeen: false, hintsSeen: [], nextClass: 1, nextRemnant: 0, nextGtype: 0 },

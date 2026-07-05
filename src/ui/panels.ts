@@ -12,6 +12,7 @@ import { D, Decimal } from '../core/decimal';
 import { exportSave, importSave, saveGame, hardReset } from '../storage';
 import { attachTip } from './tooltip';
 import { spawnFloaty } from './floaty';
+import { ACH_COUNT } from '../core/achievements';
 
 type St = () => GameState;
 const M = (s: GameState) => F.computeMults(s);
@@ -128,6 +129,14 @@ export class DustPanel implements Panel {
     // Ignite-Box
     this.igniteBox = el('div', 'reset-box hot');
     this.igniteBox.append(this.igniteBar.wrap, this.igniteLabel);
+    attachTip(this.igniteLabel, () => {
+      const s = this.st();
+      const m = M(s);
+      const capped = F.isGainCapped(F.plasmaGain(s, m), s.star.totalPlasma, C.PLASMA_CLAMP_MULT);
+      return capped
+        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.PLASMA_CLAMP_MULT + 1 }) }
+        : { title: t('cap.title'), body: t('cap.hint', { v: C.PLASMA_CLAMP_MULT + 1 }) };
+    });
     this.classSeg = el('div', 'seg');
     for (let c = 0; c < 3; c++) {
       const b = btn('seg-btn', t(`star.class${c}`), () => { this.st().ui.nextClass = c as StarClass; });
@@ -196,6 +205,8 @@ export class DustPanel implements Panel {
         setText(this.igniteLabel, t('star.igniteReq', { v: fmt(req, true) }));
         setDisabled(this.igniteBtn, true);
       }
+      setClass(this.igniteLabel, 'capped',
+        F.canIgnite(s) && F.isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT));
       setVisible(this.classSeg, s.stats.ignitions > 0);
       this.classBtns.forEach((b, c) => setClass(b, 'active', s.ui.nextClass === c));
     }
@@ -264,6 +275,13 @@ export class StarPanel implements Panel {
     this.novaBox = el('div', 'reset-box nova');
     this.novaBox.append(el('h3', '', t('nova.name')), this.novaBar.wrap, this.novaLabel,
       el('div', 'sub center', t('nova.remnant')));
+    attachTip(this.novaLabel, () => {
+      const s = this.st();
+      const capped = F.isGainCapped(F.shardGain(s, M(s)), s.nova.totalShards);
+      return capped
+        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 }) }
+        : { title: t('cap.title'), body: t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 }) };
+    });
     this.remSeg = el('div', 'seg');
     for (let r = 0; r < 3; r++) {
       const b = btn('seg-btn', t(`nova.rem${r}`), () => { this.st().ui.nextRemnant = r as 0 | 1 | 2; });
@@ -329,6 +347,7 @@ export class StarPanel implements Panel {
       setText(this.novaLabel, t('nova.req', { v: fmt(nReq, true) }));
       setDisabled(this.novaBtn, true);
     }
+    setClass(this.novaLabel, 'capped', F.canSupernova(s) && F.isGainCapped(gain, s.nova.totalShards));
     this.remBtns.forEach((b, r) => setClass(b, 'active', s.ui.nextRemnant === r));
   }
 }
@@ -475,6 +494,13 @@ export class GalaxyPanel implements Panel {
   constructor(private st: St, private hud: Hud) {
     this.coalesceBox = el('div', 'reset-box gal');
     this.coalesceBox.append(this.coalBar.wrap, this.coalLabel, el('div', 'sub center', t('galaxy.type')));
+    attachTip(this.coalLabel, () => {
+      const s = this.st();
+      const capped = F.isGainCapped(F.dmGain(s, M(s)), s.galaxy.totalDM);
+      return capped
+        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 }) }
+        : { title: t('cap.title'), body: t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 }) };
+    });
     this.gtSeg = el('div', 'seg');
     for (let g = 0; g < 3; g++) {
       const b = btn('seg-btn', t(`galaxy.t${g}`), () => { this.st().ui.nextGtype = g as GalaxyType; });
@@ -542,6 +568,7 @@ export class GalaxyPanel implements Panel {
       setText(this.coalLabel, t('galaxy.req', { v: fmt(coalReq, true) }));
       setDisabled(this.coalBtn, true);
     }
+    setClass(this.coalLabel, 'capped', F.canCoalesce(s) && F.isGainCapped(gain, s.galaxy.totalDM));
     this.gtBtns.forEach((b, g) => setClass(b, 'active', s.ui.nextGtype === g));
 
     for (let i = 0; i < C.CONSTELLATION_NODES; i++) {
@@ -586,6 +613,13 @@ export class SingPanel implements Panel {
   constructor(private st: St, private hud: Hud) {
     this.collapseBox = el('div', 'reset-box sing');
     this.collapseBox.append(this.colBar.wrap, this.colLabel);
+    attachTip(this.colLabel, () => {
+      const s = this.st();
+      const capped = F.isGainCapped(F.entropyGain(s, M(s)), s.sing.totalEntropy);
+      return capped
+        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 }) }
+        : { title: t('cap.title'), body: t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 }) };
+    });
     this.colBtn = btn('reset-btn sing', t('sing.go'), () => {
       const s = this.st();
       const doIt = () => {
@@ -656,6 +690,7 @@ export class SingPanel implements Panel {
       setText(this.colLabel, t('sing.req', { v: fmt(colReq, true) }));
       setDisabled(this.colBtn, true);
     }
+    setClass(this.colLabel, 'capped', F.canCollapse(s) && F.isGainCapped(gain, s.sing.totalEntropy));
     setText(this.uniLabel, s.sing.universes > 0 ? t('sing.universes', { v: String(s.sing.universes + 1) }) : '');
 
     const mass = F.feedMass(s);
@@ -690,7 +725,7 @@ export class AchPanel implements Panel {
   constructor() {
     this.root.append(el('h3', '', t('ach.title')), this.bonus);
     const grid = el('div', 'ach-grid');
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < ACH_COUNT; i++) {
       const c = el('div', 'ach-cell', '?');
       // Achievement-Zellen zeigen selbst schon '?' — kein zusätzliches Eck-Icon
       attachTip(c, () => ({
@@ -705,7 +740,7 @@ export class AchPanel implements Panel {
 
   update(s: GameState, _m: F.Mults): void {
     let n = 0;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < ACH_COUNT; i++) {
       const got = s.achievements[i];
       if (got) n++;
       setClass(this.cells[i], 'got', got);

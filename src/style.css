@@ -218,6 +218,16 @@ button:disabled { opacity: 0.38; cursor: default; }
 .stat-row { justify-content: space-between; font-variant-numeric: tabular-nums; }
 .version { margin-top: 12px; opacity: 0.5; }
 
+/* ── Gain am Clamp-Deckel: golden pulsierend ── */
+.capped {
+  color: var(--gold) !important;
+  font-weight: 800;
+  animation: cap-pulse 1.6s ease-in-out infinite;
+}
+@keyframes cap-pulse {
+  50% { text-shadow: 0 0 14px rgba(255, 201, 100, 0.95); }
+}
+
 /* ── Fliegende Zahlen ── */
 .floaty {
   position: fixed; z-index: 250; pointer-events: none;
