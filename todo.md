@@ -13,6 +13,10 @@
 - [ ] **galaxy.click** — neue, von der Incremental-Community betriebene Plattform (Nachfolger-Spirit von Kongregate), sehr passende Zielgruppe.
 - [ ] Reddit r/incremental_games — kein Hoster, aber Launch-Post („WIP Wednesday" / „Feedback Friday") für erste Spieler.
 
+## Kleinkram
+
+- [ ] Screenshots/GIF der 5 Szenen ins README (Browser-Capture; Preview-Panel war während der Entwicklung rAF-gedrosselt)
+
 ## Features (bewusst v1 ausgeklammert)
 
 - [ ] Cloud-Saves (z. B. via Supabase/Firebase oder Google-Drive-Export)

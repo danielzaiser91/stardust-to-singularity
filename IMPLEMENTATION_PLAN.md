@@ -28,10 +28,10 @@
 |---|-------|-------------|---------|--------------|--------------------|
 | 0 | **Dust** | — | Dust | Generator-Kette + aktives Klicken | Spielstart |
 | 1 | **Star** | **Ignition** | Plasma | Fusionskette H→Fe, Sternklassen | ~30–60 min |
-| 2 | **Supernova** | **Supernova** | Nova Shards | Nebel-Seeding, Remnants, Challenges | ~4–8 h |
-| 3 | **Galaxy** | **Coalescence** | Dark Matter | Konstellations-Skilltree | ~1,5–3 Tage |
-| 4 | **Singularity** | **Collapse** | Entropy | Endlos-Prestige, Akkretion | ~5–8 Tage |
-| — | Endgame/NG+ | „New Universe" | — | Endlos-Skalierung + Abschluss-Lore | ~2 Wochen |
+| 2 | **Supernova** | **Supernova** | Nova Shards | Nebel-Seeding, Remnants, Challenges | ~4 h |
+| 3 | **Galaxy** | **Coalescence** | Dark Matter | Konstellations-Skilltree | Tag 0,5–1 |
+| 4 | **Singularity** | **Collapse** | Entropy | Endlos-Prestige, Akkretion | Tag 1–3 |
+| — | Endgame/NG+ | „New Universe" | — | Endlos-Skalierung + Abschluss-Lore | Tag 6–14 |
 
 *aktiv gespielt; idle entsprechend länger. Werte werden per Simulation kalibriert (§5).
 
@@ -218,16 +218,16 @@ Ebenen-Übergänge: Kamera fliegt nahtlos (Dust-Wolke → hinein → Stern entz�
 ### 5.2 Automatisierte Balance-Assertions (Vitest)
 
 ```
-tests/balance.test.ts — Beispiele:
-✓ Erste Ignition (aktiv):      20–60 min
-✓ Erste Ignition (idle):       < 3 h
-✓ Erste Supernova:             4–8 h aktiv
-✓ Galaxy:                      1,5–3 Tage
-✓ Singularity:                 5–8 Tage
-✓ Endgame erreichbar:          < 21 Tage idle
-✓ Kein Dead-End: Bot kommt aus jeder Challenge wieder raus
-✓ Kein Layer-Skip: Progression monoton, keine Ebene < 15 min „durchgefallen"
-✓ Offline(8 h) ≈ Online(8 h idle) ± 5 %
+tests/balance.test.ts (CI, schnell) — Bänder:
+✓ Erste Ignition (aktiv):      15–75 min
+✓ Erste Ignition (idle):       < 3 h; langsamer als aktiv, aber < 3×
+✓ Erste Supernova:             1,5–10 h aktiv
+✓ Kein Layer-Skip:             Ignition deutlich vor Supernova
+✓ Offline(1 h) ≈ Online(1 h idle) ± 5 %
+Voll-Progression (npm run sim, Endabnahme):
+✓ Galaxy Tag 0,5–1 · Singularity Tag 1–3 · Endgame Tag 6–14
+Das Pacing-Modell dahinter (Softcaps, Gain-Clamp, Aufladezeiten, eskalierende
+Anforderungen) ist in BALANCE.md dokumentiert.
 ```
 
 Balance-Änderung = nur `constants.ts` anfassen → Sim laufen lassen → Assertions grün. Jede Progression-Regression fällt sofort auf. **Die Sim läuft in CI bei jedem Push.**
