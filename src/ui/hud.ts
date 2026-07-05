@@ -3,7 +3,7 @@ import { fmt, fmtTime } from './format';
 import { t } from '../i18n';
 import type { GameState } from '../core/state';
 import type { Mults } from '../core/formulas';
-import { dustPerSecond } from '../core/formulas';
+import { dustPerSecond, remnantParams } from '../core/formulas';
 import type { OfflineSummary } from '../core/offline';
 import { on } from '../events';
 import { ACHIEVEMENT_META } from '../core/achievements';
@@ -66,7 +66,7 @@ export class Hud {
     this.pulsarPill.append(this.pulsarVal);
     attachTip(this.pulsarPill, () => {
       const s = this.stateRef();
-      const burst = REMNANT_PULSAR_MULT + 2 * Math.max(0, s.nova.remnants[1] - 1);
+      const burst = REMNANT_PULSAR_MULT + remnantParams(s).pulsarPer * Math.max(0, s.nova.remnants[1] - 1);
       const phase = s.nova.pulsarPhase;
       const active = phase < REMNANT_PULSAR_DURATION;
       return {
@@ -148,7 +148,7 @@ export class Hud {
       const active = phase < REMNANT_PULSAR_DURATION;
       setClass(this.pulsarPill, 'burst', active);
       setText(this.pulsarVal, active
-        ? `×${REMNANT_PULSAR_MULT + 2 * (pulsars - 1)} · ${Math.ceil(REMNANT_PULSAR_DURATION - phase)}s`
+        ? `×${REMNANT_PULSAR_MULT + remnantParams(s).pulsarPer * (pulsars - 1)} · ${Math.ceil(REMNANT_PULSAR_DURATION - phase)}s`
         : `${Math.ceil(m.pulsarPeriod - phase)}s`);
     }
 

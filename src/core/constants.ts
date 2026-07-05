@@ -128,7 +128,18 @@ export const MS_GALAXY = [1, 2, 3, 6, 9, 10, 12];
 // Auto-Zündung/-Supernova: kontinuierlicher Anteil des aktuellen Prestige-Gewinns pro Sekunde
 // (pro Tick berechnet); bei 100 % Akkumulation zählt ein Reset-Event (Leitern/Charge intakt)
 export const AUTO_HARVEST_RATE = 0.01;
-export const MS_COLLAPSE = [1, 5];           // Perks · Keystones bleiben
+// Kollaps-Meilensteine: Perks · Spezial-MS Supernova · Spezial-MS Staub · Keystones bleiben
+export const MS_COLLAPSE = [1, 2, 3, 5];
+// ── Spezial-Meilensteine ─────────────────────────────────────────────────────
+// Supernova (ab 2 Kollapsen): je 10 Remnants EINES Typs steigt dessen Effekt eine Stufe.
+// Staub (ab 3 Kollapsen): je 100 Käufe einer Generator-Stufe (im Run) Output ×3, stapelnd.
+export const SPECIAL_REMNANT_STEP = 10;
+export const SPECIAL_NEUTRON_BONUS = 0.1;    // +0,1 Fusions-Basis je Stufe (1,5 → 1,6 → …)
+export const SPECIAL_PULSAR_BONUS = 1;       // +1 Burst-Beitrag je weiterem Pulsar, je Stufe
+export const SPECIAL_BH_BONUS = 0.15;        // +15 % Scherben je Schwarzem Loch, je Stufe
+export const SPECIAL_GEN_STEP = 100;
+export const SPECIAL_GEN_MULT = 3;
+export const REMNANT_PULSAR_PER = 2;         // Basis-Burst-Beitrag je weiterem Pulsar
 
 // ── Querschnitt ──────────────────────────────────────────────────────────────
 export const ACH_MULT = 1.02;                // globale Produktion je Achievement

@@ -215,6 +215,25 @@ describe('tick & actions', () => {
     expect(ratio).toBeCloseTo(2, 1);
   });
 
+  it('special milestones: remnant tiers (2 collapses) & generator steps (3 collapses)', () => {
+    const mk = (collapses: number) => {
+      const s = initialState(1);
+      s.star.unlocked = true;
+      s.stats.collapses = collapses;
+      s.nova.remnants = [10, 0, 10];   // keine Pulsare: deren Burst würde allGenMult mitskalieren
+      s.dust.gens[0].bought = 200;
+      return s;
+    };
+    const off = mk(0), on = mk(3);
+    // Remnant-Stufe 1: Fusions-Basis 1,6 statt 1,5 → Fusion stärker
+    expect(computeMults(on).fusionMult).toBeGreaterThan(computeMults(off).fusionMult);
+    expect(F.remnantTier(on, 0)).toBe(1);
+    expect(F.remnantTier(off, 0)).toBe(0);   // vor 2 Kollapsen wirkungslos
+    // Generator-Spezial: 200 Käufe → ×3² auf Stufe 1
+    const ratio = F.tierMult(on, computeMults(on), 0).div(F.tierMult(off, computeMults(off), 0)).toNumber();
+    expect(ratio).toBeCloseTo(Math.pow(C.SPECIAL_GEN_MULT, 2), 1);
+  });
+
   it('coalescence resets challenges & lower milestones until galaxy milestones keep them', () => {
     const mk = (coalescences: number) => {
       const s = initialState(1);

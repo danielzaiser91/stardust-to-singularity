@@ -256,7 +256,17 @@ export const de: Record<string, string> = {
   'cap.max': 'Aktueller Deckel: {v}',
   'ms.gal6': 'Der Nebelgarten überlebt die Coalescence',
   'ms.col0': 'Singularitäts-Perks',
-  'ms.col1': 'Keystone-Konstellationen überleben den Kollaps',
+  'ms.col1': 'Spezial-Meilensteine für die Supernova-Ebene',
+  'ms.col2': 'Spezial-Meilensteine für die Staub-Ebene',
+  'ms.col3': 'Keystone-Konstellationen überleben den Kollaps',
+  'sms.title': 'Spezial-Meilensteine',
+  'sms.tip': 'Je {n} Remnants EINES Typs steigt dessen Effekt eine Stufe — ohne Limit.',
+  'sms.tier': 'Stufe {t} ({c}/{n})',
+  'sms.rem0e': 'Fusions-Basis ×{v} je Stück',
+  'sms.rem1e': 'Burst +{v} je weiterem Pulsar',
+  'sms.rem2e': '+{v} % Scherben je Stück',
+  'sms.dustDesc': 'Je {s} Käufe einer Generator-Stufe (im aktuellen Run): Output ×{m}, stapelt sich.',
+  'sms.dustNone': 'Noch keine Stufe aktiv — kaufe 100× dieselbe Generator-Stufe',
 
   // — Gain-Cap —
   'cap.title': 'Maximalgewinn',

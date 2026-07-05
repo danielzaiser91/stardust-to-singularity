@@ -148,7 +148,8 @@ export function computeMults(s: GameState): Mults {
   const dilation = s.sing.dilation.active ? C.DILATION_MULT : 1;
   const pulsarPeriod = C.REMNANT_PULSAR_PERIOD * nPulsarPeriod;
   const pulsarActive = s.nova.remnants[1] > 0 && s.nova.pulsarPhase < C.REMNANT_PULSAR_DURATION;
-  const pulsarBurst = pulsarActive ? C.REMNANT_PULSAR_MULT + 2 * (s.nova.remnants[1] - 1) : 1;
+  const rp = remnantParams(s);
+  const pulsarBurst = pulsarActive ? C.REMNANT_PULSAR_MULT + rp.pulsarPer * (s.nova.remnants[1] - 1) : 1;
 
   // — Elemente (He C O Si boosts) —
   const el = s.star.elements;
@@ -210,7 +211,7 @@ export function computeMults(s: GameState): Mults {
     : ZERO;
 
   let fusionMult = nFusion * perkFusion
-    * Math.pow(C.REMNANT_NEUTRON_FUSION, s.nova.remnants[0])
+    * Math.pow(rp.neutronBase, s.nova.remnants[0])
     * (done[2] ? 2 : 1)
     * (s.star.upgrades[10] ? 2 : 1);
   if (ch === 2) fusionMult *= 0.1;                          // Challenge 3: Slow Burn
@@ -220,7 +221,7 @@ export function computeMults(s: GameState): Mults {
   const plasmaGainExp = C.PLASMA_EXP + (s.star.upgrades[11] ? 0.05 : 0);
 
   const shardGainMult = nShard.mul(prestigeMult).mul(ngPrestige)
-    .mul(1 + C.REMNANT_BH_SHARDS * s.nova.remnants[2]).mul(D(1 + s.sing.perks[1]));
+    .mul(1 + rp.bhPer * s.nova.remnants[2]).mul(D(1 + s.sing.perks[1]));
 
   const dmGainMult = perkDM.mul(prestigeMult).mul(ngPrestige);
   const entropyGainMult = prestigeMult.mul(ngPrestige);
@@ -275,6 +276,11 @@ export function tierMult(s: GameState, m: Mults, tier: number): Decimal {
     .mul(m.allGenMult)
     .mul(C.GEN_RATE[tier]);
   if (tier === 0 && s.nova.completed[7]) mult = mult.mul(8);  // Challenge-8-Belohnung
+  // Spezial-Meilenstein (ab 3 Kollapsen): je 100 Käufe dieser Stufe im Run → Output ×3
+  if (s.stats.collapses >= C.MS_COLLAPSE[2]) {
+    const steps = Math.floor(s.dust.gens[tier].bought / C.SPECIAL_GEN_STEP);
+    if (steps > 0) mult = mult.mul(Decimal.pow(C.SPECIAL_GEN_MULT, steps));
+  }
   return mult;
 }
 /** Dust/s (für UI, Klick und Sim) */
@@ -318,6 +324,20 @@ export function novaReq(s: GameState): Decimal {
 /** Wachstum pro Reset hart gedeckelt — Pacing bleibt Kadenz-getrieben */
 function clampGain(raw: Decimal, total: Decimal, mult: number = C.GAIN_CLAMP_MULT): Decimal {
   return Decimal.min(raw, total.mul(mult).add(C.GAIN_CLAMP_FLOOR)).floor();
+}
+
+/** Spezial-Meilenstein-Stufe eines Remnant-Typs (ab 2. Kollaps; je 10 Stück eine Stufe) */
+export function remnantTier(s: GameState, type: 0 | 1 | 2): number {
+  if (s.stats.collapses < C.MS_COLLAPSE[1]) return 0;
+  return Math.floor(s.nova.remnants[type] / C.SPECIAL_REMNANT_STEP);
+}
+/** Effektive Remnant-Parameter inkl. Spezial-Meilensteinen — eine Quelle für Formeln & UI */
+export function remnantParams(s: GameState): { neutronBase: number; pulsarPer: number; bhPer: number } {
+  return {
+    neutronBase: C.REMNANT_NEUTRON_FUSION + C.SPECIAL_NEUTRON_BONUS * remnantTier(s, 0),
+    pulsarPer: C.REMNANT_PULSAR_PER + C.SPECIAL_PULSAR_BONUS * remnantTier(s, 1),
+    bhPer: C.REMNANT_BH_SHARDS + C.SPECIAL_BH_BONUS * remnantTier(s, 2),
+  };
 }
 
 /** Aktueller Clamp-Deckel eines Layers — fürs UI („mehr als das geht gerade nicht") */

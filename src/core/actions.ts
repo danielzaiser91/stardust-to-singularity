@@ -304,7 +304,7 @@ function resetGalaxyLayer(s: GameState): void {
   s.galaxy.dm = ZERO;
   s.galaxy.totalDM = ZERO;
   // Meilenstein 5 Kollapse: Keystone-Nodes (Astenden) überleben
-  const keepKeystones = s.stats.collapses >= C.MS_COLLAPSE[1];
+  const keepKeystones = s.stats.collapses >= C.MS_COLLAPSE[3];
   s.galaxy.nodes = s.galaxy.nodes.map((owned, i) =>
     keepKeystones && (i === 14 || i === 29 || i === 44) ? owned : false);
   s.galaxy.count = 0;

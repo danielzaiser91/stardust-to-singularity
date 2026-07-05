@@ -193,7 +193,18 @@ export class DustPanel implements Panel {
       [t('ms.ign0'), t('ms.ign1'), t('ms.ign2')],
       C.MS_IGNITION, 'ms.u.ign', s => s.stats.ignMs);
     this.root.append(this.ms.root);
+
+    // Spezial-Meilensteine (ab 3 Kollapsen): je 100 Käufe einer Generator-Stufe → Output ×3
+    this.smsBox = el('div', 'ms-box');
+    const smsHead = el('h3', '', t('sms.title'));
+    attachTip(smsHead, () => ({ title: t('sms.title'), body: t('sms.dustDesc', { s: C.SPECIAL_GEN_STEP, m: C.SPECIAL_GEN_MULT }) }));
+    this.smsBox.append(smsHead, el('div', 'sub', t('sms.dustDesc', { s: C.SPECIAL_GEN_STEP, m: C.SPECIAL_GEN_MULT })));
+    this.smsLine = el('div', 'sub', '');
+    this.smsBox.append(this.smsLine);
+    this.root.append(this.smsBox);
   }
+  private smsBox!: HTMLElement;
+  private smsLine!: HTMLElement;
   private ms!: ReturnType<typeof milestoneSection>;
 
   update(s: GameState, m: F.Mults): void {
@@ -254,6 +265,15 @@ export class DustPanel implements Panel {
       const autoOk = F.autoIgniteUnlocked(s);
       setClass(this.autoBtn, 'dim', !autoOk);
       setClass(this.autoBtn, 'active', autoOk && s.nova.autoIgnite.on);
+    }
+    setVisible(this.smsBox, s.stats.collapses >= C.MS_COLLAPSE[2]);
+    if (s.stats.collapses >= C.MS_COLLAPSE[2]) {
+      const parts: string[] = [];
+      for (let i = 0; i < C.GEN_COUNT; i++) {
+        const steps = Math.floor(s.dust.gens[i].bought / C.SPECIAL_GEN_STEP);
+        if (steps > 0) parts.push(`#${i + 1} ×${fmt(D(C.SPECIAL_GEN_MULT).pow(steps), sci)}`);
+      }
+      setText(this.smsLine, parts.length ? parts.join(' · ') : t('sms.dustNone'));
     }
     this.ms.update(s);
   }
@@ -338,12 +358,16 @@ export class StarPanel implements Panel {
       attachTip(b, () => {
         const s = this.st();
         const n = s.nova.remnants[r];
-        const v = r === 0 ? fmt(D(C.REMNANT_NEUTRON_FUSION).pow(n), s.settings.sciNotation)
-          : r === 1 ? fmtMult(n > 0 ? C.REMNANT_PULSAR_MULT + 2 * (n - 1) : 1)
-          : fmtMult(1 + C.REMNANT_BH_SHARDS * n);
+        const rp = F.remnantParams(s);
+        const v = r === 0 ? fmt(D(rp.neutronBase).pow(n), s.settings.sciNotation)
+          : r === 1 ? fmtMult(n > 0 ? C.REMNANT_PULSAR_MULT + rp.pulsarPer * (n - 1) : 1)
+          : fmtMult(1 + rp.bhPer * n);
+        const tier = F.remnantTier(s, r as 0 | 1 | 2);
+        const sms = s.stats.collapses >= C.MS_COLLAPSE[1]
+          ? `\n${t('sms.tier', { t: tier, c: n, n: (tier + 1) * C.SPECIAL_REMNANT_STEP })}` : '';
         return {
           title: t(`nova.rem${r}`),
-          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v, p: C.REMNANT_PULSAR_PERIOD, d: C.REMNANT_PULSAR_DURATION })}`,
+          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v, p: C.REMNANT_PULSAR_PERIOD, d: C.REMNANT_PULSAR_DURATION })}${sms}`,
         };
       });
       this.remBtns.push(b);
@@ -370,7 +394,23 @@ export class StarPanel implements Panel {
           : t('ms.novaKeep', { v: t(`up.${id}`) }))],
       C.MS_NOVA, 'ms.u.nova', s => s.stats.novaMs);
     this.root.append(this.ms.root);
+
+    // Spezial-Meilensteine (ab 2 Kollapsen): je 10 Remnants eines Typs → Effekt-Stufe
+    this.smsBox = el('div', 'ms-box');
+    const smsHead = el('h3', '', t('sms.title'));
+    attachTip(smsHead, () => ({ title: t('sms.title'), body: t('sms.tip', { n: C.SPECIAL_REMNANT_STEP }) }));
+    this.smsBox.append(smsHead);
+    for (let rt = 0; rt < 3; rt++) {
+      const row = el('div', 'ms-row');
+      const txt = el('span', '', '');
+      row.append(el('span', 'ms-icon', '✦'), txt);
+      this.smsBox.append(row);
+      this.smsRows.push(txt);
+    }
+    this.root.append(this.smsBox);
   }
+  private smsBox!: HTMLElement;
+  private smsRows: HTMLElement[] = [];
   private ms!: ReturnType<typeof milestoneSection>;
 
   update(s: GameState, m: F.Mults): void {
@@ -421,6 +461,21 @@ export class StarPanel implements Panel {
       setClass(b, 'active', s.ui.nextRemnant === r);
       setText(b, `${t(`nova.rem${r}`)} (${s.nova.remnants[r]})`);
     });
+    setVisible(this.smsBox, s.stats.collapses >= C.MS_COLLAPSE[1]);
+    if (s.stats.collapses >= C.MS_COLLAPSE[1]) {
+      const rp = F.remnantParams(s);
+      const eff = [
+        t('sms.rem0e', { v: fmtMult(rp.neutronBase) }),
+        t('sms.rem1e', { v: fmtMult(rp.pulsarPer) }),
+        t('sms.rem2e', { v: fmtMult(rp.bhPer * 100) }),
+      ];
+      for (let rt = 0; rt < 3; rt++) {
+        const tier = F.remnantTier(s, rt as 0 | 1 | 2);
+        setText(this.smsRows[rt], `${t(`nova.rem${rt}`)} — ${t('sms.tier', {
+          t: tier, c: s.nova.remnants[rt], n: (tier + 1) * C.SPECIAL_REMNANT_STEP,
+        })} · ${eff[rt]}`);
+      }
+    }
     this.ms.update(s);
   }
 }
@@ -749,7 +804,7 @@ export class GalaxyPanel implements Panel {
     this.root.append(collapseBox);
 
     this.ms = milestoneSection(
-      [t('ms.col0'), t('ms.col1')],
+      [t('ms.col0'), t('ms.col1'), t('ms.col2'), t('ms.col3')],
       C.MS_COLLAPSE, 'ms.u.col', s => s.stats.collapses);
     this.root.append(this.ms.root);
   }

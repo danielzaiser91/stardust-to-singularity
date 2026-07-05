@@ -256,7 +256,17 @@ export const en: Record<string, string> = {
   'cap.max': 'Current cap: {v}',
   'ms.gal6': 'The nebula garden survives coalescence',
   'ms.col0': 'Singularity perks',
-  'ms.col1': 'Keystone constellations survive collapse',
+  'ms.col1': 'Special milestones for the supernova layer',
+  'ms.col2': 'Special milestones for the dust layer',
+  'ms.col3': 'Keystone constellations survive collapse',
+  'sms.title': 'Special milestones',
+  'sms.tip': 'Every {n} remnants of ONE type raise its effect by a tier — no limit.',
+  'sms.tier': 'Tier {t} ({c}/{n})',
+  'sms.rem0e': 'Fusion base ×{v} each',
+  'sms.rem1e': 'Burst +{v} per extra pulsar',
+  'sms.rem2e': '+{v}% shards each',
+  'sms.dustDesc': 'Every {s} purchases of a generator tier (current run): output ×{m}, stacking.',
+  'sms.dustNone': 'No tier active yet — buy 100× of the same generator tier',
 
   // — Gain-Cap —
   'cap.title': 'Gain cap',
