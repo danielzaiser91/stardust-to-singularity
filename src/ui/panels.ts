@@ -142,10 +142,16 @@ export class DustPanel implements Panel {
     this.classSeg = el('div', 'seg');
     for (let c = 0; c < 3; c++) {
       const b = btn('seg-btn', t(`star.class${c}`), () => { this.st().ui.nextClass = c as StarClass; });
-      attachTip(b, () => ({
-        title: t(`star.class${c}`),
-        body: `${t(`star.class${c}d`)}\n${t('choice.pickedGal', { n: this.st().stats.classPicks[c] })}`,
-      }));
+      attachTip(b, () => {
+        const s = this.st();
+        const cls = C.STAR_CLASSES[c];
+        const active = s.star.unlocked && s.star.cls === c;
+        return {
+          title: t(`star.class${c}`),
+          body: `${t(`star.class${c}d`)}\n${t('star.classEff', { s: fmtMult(cls.speed), p: fmtMult(cls.plasmaGain) })}`
+            + `\n${t('choice.pickedGal', { n: s.stats.classPicks[c] })}${active ? `\n${t('star.classActive')}` : ''}`,
+        };
+      });
       this.classBtns.push(b);
       this.classSeg.append(b);
     }
@@ -531,9 +537,15 @@ export class NovaPanel implements Panel {
       attachTip(b, () => {
         const s = this.st();
         const active = s.galaxy.unlocked && s.galaxy.gtype === g;
+        const gt = C.GALAXY_TYPES[g];
+        const eff = [
+          ...(gt.all !== 1 ? [t('galaxy.effAll', { v: fmtMult(gt.all) })] : []),
+          ...(gt.offline !== 1 ? [t('galaxy.effOffline', { v: fmtMult(gt.offline) })] : []),
+          ...(gt.active !== 1 ? [t('galaxy.effActive', { v: fmtMult(gt.active) })] : []),
+        ].join(' · ');
         return {
           title: t(`galaxy.t${g}`),
-          body: `${t(`galaxy.t${g}d`)}\n${t('choice.pickedUni', { n: s.stats.gtypePicks[g] })}${active ? `\n${t('galaxy.activeNow')}` : ''}`,
+          body: `${eff}\n${t('choice.pickedUni', { n: s.stats.gtypePicks[g] })}${active ? `\n${t('galaxy.activeNow')}` : ''}`,
         };
       });
       this.gtBtns.push(b);
