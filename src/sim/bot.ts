@@ -179,9 +179,17 @@ export function simulate(s: GameState, profile: Profile, until: string, maxDays:
   const untilDef = MILESTONE_DEFS.find(d => d.name === until);
   if (!untilDef) throw new Error(`unknown milestone: ${until}`);
 
+  let nextLog = 86400;
   while (s.stats.played < maxSec) {
     tick(s, 1);
     botStep(s, profile);
+    if (s.stats.played >= nextLog) {
+      nextLog += 86400;
+      // eslint-disable-next-line no-console
+      console.log(`  d${(s.stats.played / 86400).toFixed(0)}: ign=${s.stats.ignitions} nova=${s.stats.supernovae}` +
+        ` gal=${s.stats.coalescences} col=${s.stats.collapses} shards=${s.nova.totalShards.toExponential(1)}` +
+        ` dm=${s.galaxy.totalDM.toExponential(1)} ent=${s.sing.totalEntropy.toExponential(1)}`);
+    }
     for (const d of MILESTONE_DEFS) {
       if (!seen.has(d.name) && d.hit(s)) {
         seen.add(d.name);

@@ -6,7 +6,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import type { GameState } from '../core/state';
 import type { Mults } from '../core/formulas';
-import { activeTier, type QualityTier } from './quality';
+import { activeTier, sniffSoftwareGL, type QualityTier } from './quality';
 import { on } from '../events';
 
 export interface LayerScene {
@@ -39,9 +39,13 @@ export class Engine {
   private raycaster = new THREE.Raycaster();
   cometMesh: THREE.Object3D | null = null;
 
+  private forceLow = false;
+  private frameEMA = 0.016;
+
   constructor(canvas: HTMLCanvasElement, s: GameState) {
-    this.tier = activeTier(s);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+    this.forceLow = sniffSoftwareGL(this.renderer.getContext());
+    this.tier = activeTier(s, this.forceLow);
     this.renderer.setClearColor(0x050510);
     this.camera = new THREE.PerspectiveCamera(60, 1, 0.1, 5000);
     this.camera.position.set(0, 22, 60);
@@ -105,7 +109,7 @@ export class Engine {
   }
 
   applyQuality(s: GameState): void {
-    const t = activeTier(s);
+    const t = activeTier(s, this.forceLow);
     if (t.name === this.tier.name) return;
     this.tier = t;
     this.bloom.enabled = t.bloom;
@@ -128,6 +132,12 @@ export class Engine {
 
   update(s: GameState, m: Mults, dt: number): void {
     this.time += dt;
+    // Auto-Degrade: dauerhaft zähe Frames → auf Low fallen (nur im Auto-Modus)
+    this.frameEMA = this.frameEMA * 0.95 + Math.min(dt, 1) * 0.05;
+    if (!this.forceLow && this.frameEMA > 0.09 && s.settings.quality === 0) {
+      this.forceLow = true;
+      this.applyQuality(s);
+    }
     this.setLayer(s.ui.scene);
     const layer = this.layers.get(this.activeLayer);
     layer?.update(s, m, dt, this.time);
@@ -162,7 +172,9 @@ export class Engine {
 
   private resize(): void {
     const w = window.innerWidth, h = window.innerHeight;
-    const dpr = Math.min(window.devicePixelRatio, this.tier.dpr);
+    // DPR zusätzlich über Pixelbudget gedeckelt (~2,3 MP) — Bloom skaliert quadratisch
+    const areaCap = Math.sqrt(2_300_000 / Math.max(1, w * h));
+    const dpr = Math.max(0.75, Math.min(window.devicePixelRatio, this.tier.dpr, areaCap));
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h);
     this.composer.setSize(w * dpr, h * dpr);

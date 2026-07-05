@@ -4,7 +4,7 @@ import { tick } from './core/tick';
 import { computeMults, type Mults } from './core/formulas';
 import * as A from './core/actions';
 import { simulateOffline } from './core/offline';
-import { loadGame, saveGame } from './storage';
+import { loadGame, saveGame, replaceSave } from './storage';
 import { setLang } from './i18n';
 import { Engine } from './render/engine';
 import { DustScene } from './render/scenes/dust';
@@ -59,7 +59,7 @@ hud.addTab('settings', settingsPanel, () => true);
 hud.selectTab('dust');
 
 settingsPanel.onImport = imported => {
-  saveGame(imported);
+  replaceSave(imported);
   location.reload();  // sauberster Weg, alle Systeme zu resynchronisieren
 };
 
@@ -86,11 +86,14 @@ function frame(now: number): void {
   let dt = (now - last) / 1000;
   last = now;
   if (dt <= 0) return;
-  if (dt > 2) {
+  if (dt > 10) {
     // längere Lücke (Tab pausiert) → Offline-Pfad statt Riesen-Tick
     const sum = simulateOffline(state, dt);
     if (sum.realSeconds > 300) hud.offlineDialog(sum, state.settings.sciNotation);
+    last = performance.now();  // Sim-Dauer nicht als neues dt werten (sonst Spirale)
     dt = 0.001;
+  } else if (dt > 0.25) {
+    dt = 0.25;  // Frame-Spikes glätten
   }
   mults = tick(state, dt);
 
@@ -115,6 +118,24 @@ function frame(now: number): void {
   }
 }
 requestAnimationFrame(frame);
+
+// ── Onboarding-Hints (je einmal pro Session) ─────────────────────────────────
+import { canIgnite } from './core/formulas';
+import { t } from './i18n';
+const hintsShown = new Set<string>();
+function hint(id: string, cond: boolean): void {
+  if (cond && !hintsShown.has(id)) {
+    hintsShown.add(id);
+    hud.toast('💡', t(`hint.${id}`));
+  }
+}
+setInterval(() => {
+  hint('welcome', state.stats.played < 30 && state.stats.ignitions === 0);
+  hint('comet', state.dust.comet.active);
+  hint('ignite', canIgnite(state) && state.stats.ignitions === 0);
+  hint('fusion', state.star.unlocked && state.star.reactors[0] === 0 && state.stats.ignitions >= 1);
+  hint('iron', state.star.elements[5].gt(0) && state.stats.supernovae === 0);
+}, 2000);
 
 // Mobile: beim Verlassen speichern
 document.addEventListener('visibilitychange', () => {

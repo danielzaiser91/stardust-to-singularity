@@ -44,12 +44,12 @@ export const PLASMA_UPGRADE_COSTS = [2, 4, 8, 15, 30, 60, 120, 300, 800, 2000, 6
 
 // ── Ebene 2: Supernova ───────────────────────────────────────────────────────
 export const SUPERNOVA_REQ = 1e4;            // Fe
-export const SHARD_EXP = 0.55;               // shards = (Fe/REQ)^exp
+export const SHARD_EXP = 0.45;               // shards = (Fe/REQ)^exp
 // ★ Kaskaden-Passiveffekte: jede Prestige-Währung boostet die Ebenen darunter
-export const SHARD_DUST_EXP = 1.2;           // Dust ×(1+totalShards)^exp
-export const SHARD_H_EXP = 0.6;              // H-Rate ×(1+totalShards)^exp
-export const DM_ALL_EXP = 0.8;               // Gesamtproduktion ×(1+totalDM)^exp
-export const ENTROPY_ALL_EXP = 0.5;          // Gesamtproduktion ×(1+totalEntropy)^exp
+export const SHARD_DUST_EXP = 0.8;           // Dust ×(1+totalShards)^exp
+export const SHARD_H_EXP = 0.4;              // H-Rate ×(1+totalShards)^exp
+export const DM_ALL_EXP = 1.2;               // Gesamtproduktion ×(1+totalDM)^exp
+export const ENTROPY_ALL_EXP = 0.8;          // Gesamtproduktion ×(1+totalEntropy)^exp
 export const NEBULA_CELLS = 19;              // Hex-Grid Radius 2
 export const NEBULA_COST_BASE = 1;           // Shards
 export const NEBULA_COST_GROWTH = 2;
@@ -66,8 +66,8 @@ export const CH7_DECAY = 0.01;               // 1 %/s Dust-Zerfall in Challenge 
 export const CH4_COST_EXP = 1.2;
 
 // ── Ebene 3: Galaxy ──────────────────────────────────────────────────────────
-export const COALESCE_REQ = 1e5;             // total Nova Shards
-export const DM_EXP = 0.45;                  // dm = (totalShards/REQ)^exp
+export const COALESCE_REQ = 1e6;             // total Nova Shards
+export const DM_EXP = 0.55;                  // dm = (totalShards/REQ)^exp
 export const CONSTELLATION_NODES = 45;       // 3 Äste à 15
 export const NODE_COST = (i: number) => Math.max(1, Math.floor(Math.pow(1.55, i % 15) * (1 + Math.floor(i / 15))));
 export const GALAXY_TYPES = [
@@ -78,7 +78,7 @@ export const GALAXY_TYPES = [
 
 // ── Ebene 4: Singularity ─────────────────────────────────────────────────────
 export const COLLAPSE_REQ = 1e4;             // total Dark Matter
-export const ENTROPY_EXP = 0.3;
+export const ENTROPY_EXP = 0.45;
 export const PERK_COUNT = 8;
 export const PERK_BASE_COST = [1, 3, 10, 25, 100, 500, 2500, 10000];
 export const PERK_COST_GROWTH = [3, 4, 5, 6, 8, 10, 12, 15];
