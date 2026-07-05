@@ -42,6 +42,13 @@ h3 { margin: 14px 0 6px; font-size: 0.95rem; letter-spacing: 0.08em; text-transf
 .pill-shards .pill-icon { color: var(--magenta); }
 .pill-dm .pill-icon { color: var(--violet); }
 .pill-entropy .pill-icon { color: var(--white-hot); }
+.pill-pulsar { opacity: 0.75; }
+.pill-pulsar .pill-icon { color: var(--gold); }
+.pill-pulsar.burst {
+  opacity: 1; border-color: var(--gold); color: var(--gold);
+  box-shadow: 0 0 14px rgba(255, 201, 100, 0.45);
+  animation: cap-pulse 0.9s ease-in-out infinite;
+}
 .collapse-btn { margin-left: auto; }
 
 /* ── Panel-Host (Desktop: rechts) ── */

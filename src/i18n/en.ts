@@ -196,6 +196,11 @@ export const en: Record<string, string> = {
   'achd.nodes': 'Light {v} constellation nodes', 'achd.keystone': 'Reach any keystone constellation',
   'achd.collapse': 'Collapse into a singularity', 'achd.entropy': 'Reach 100 Entropy', 'achd.universe': 'Begin a new universe',
 
+  // — Pulsar-Status —
+  'pulsar.title': '⚡ Pulsar burst',
+  'pulsar.active': 'Burst ACTIVE: all production ×{v} — {t}s remaining.',
+  'pulsar.idle': 'Next burst in {t}s — then all production ×{v} for {d}s. Powered by your pulsar remnants.',
+
   // — Gain-Cap —
   'cap.title': 'Gain cap',
   'cap.body': 'This gain is at its per-reset maximum (×{v} of your current total). Gathering more will NOT increase it — reset now!',

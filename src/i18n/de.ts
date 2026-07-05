@@ -196,6 +196,11 @@ export const de: Record<string, string> = {
   'achd.nodes': 'Entzünde {v} Konstellations-Nodes', 'achd.keystone': 'Erreiche einen Schlussstein',
   'achd.collapse': 'Kollabiere zur Singularität', 'achd.entropy': 'Erreiche 100 Entropie', 'achd.universe': 'Beginne ein neues Universum',
 
+  // — Pulsar-Status —
+  'pulsar.title': '⚡ Pulsar-Burst',
+  'pulsar.active': 'Burst AKTIV: Gesamtproduktion ×{v} — noch {t}s.',
+  'pulsar.idle': 'Nächster Burst in {t}s — dann Gesamtproduktion ×{v} für {d}s. Gespeist von deinen Pulsar-Überresten.',
+
   // — Gain-Cap —
   'cap.title': 'Maximalgewinn',
   'cap.body': 'Dieser Gewinn ist am Pro-Reset-Maximum (×{v} deiner aktuellen Summe). Mehr sammeln erhöht ihn NICHT — jetzt resetten!',

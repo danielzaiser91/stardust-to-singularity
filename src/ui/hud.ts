@@ -7,7 +7,8 @@ import { dustPerSecond } from '../core/formulas';
 import type { OfflineSummary } from '../core/offline';
 import { on } from '../events';
 import { ACHIEVEMENT_META } from '../core/achievements';
-import { hideTip } from './tooltip';
+import { hideTip, attachTip } from './tooltip';
+import { REMNANT_PULSAR_MULT, REMNANT_PULSAR_DURATION } from '../core/constants';
 
 export interface Panel { root: HTMLElement; update(s: GameState, m: Mults): void; }
 
@@ -22,6 +23,9 @@ export class Hud {
   private tabs: { id: string; btn: HTMLButtonElement; panel: Panel; scene?: number; show: (s: GameState) => boolean }[] = [];
   activeTab = 'dust';
   private collapsed = false;
+  private pulsarPill!: HTMLElement;
+  private pulsarVal!: HTMLElement;
+  private lastPulsarPeriod = 60;
 
   constructor(private stateRef: () => GameState) {
     this.root = document.getElementById('ui')!;
@@ -35,6 +39,25 @@ export class Hud {
       this.pills[id] = { wrap, val, rate };
       top.append(wrap);
     }
+    // Pulsar-Burst-Status: aktiv = Restdauer, sonst Countdown bis zum nächsten Burst
+    this.pulsarPill = el('div', 'pill pill-pulsar');
+    this.pulsarPill.append(el('span', 'pill-icon', '⚡'));
+    this.pulsarVal = el('span', 'pill-val', '');
+    this.pulsarPill.append(this.pulsarVal);
+    attachTip(this.pulsarPill, () => {
+      const s = this.stateRef();
+      const burst = REMNANT_PULSAR_MULT + 2 * Math.max(0, s.nova.remnants[1] - 1);
+      const phase = s.nova.pulsarPhase;
+      const active = phase < REMNANT_PULSAR_DURATION;
+      return {
+        title: t('pulsar.title'),
+        body: active
+          ? t('pulsar.active', { v: burst, t: Math.ceil(REMNANT_PULSAR_DURATION - phase) })
+          : t('pulsar.idle', { t: Math.ceil(this.lastPulsarPeriod - phase), v: burst, d: REMNANT_PULSAR_DURATION }),
+      };
+    });
+    top.append(this.pulsarPill);
+
     const collapseBtn = btn('collapse-btn', '▾', () => {
       this.collapsed = !this.collapsed;
       document.body.classList.toggle('panels-collapsed', this.collapsed);
@@ -88,6 +111,19 @@ export class Hud {
     setText(this.pills.dm.val, fmt(s.galaxy.dm, s.settings.sciNotation));
     setVisible(this.pills.entropy.wrap, s.sing.unlocked);
     setText(this.pills.entropy.val, fmt(s.sing.entropy, s.settings.sciNotation));
+
+    // Pulsar-Burst-Pill
+    const pulsars = s.nova.remnants[1];
+    setVisible(this.pulsarPill, pulsars > 0);
+    if (pulsars > 0) {
+      this.lastPulsarPeriod = m.pulsarPeriod;
+      const phase = s.nova.pulsarPhase;
+      const active = phase < REMNANT_PULSAR_DURATION;
+      setClass(this.pulsarPill, 'burst', active);
+      setText(this.pulsarVal, active
+        ? `×${REMNANT_PULSAR_MULT + 2 * (pulsars - 1)} · ${Math.ceil(REMNANT_PULSAR_DURATION - phase)}s`
+        : `${Math.ceil(m.pulsarPeriod - phase)}s`);
+    }
 
     for (const tab of this.tabs) {
       setVisible(tab.btn, tab.show(s));
