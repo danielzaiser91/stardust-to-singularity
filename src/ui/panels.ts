@@ -428,7 +428,14 @@ export class NovaPanel implements Panel {
       this.hexBtns.push(b);
       grid.append(b);
     }
-    this.root.append(grid, this.cellCost, this.remCounts);
+    const respecBtn = btn('buy', t('nova.respec'), () => {
+      const s = this.st();
+      if (A.respecNebula(s)) this.update(s, M(s));
+    });
+    attachTip(respecBtn, () => ({ title: t('nova.respec'), body: t('nova.respecTip') }));
+    const tokenRow = el('div', 'row auto-row');
+    tokenRow.append(this.cellCost, respecBtn);
+    this.root.append(grid, tokenRow, this.remCounts);
 
     this.root.append(el('h3', '', t('nova.challenges')), el('div', 'sub', t('nova.chHow')));
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
@@ -514,19 +521,25 @@ export class NovaPanel implements Panel {
 
   update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
-    const cellCost = F.nebulaCellCost(s);
-    const affordable = s.nova.shards.gte(cellCost);
-    setText(this.cellCost, `${t('misc.cost')}: ${fmt(cellCost, sci)} ${t('nova.shards')}`);
+    const tokens = Math.min(s.nova.cellsBought, C.NEBULA_CELLS);
+    const placed = s.nova.cells.filter(c => c !== 0).length;
+    const freeToken = tokens - placed > 0;
+    const nextCost = F.nebulaCellCost(s);
+    const canBuyToken = tokens < C.NEBULA_CELLS && s.nova.shards.gte(nextCost);
+    setText(this.cellCost, t('nova.tokenLine', {
+      p: placed, h: tokens, m: C.NEBULA_CELLS,
+      v: tokens >= C.NEBULA_CELLS ? t('nova.tokenMax') : `${fmt(nextCost, sci)} ✸`,
+    }));
     for (let i = 0; i < this.hexBtns.length; i++) {
       const b = this.hexBtns[i];
       const type = s.nova.cells[i];
       setClass(b, 'hex-1', type === 1);
       setClass(b, 'hex-2', type === 2);
       setClass(b, 'hex-3', type === 3);
-      // leere Zellen zeigen '+', wenn platzierbar; tote Klicks gibt es nicht mehr:
-      // nicht leistbar oder schon gleicher Typ → sichtbar disabled
-      setText(b, type === 0 && affordable ? '+' : '');
-      setDisabled(b, !affordable || type === this.brush);
+      // leer: braucht freien/kaufbaren Token · belegt: Ersetzen ist gratis (nur gleicher Typ sinnlos)
+      const usable = type === 0 ? (freeToken || canBuyToken) : type !== this.brush;
+      setText(b, type === 0 && usable ? '+' : '');
+      setDisabled(b, !usable);
     }
     setText(this.remCounts,
       `${t('nova.rem0')}: ${s.nova.remnants[0]} · ${t('nova.rem1')}: ${s.nova.remnants[1]} · ${t('nova.rem2')}: ${s.nova.remnants[2]}`);

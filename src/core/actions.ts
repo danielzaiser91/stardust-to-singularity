@@ -166,14 +166,33 @@ export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
   return true;
 }
 
+/**
+ * Token-Modell: cellsBought = gekaufte Tokens (max 19 = Zellenzahl). Platzieren auf
+ * leerer Zelle verbraucht einen freien Token (kauft bei Bedarf automatisch nach);
+ * Ersetzen belegter Zellen ist GRATIS. Respec räumt ab, Tokens bleiben.
+ */
 export function placeNebula(s: GameState, cell: number, type: NebulaCell): boolean {
   if (cell < 0 || cell >= C.NEBULA_CELLS || type === 0) return false;
   if (s.nova.cells[cell] === type) return false;
-  const cost = nebulaCellCost(s);
-  if (s.nova.shards.lt(cost)) return false;
-  s.nova.shards = s.nova.shards.sub(cost);
+  s.nova.cellsBought = Math.min(s.nova.cellsBought, C.NEBULA_CELLS);  // Alt-Saves normalisieren
+  if (s.nova.cells[cell] === 0) {
+    const placed = s.nova.cells.filter(c => c !== 0).length;
+    if (placed >= s.nova.cellsBought) {
+      if (s.nova.cellsBought >= C.NEBULA_CELLS) return false;
+      const cost = nebulaCellCost(s);
+      if (s.nova.shards.lt(cost)) return false;
+      s.nova.shards = s.nova.shards.sub(cost);
+      s.nova.cellsBought++;
+    }
+  }
   s.nova.cells[cell] = type;
-  s.nova.cellsBought++;
+  return true;
+}
+
+/** Alle Nebel entfernen — Tokens bleiben erhalten (freies Umplatzieren) */
+export function respecNebula(s: GameState): boolean {
+  if (!s.nova.cells.some(c => c !== 0)) return false;
+  s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
   return true;
 }
 

@@ -5,6 +5,7 @@ import { serialize, deserialize } from '../src/core/save';
 import { tick } from '../src/core/tick';
 import { computeMults, genCost, plasmaGain, HEX_COORDS, HEX_NEIGHBORS, NODE_EFFECTS } from '../src/core/formulas';
 import { buyGenerator, click, doIgnite, doSupernova } from '../src/core/actions';
+import * as actionsAll from '../src/core/actions';
 import { simulateOffline } from '../src/core/offline';
 import { ACHIEVEMENT_CHECKS } from '../src/core/achievements';
 import { LORE_TRIGGERS } from '../src/core/lore';
@@ -116,6 +117,24 @@ describe('tick & actions', () => {
     expect(s.stats.ignitions).toBeGreaterThan(ignBefore);   // Gewinn kassiert
     expect(s.dust.gens[0].bought).toBe(33);                 // KEIN Reset → kein Flackern
     expect(s.star.plasma.gt(0)).toBe(true);
+  });
+
+  it('nebula tokens: replace is free, respec keeps tokens, cap at 19', () => {
+    const s = initialState(1);
+    s.nova.unlocked = true;
+    s.nova.shards = D(1000);
+    const { placeNebula, respecNebula } = actionsAll;
+    expect(placeNebula(s, 0, 1)).toBe(true);        // kauft Token 1 (Kosten 1)
+    expect(s.nova.cellsBought).toBe(1);
+    const shardsAfterBuy = s.nova.shards.toNumber();
+    expect(placeNebula(s, 0, 2)).toBe(true);        // Ersetzen: GRATIS
+    expect(s.nova.shards.toNumber()).toBe(shardsAfterBuy);
+    expect(s.nova.cellsBought).toBe(1);
+    expect(respecNebula(s)).toBe(true);             // Respec: Zellen leer, Token bleibt
+    expect(s.nova.cells.every(c => c === 0)).toBe(true);
+    expect(s.nova.cellsBought).toBe(1);
+    expect(placeNebula(s, 5, 3)).toBe(true);        // freier Token wird genutzt, kein Kauf
+    expect(s.nova.cellsBought).toBe(1);
   });
 
   it('stellar memory perk protects upgrades/reactors across supernova', () => {
