@@ -2,7 +2,7 @@ import { Decimal } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
 import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, type Mults } from './formulas';
-import { doIgnite, doSupernova, buyGenerator } from './actions';
+import { doIgnite, doSupernova, buyGenerator, buyCompressionMax } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
 import { checkLore } from './lore';
@@ -81,8 +81,12 @@ export function tick(s: GameState, dt: number): Mults {
     s.star.plasma = s.star.plasma.add(s.stats.bestPlasma.mul(0.001 * hl * gdt));
   }
 
-  // — Autobuyer —
-  if (s.star.upgrades[4]) for (let t = 0; t < Math.min(4, top); t++) autoBuyGen(s, m, t);
+  // — Autobuyer (inkl. Kompression: die Balance-Sim kauft sie kontinuierlich,
+  //    also muss der Spieler-Autobuyer das auch — sonst läuft Auto-Play unter Sim-Niveau) —
+  if (s.star.upgrades[4]) {
+    for (let t = 0; t < Math.min(4, top); t++) autoBuyGen(s, m, t);
+    buyCompressionMax(s);
+  }
   if (s.star.upgrades[8]) for (let t = 4; t < Math.min(8, top); t++) autoBuyGen(s, m, t);
   if (s.nova.autoIgnite.on && s.nova.challenge === -1) {
     const gain = plasmaGain(s, m);

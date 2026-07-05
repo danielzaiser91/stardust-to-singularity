@@ -61,6 +61,15 @@ describe('tick & actions', () => {
     expect(s.stats.clicks).toBe(1);
   });
 
+  it('autobuyer upgrade also buys compression (parity with balance sim)', () => {
+    const s = initialState(1);
+    s.star.unlocked = true;
+    s.star.upgrades[4] = true;
+    s.dust.amount = D(1e6);
+    tick(s, 1);
+    expect(s.dust.compression).toBeGreaterThan(0);
+  });
+
   it('ignition resets dust layer and grants plasma', () => {
     const s = initialState(1);
     s.dust.total = D(C.IGNITION_REQ).mul(100);

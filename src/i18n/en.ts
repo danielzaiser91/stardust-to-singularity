@@ -40,7 +40,7 @@ export const en: Record<string, string> = {
   'up.1': 'Stellar Wind', 'up.1d': 'Dust production ×2',
   'up.2': 'Alchemy', 'up.2d': 'Generators 10% cheaper per element discovered',
   'up.3': 'Dense Core', 'up.3d': 'Compression +0.05 strength',
-  'up.4': 'Auto-Attractors', 'up.4d': 'Autobuy generator tiers 1–4',
+  'up.4': 'Auto-Attractors', 'up.4d': 'Autobuy generator tiers 1–4 and Compression',
   'up.5': 'Long Tail', 'up.5d': 'Comet boosts last twice as long',
   'up.6': 'Proton Rain', 'up.6d': 'Hydrogen production ×3',
   'up.7': 'Magnetic Grip', 'up.7d': 'Click power ×5',
