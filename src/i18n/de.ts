@@ -13,6 +13,7 @@ export const de: Record<string, string> = {
   // — Dust —
   'dust.name': 'Staub',
   'dust.click': 'Staub anziehen',
+  'dust.clickTip': 'Hovern (oder auf Touch gedrückt halten) zieht automatisch 4× pro Sekunde an.',
   'dust.compression': 'Kompression',
   'dust.compressionDesc': 'Alle Generatoren ×{v} pro Stufe',
   'dust.comet': 'Ein Komet zieht vorbei! Tipp ihn an!',
@@ -128,6 +129,7 @@ export const de: Record<string, string> = {
   'set.language': 'Sprache', 'set.sound': 'Soundeffekte', 'set.music': 'Ambient-Musik',
   'set.quality': 'Grafikqualität', 'set.q0': 'Auto', 'set.q1': 'Niedrig', 'set.q2': 'Mittel', 'set.q3': 'Hoch',
   'set.notation': 'Nur wissenschaftliche Notation', 'set.confirmResets': 'Resets bestätigen',
+  'set.autoTab': 'Bei Reset automatisch Tab wechseln',
   'set.save': 'Jetzt speichern', 'set.saved': 'Gespeichert!', 'set.export': 'Save exportieren', 'set.import': 'Save importieren',
   'set.exported': 'Save in Zwischenablage kopiert!', 'set.importPrompt': 'Save-String einfügen:',
   'set.importOk': 'Save importiert!', 'set.importErr': 'Ungültiger Save-String.',

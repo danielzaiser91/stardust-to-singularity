@@ -56,6 +56,25 @@ export class DustPanel implements Panel {
       emit('click');
     });
     this.clickBtn.append(this.clickVal);
+    attachTip(this.clickBtn, () => ({ title: t('dust.click'), body: t('dust.clickTip') }));
+
+    // Hovern (Desktop) bzw. Halten (Touch) = 4 Auto-Klicks/s; Sound gedrosselt auf 1/s
+    let hoverTimer: ReturnType<typeof setInterval> | undefined;
+    let hoverCount = 0;
+    const startAuto = () => {
+      if (hoverTimer) return;
+      hoverTimer = setInterval(() => {
+        const s = this.st();
+        A.click(s, M(s));
+        if (++hoverCount % 4 === 0) emit('click');
+      }, 250);
+    };
+    const stopAuto = () => { clearInterval(hoverTimer); hoverTimer = undefined; };
+    this.clickBtn.addEventListener('pointerenter', startAuto);
+    this.clickBtn.addEventListener('pointerleave', stopAuto);
+    this.clickBtn.addEventListener('pointercancel', stopAuto);
+    window.addEventListener('blur', stopAuto);
+
     this.root.append(this.clickBtn, this.cometNote);
 
     // Compression
@@ -108,7 +127,10 @@ export class DustPanel implements Panel {
     this.igniteBtn = btn('reset-btn hot', t('star.ignite'), () => {
       const s = this.st();
       const doIt = () => {
-        if (A.doIgnite(s, s.ui.nextClass)) { emit('ignite'); this.hud.selectTab('star'); }
+        if (A.doIgnite(s, s.ui.nextClass)) {
+          emit('ignite');
+          if (s.settings.autoTab) this.hud.selectTab('star');
+        }
       };
       if (s.stats.ignitions === 0) this.hud.confirm(t('star.ignite'), t('star.igniteConfirm'), doIt);
       else doIt();
@@ -241,7 +263,10 @@ export class StarPanel implements Panel {
     this.novaBtn = btn('reset-btn nova', t('nova.go'), () => {
       const s = this.st();
       const doIt = () => {
-        if (A.doSupernova(s, s.ui.nextRemnant)) { emit('supernova'); this.hud.selectTab('nova'); }
+        if (A.doSupernova(s, s.ui.nextRemnant)) {
+          emit('supernova');
+          if (s.settings.autoTab) this.hud.selectTab('nova');
+        }
       };
       if (s.stats.supernovae === 0) this.hud.confirm(t('nova.go'), t('nova.confirm'), doIt);
       else doIt();
@@ -449,7 +474,10 @@ export class GalaxyPanel implements Panel {
     this.coalBtn = btn('reset-btn gal', t('galaxy.go'), () => {
       const s = this.st();
       const doIt = () => {
-        if (A.doCoalesce(s, s.ui.nextGtype)) { emit('coalesce'); this.hud.selectTab('galaxy'); }
+        if (A.doCoalesce(s, s.ui.nextGtype)) {
+          emit('coalesce');
+          if (s.settings.autoTab) this.hud.selectTab('galaxy');
+        }
       };
       if (s.stats.coalescences === 0) this.hud.confirm(t('galaxy.go'), t('galaxy.confirm'), doIt);
       else doIt();
@@ -549,7 +577,12 @@ export class SingPanel implements Panel {
     this.collapseBox.append(this.colBar.wrap, this.colLabel);
     this.colBtn = btn('reset-btn sing', t('sing.go'), () => {
       const s = this.st();
-      const doIt = () => { if (A.doCollapse(s)) { emit('collapse'); this.hud.selectTab('sing'); } };
+      const doIt = () => {
+        if (A.doCollapse(s)) {
+          emit('collapse');
+          if (s.settings.autoTab) this.hud.selectTab('sing');
+        }
+      };
       if (s.stats.collapses === 0) this.hud.confirm(t('sing.go'), t('sing.confirm'), doIt);
       else doIt();
     });
@@ -590,7 +623,10 @@ export class SingPanel implements Panel {
     this.endBtn = btn('reset-btn end', t('sing.endgame'), () => {
       const s = this.st();
       this.hud.confirm(t('sing.endgame'), t('sing.endgameConfirm'), () => {
-        if (A.newUniverse(s)) { emit('universe'); this.hud.selectTab('dust'); }
+        if (A.newUniverse(s)) {
+          emit('universe');
+          if (s.settings.autoTab) this.hud.selectTab('dust');
+        }
       });
     });
     this.endBox.append(el('div', 'sub center', t('sing.endgameReq', { v: fmt(D(C.ENDGAME_ENTROPY), true) })), this.endBtn);
@@ -753,6 +789,7 @@ export class SettingsPanel implements Panel {
       String(s.settings.quality), v => { this.st().settings.quality = Number(v) as 0 | 1 | 2 | 3; });
     chkRow(t('set.notation'), s.settings.sciNotation, v => { this.st().settings.sciNotation = v; });
     chkRow(t('set.confirmResets'), s.settings.confirmResets, v => { this.st().settings.confirmResets = v; });
+    chkRow(t('set.autoTab'), s.settings.autoTab, v => { this.st().settings.autoTab = v; });
 
     const saveRow = el('div', 'row set-row');
     saveRow.append(

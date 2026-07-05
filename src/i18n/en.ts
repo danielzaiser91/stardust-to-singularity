@@ -13,6 +13,7 @@ export const en: Record<string, string> = {
   // — Dust —
   'dust.name': 'Dust',
   'dust.click': 'Attract Dust',
+  'dust.clickTip': 'Hovering (or holding on touch) auto-attracts 4× per second.',
   'dust.compression': 'Compression',
   'dust.compressionDesc': 'All generators ×{v} per level',
   'dust.comet': 'A comet passes by! Tap it!',
@@ -128,6 +129,7 @@ export const en: Record<string, string> = {
   'set.language': 'Language', 'set.sound': 'Sound effects', 'set.music': 'Ambient music',
   'set.quality': 'Graphics quality', 'set.q0': 'Auto', 'set.q1': 'Low', 'set.q2': 'Medium', 'set.q3': 'High',
   'set.notation': 'Scientific notation only', 'set.confirmResets': 'Confirm resets',
+  'set.autoTab': 'Switch tab automatically on reset',
   'set.save': 'Save now', 'set.saved': 'Saved!', 'set.export': 'Export save', 'set.import': 'Import save',
   'set.exported': 'Save copied to clipboard!', 'set.importPrompt': 'Paste your save string:',
   'set.importOk': 'Save imported!', 'set.importErr': 'Invalid save string.',

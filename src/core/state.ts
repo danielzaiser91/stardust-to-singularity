@@ -20,6 +20,7 @@ export interface GameState {
     quality: 0 | 1 | 2 | 3;  // auto, low, medium, high
     sciNotation: boolean;
     confirmResets: boolean;
+    autoTab: boolean;   // bei Reset automatisch zum neuen Layer-Tab wechseln
   };
   stats: {
     played: number;     // Sekunden gesamt
@@ -109,7 +110,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
     startedAt: 0,
     rngState: seed,
     lang: 'en',
-    settings: { sfx: 0.7, music: 0.5, quality: 0, sciNotation: false, confirmResets: true },
+    settings: { sfx: 0.7, music: 0.5, quality: 0, sciNotation: false, confirmResets: true, autoTab: true },
     stats: {
       played: 0, clicks: 0, comets: 0,
       ignitions: 0, supernovae: 0, coalescences: 0, collapses: 0,
