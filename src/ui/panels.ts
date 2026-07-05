@@ -47,6 +47,7 @@ export class DustPanel implements Panel {
   private igniteBar = bar('bar-hot');
   private igniteLabel = el('div', 'sub center');
   private igniteBtn: HTMLButtonElement;
+  private autoBtn!: HTMLButtonElement;
   private classSeg: HTMLElement;
   private classBtns: HTMLButtonElement[] = [];
   private cometNote = el('div', 'comet-note');
@@ -166,7 +167,25 @@ export class DustPanel implements Panel {
       if (s.stats.ignitions === 0) this.hud.confirm(t('star.ignite'), t('star.igniteConfirm'), doIt);
       else doIt();
     });
-    this.igniteBox.append(this.classSeg, this.igniteBtn);
+    // Auto-Zündung direkt neben dem Zünden-Button (Toggle; gesperrt bis Meilenstein)
+    this.autoBtn = btn('seg-btn auto-btn', t('nova.autoIgnite'), () => {
+      const s = this.st();
+      if (!F.autoIgniteUnlocked(s)) return;
+      s.nova.autoIgnite.on = !s.nova.autoIgnite.on;
+      this.update(s, M(s));
+    });
+    attachTip(this.autoBtn, () => {
+      const s = this.st();
+      return {
+        title: t('nova.autoIgnite'),
+        body: F.autoIgniteUnlocked(s)
+          ? t('nova.autoIgniteTip', { v: C.PLASMA_CLAMP_MULT + 1 })
+          : t('nova.autoIgniteLock'),
+      };
+    });
+    const ignRow = el('div', 'ignite-row');
+    ignRow.append(this.igniteBtn, this.autoBtn);
+    this.igniteBox.append(this.classSeg, ignRow);
     this.root.append(this.igniteBox);
 
     this.ms = milestoneSection(
@@ -230,6 +249,10 @@ export class DustPanel implements Panel {
         F.canIgnite(s) && F.isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT));
       setVisible(this.classSeg, s.stats.ignMs >= C.MS_IGNITION[1]);
       this.classBtns.forEach((b, c) => setClass(b, 'active', s.ui.nextClass === c));
+      setVisible(this.autoBtn, s.nova.unlocked);
+      const autoOk = F.autoIgniteUnlocked(s);
+      setClass(this.autoBtn, 'dim', !autoOk);
+      setClass(this.autoBtn, 'active', autoOk && s.nova.autoIgnite.on);
     }
     this.ms.update(s);
   }
@@ -409,9 +432,6 @@ export class NovaPanel implements Panel {
   private tokenBtn!: HTMLButtonElement;
   private gardenTotal = el('div', 'sub center');
   private chRows: { row: HTMLElement; enter: HTMLButtonElement; status: HTMLElement }[] = [];
-  private autoRow: HTMLElement;
-  private autoChk: HTMLInputElement;
-  private autoLock = el('div', 'sub center');
   private coalBar = bar('bar-gal');
   private coalLabel = el('div', 'sub center');
   private coalBtn!: HTMLButtonElement;
@@ -530,20 +550,6 @@ export class NovaPanel implements Panel {
       this.root.append(row);
     }
 
-    // Auto-Ignite: kein Schwellwert-Feld — zündet immer am goldenen Cap-Punkt
-    this.autoRow = el('div', 'row auto-row');
-    this.autoChk = el('input') as HTMLInputElement;
-    this.autoChk.type = 'checkbox';
-    this.autoChk.addEventListener('change', () => { this.st().nova.autoIgnite.on = this.autoChk.checked; });
-    const label = el('label', '', t('nova.autoIgnite'));
-    label.prepend(this.autoChk);
-    attachTip(label, () => ({
-      title: t('nova.autoIgnite'),
-      body: t('nova.autoIgniteTip', { v: C.PLASMA_CLAMP_MULT + 1 }),
-    }));
-    this.autoRow.append(label);
-    this.root.append(this.autoRow, this.autoLock);
-
     // Coalescence-Box lebt HIER (Ebene darunter) — der Galaxy-Tab existiert ja erst danach
     const coalesceBox = el('div', 'reset-box gal');
     coalesceBox.append(this.coalBar.wrap, this.coalLabel, el('div', 'sub center', t('galaxy.type')));
@@ -639,12 +645,6 @@ export class NovaPanel implements Panel {
       setText(r.enter, active ? t('nova.chExit') : t('nova.chEnter'));
       setDisabled(r.enter, locked || (!active && s.nova.challenge !== -1));
     }
-
-    const autoOk = F.autoIgniteUnlocked(s);
-    setVisible(this.autoRow, autoOk);
-    setVisible(this.autoLock, !autoOk);
-    setText(this.autoLock, t('nova.autoIgniteLock'));
-    if (this.autoChk.checked !== s.nova.autoIgnite.on) this.autoChk.checked = s.nova.autoIgnite.on;
 
     // Coalescence
     const coalReq = F.coalesceReq(s);
