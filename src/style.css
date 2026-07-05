@@ -54,7 +54,10 @@ h3 { margin: 14px 0 6px; font-size: 0.95rem; letter-spacing: 0.08em; text-transf
   background: var(--panel); border: 1px solid var(--panel-border); border-radius: 14px;
   padding: 12px; backdrop-filter: blur(10px);
   animation: panel-in 0.25s ease;
+  overflow-x: hidden;
 }
+/* Text neben Buttons in einer Row: darf schrumpfen und umbrechen statt überzulaufen */
+.row-note { flex: 1 1 100px; min-width: 0; overflow-wrap: anywhere; }
 @keyframes panel-in { from { opacity: 0; transform: translateY(8px); } }
 body.panels-collapsed .panel-host, body.panels-collapsed .tabbar { display: none; }
 
@@ -286,6 +289,20 @@ button:disabled { opacity: 0.38; cursor: default; }
 .offline-list { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; font-variant-numeric: tabular-nums;
   color: var(--gold); }
 
+/* ── Desktop breit: Ressourcen als vertikale Spalte links neben dem Panel ── */
+@media (min-width: 731px) {
+  .topbar {
+    position: absolute; top: 8px; left: auto;
+    right: calc(min(420px, 96vw) + 14px);
+    width: max-content;
+    flex-direction: column; align-items: flex-end; gap: 6px;
+    padding: 0; background: none;
+  }
+  body.panels-collapsed .topbar { right: 8px; }
+  .collapse-btn { position: fixed; top: 8px; right: 8px; margin: 0; }
+  .panel-host { top: 8px; }
+}
+
 /* ── Mobile ── */
 @media (max-width: 720px) {
   :root { font-size: 14px; }
@@ -297,4 +314,14 @@ button:disabled { opacity: 0.38; cursor: default; }
   .ach-grid { grid-template-columns: repeat(6, 1fr); }
   button { padding: 9px 12px; }  /* größere Touch-Targets */
   .tab { padding: 10px 14px; }
+}
+
+/* ── Sehr schmale Geräte: kompaktere Buttons, nichts läuft über ── */
+@media (max-width: 480px) {
+  .buy { min-width: 58px; padding: 8px 7px; font-size: 0.78rem; }
+  .buy.alt { min-width: 42px; }
+  .cost { font-size: 0.66rem; }
+  .row { gap: 6px; }
+  .gen-name { font-size: 0.84rem; }
+  .seg-btn { min-width: 72px; font-size: 0.74rem; }
 }

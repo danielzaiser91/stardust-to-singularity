@@ -38,7 +38,7 @@ export class DustPanel implements Panel {
   private clickVal = el('span', 'sub');
   private compRow: HTMLElement;
   private compCost = el('span', 'cost');
-  private compEff = el('span', 'sub');
+  private compEff = el('span', 'sub row-note');
   private genRows: { row: HTMLElement; owned: HTMLElement; rate: HTMLElement; b1: HTMLButtonElement; bm: HTMLButtonElement; c1: HTMLElement }[] = [];
   private igniteBox: HTMLElement;
   private igniteBar = bar('bar-hot');
