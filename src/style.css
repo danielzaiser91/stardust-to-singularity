@@ -175,6 +175,21 @@ button:disabled { opacity: 0.38; cursor: default; }
 .ignite-row { display: flex; gap: 8px; align-items: stretch; }
 .ignite-row .reset-btn { flex: 1; }
 .auto-btn.dim { opacity: 0.4; cursor: default; }
+/* Token-Kosten über den Nebel-Pinseln: Betrag in Scherben-Farbe, prominent */
+.token-cost { margin: 4px 0 10px; }
+.token-cost-val {
+  display: inline-block; color: var(--magenta); font-weight: 800; font-size: 1.12em;
+  letter-spacing: 0.03em; text-shadow: 0 0 10px rgba(255, 100, 200, 0.45);
+  opacity: 0.75;
+}
+.token-cost-val.affordable { opacity: 1; }
+.token-cost-val.token-denied { animation: token-deny 0.45s ease; }
+@keyframes token-deny {
+  20% { transform: translateX(-4px) scale(1.15); color: var(--danger); }
+  40% { transform: translateX(4px) scale(1.15); }
+  60% { transform: translateX(-3px) scale(1.1); color: var(--danger); }
+  80% { transform: translateX(3px) scale(1.05); }
+}
 .garden-ctl { display: flex; gap: 8px; align-items: center; justify-content: flex-start; margin: 8px 0 0; }
 .garden-ctl .icon-btn { min-width: 36px; font-size: 1.05rem; padding: 5px 10px; }
 .hexgrid { position: relative; width: 100%; aspect-ratio: 1.15; margin: 8px 0; }
