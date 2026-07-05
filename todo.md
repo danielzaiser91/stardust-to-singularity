@@ -13,6 +13,13 @@
 - [ ] **galaxy.click** — neue, von der Incremental-Community betriebene Plattform (Nachfolger-Spirit von Kongregate), sehr passende Zielgruppe.
 - [ ] Reddit r/incremental_games — kein Hoster, aber Launch-Post („WIP Wednesday" / „Feedback Friday") für erste Spieler.
 
+## Balance-Feintuning (v1 spielbar, Größenordnung validiert)
+
+- [ ] Singularitäts-Phase straffen: Galaxie-Zyklen tief im Run strecken sich (~+0,4 d/Stufe).
+      Kandidaten-Knöpfe: `COALESCE_REQ_GROWTH` 4→3, `DM_EXP` 0,55→0,65, Ergosphere-Basispreis senken.
+      Workflow: Knopf drehen → `npm run sim -- --until endgame` → Timeline prüfen (BALANCE.md).
+- [ ] Idle-Voll-Progression bis Endgame simulieren (bisher bis Galaxie validiert: ~1,7× langsamer)
+
 ## Kleinkram
 
 - [ ] Screenshots/GIF der 5 Szenen ins README (Browser-Capture; Preview-Panel war während der Entwicklung rAF-gedrosselt)

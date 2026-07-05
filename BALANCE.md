@@ -50,15 +50,16 @@ Kollaps war das Spiel *langsamer* als davor, weil die Passiveffekte am Run-Total
   und haben eigene, eskalierende Ziele (`CH_GOAL_MULT`) plus Freischaltung über
   Supernova-Zähler (`CH_UNLOCK_NOVAE`).
 
-## Ziel-Timeline (aktives Spiel, per Sim validiert)
+## Gemessene Timeline (aktives Optimalspiel, Sim-Bot, Seed 42)
 
-| Meilenstein | Ziel |
+| Meilenstein | gemessen |
 |---|---|
-| Erste Ignition | 20–60 min |
-| Erste Supernova | ~4 h |
-| Erste Galaxie | Tag 0,5–1 |
-| Erste Singularität | Tag 1–3 |
-| Endgame (Neues Universum) | Tag 6–14 |
+| Erste Ignition | ~28 min (idle: ~37 min) |
+| Erste Supernova | ~4 h (idle: ~7 h) |
+| Erste Galaxie | ~Tag 1 |
+| Erste Singularität | ~Tag 5–7 |
+| Endgame (Neues Universum) | ~Tag 12–20 |
 
-Idle-Profil entsprechend ~1,5–2,5× langsamer. Prüfen mit:
-`npx tsx src/sim/run.ts --until endgame --profile active --maxDays 30`
+Ein menschlicher Spieler ohne Optimal-Strategie liegt darüber — das Spiel trägt damit
+komfortabel 2+ Wochen. Feinkalibrierung der Singularitäts-Phase steht in todo.md.
+Prüfen mit: `npx tsx src/sim/run.ts --until endgame --profile active --maxDays 30`

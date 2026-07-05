@@ -29,9 +29,9 @@
 | 0 | **Dust** | — | Dust | Generator-Kette + aktives Klicken | Spielstart |
 | 1 | **Star** | **Ignition** | Plasma | Fusionskette H→Fe, Sternklassen | ~30–60 min |
 | 2 | **Supernova** | **Supernova** | Nova Shards | Nebel-Seeding, Remnants, Challenges | ~4 h |
-| 3 | **Galaxy** | **Coalescence** | Dark Matter | Konstellations-Skilltree | Tag 0,5–1 |
-| 4 | **Singularity** | **Collapse** | Entropy | Endlos-Prestige, Akkretion | Tag 1–3 |
-| — | Endgame/NG+ | „New Universe" | — | Endlos-Skalierung + Abschluss-Lore | Tag 6–14 |
+| 3 | **Galaxy** | **Coalescence** | Dark Matter | Konstellations-Skilltree | ~Tag 1 |
+| 4 | **Singularity** | **Collapse** | Entropy | Endlos-Prestige, Akkretion | ~Tag 5–7 |
+| — | Endgame/NG+ | „New Universe" | — | Endlos-Skalierung + Abschluss-Lore | ~Tag 12–20 |
 
 *aktiv gespielt; idle entsprechend länger. Werte werden per Simulation kalibriert (§5).
 
