@@ -430,7 +430,8 @@ export class NovaPanel implements Panel {
         title: t(`nova.cell${b}`),
         body: t(`nova.cell${b}d`) + (b === 2
           ? `\n${this.st().stats.coalescences >= C.MS_GALAXY[1]
-            ? t('nova.reFeOn') : t('nova.reFeLocked', { n: C.MS_GALAXY[1] })}`
+            ? t('nova.reFeOn', { v: fmtMult(C.NEBULA_REFLECTION_MULT), n: C.MS_GALAXY[1] })
+            : t('nova.reFeLocked', { v: fmtMult(C.NEBULA_REFLECTION_MULT), n: C.MS_GALAXY[1] })}`
           : ''),
       }));
       this.brushBtns.push(bb);
