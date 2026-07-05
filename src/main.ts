@@ -70,6 +70,10 @@ settingsPanel.onImport = imported => {
 // ── Audio ────────────────────────────────────────────────────────────────────
 const audio = new AudioEngine(st);
 
+// ── Update-Banner: informiert über neue Deploys, Klick = Save + Version-Bust ──
+import { startVersionCheck, showBanner } from './ui/updateBanner';
+startVersionCheck(() => saveGame(state));
+
 // ── Offline-Progress beim Start ──────────────────────────────────────────────
 if (state.savedAt > 0) {
   const away = (Date.now() - state.savedAt) / 1000;
@@ -168,6 +172,8 @@ if (import.meta.env.DEV) {
       for (let i = 0; i < seconds; i++) mults = tick(state, 1);
       hud.update(state, mults);
     },
+    /** Update-Banner manuell anzeigen (Test) */
+    fakeUpdate: () => showBanner(() => saveGame(state)),
   };
 }
 

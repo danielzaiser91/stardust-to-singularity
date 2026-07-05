@@ -191,6 +191,10 @@ export const de: Record<string, string> = {
   'achd.nodes': 'Entzünde {v} Konstellations-Nodes', 'achd.keystone': 'Erreiche einen Schlussstein',
   'achd.collapse': 'Kollabiere zur Singularität', 'achd.entropy': 'Erreiche 100 Entropie', 'achd.universe': 'Beginne ein neues Universum',
 
+  // — Update-Banner —
+  'update.banner': '✦ Neue Version verfügbar — klicken zum Speichern & Neuladen',
+  'update.reloading': '✦ Speichern & Neuladen…',
+
   // — Onboarding-Hints —
   'hint.welcome': 'Tippe die Staubwolke an oder kaufe einen Attraktor, um zu beginnen.',
   'hint.comet': 'Kometen geben einen Produktions-Boost — tipp sie an, bevor sie verschwinden!',

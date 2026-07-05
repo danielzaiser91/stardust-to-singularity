@@ -751,7 +751,7 @@ export class SettingsPanel implements Panel {
       row.append(v);
       this.root.append(row);
     }
-    this.root.append(el('div', 'sub center version', 'v__APP_VERSION__'));
+    this.root.append(el('div', 'sub center version', `v${__APP_VERSION__}`));
   }
 
   onImport: ((s: GameState) => void) | null = null;

@@ -14,6 +14,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  if (e.request.url.includes('version.json')) return; // Update-Check geht immer ans Netz
   e.respondWith(
     caches.match(e.request).then(hit =>
       hit ||

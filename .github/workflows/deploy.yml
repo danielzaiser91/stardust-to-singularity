@@ -29,8 +29,13 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
-      - name: Service-Worker Cache-Bust
-        run: sed -i "s/__BUILD__/${GITHUB_SHA::8}/" dist/sw.js
+        env:
+          BUILD_VERSION: ${{ github.sha }}
+      - name: Version-Stempel (SW-Cache-Bust + version.json für Update-Banner)
+        run: |
+          sed -i "s/__BUILD__/${GITHUB_SHA::8}/" dist/sw.js
+          V="$(node -p "require('./package.json').version")+${GITHUB_SHA::8}"
+          echo "{\"version\":\"$V\"}" > dist/version.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
