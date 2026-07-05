@@ -23,7 +23,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # npm install statt ci: Windows-generiertes Lockfile lässt Linux-Optionals aus
+      - run: npm install --no-audit --no-fund
       - name: Unit- & Balance-Tests
         run: npm test
       - name: Build
