@@ -160,7 +160,9 @@ export class DustPanel implements Panel {
     this.igniteBox.append(this.classSeg, this.igniteBtn);
     this.root.append(this.igniteBox);
 
-    this.ms = milestoneSection('ms.ign', C.MS_IGNITION, 'ms.u.ign', s => s.stats.ignitions);
+    this.ms = milestoneSection(
+      [t('ms.ign0'), t('ms.ign1'), t('ms.ign2')],
+      C.MS_IGNITION, 'ms.u.ign', s => s.stats.ignitions);
     this.root.append(this.ms.root);
   }
   private ms!: ReturnType<typeof milestoneSection>;
@@ -317,7 +319,12 @@ export class StarPanel implements Panel {
     this.novaBox.append(this.remSeg, this.novaBtn);
     this.root.append(this.novaBox);
 
-    this.ms = milestoneSection('ms.nova', C.MS_NOVA, 'ms.u.nova', s => s.stats.supernovae);
+    this.ms = milestoneSection(
+      [t('ms.nova0'), t('ms.nova1'),
+        ...C.MS_NOVA_KEEP.map(id => id === -1
+          ? t('ms.novaKeepAll')
+          : t('ms.novaKeep', { v: t(`up.${id}`) }))],
+      C.MS_NOVA, 'ms.u.nova', s => s.stats.supernovae);
     this.root.append(this.ms.root);
   }
   private ms!: ReturnType<typeof milestoneSection>;
@@ -458,7 +465,9 @@ export class NovaPanel implements Panel {
     this.autoRow.append(label);
     this.root.append(this.autoRow, this.autoLock);
 
-    this.ms = milestoneSection('ms.gal', C.MS_GALAXY, 'ms.u.gal', s => s.stats.coalescences);
+    this.ms = milestoneSection(
+      [t('ms.gal0'), t('ms.gal1')],
+      C.MS_GALAXY, 'ms.u.gal', s => s.stats.coalescences);
     this.root.append(this.ms.root);
     this.syncBrush();
   }
@@ -587,7 +596,9 @@ export class GalaxyPanel implements Panel {
     this.autoRow.append(label);
     this.root.append(this.autoRow, this.autoLockNote);
 
-    this.ms = milestoneSection('ms.col', C.MS_COLLAPSE, 'ms.u.col', s => s.stats.collapses);
+    this.ms = milestoneSection(
+      [t('ms.col0'), t('ms.col1')],
+      C.MS_COLLAPSE, 'ms.u.col', s => s.stats.collapses);
     this.root.append(this.ms.root);
   }
   private ms!: ReturnType<typeof milestoneSection>;
@@ -625,13 +636,13 @@ export class GalaxyPanel implements Panel {
 }
 
 /** Meilenstein-Liste einer Ebene: ○/✓ je Schwelle, grau bis erreicht */
-function milestoneSection(prefix: string, thresholds: number[], unitKey: string, count: (s: GameState) => number) {
+function milestoneSection(labels: string[], thresholds: number[], unitKey: string, count: (s: GameState) => number) {
   const root = el('div', 'ms-box');
   root.append(el('h3', '', t('ms.title')));
   const rows = thresholds.map((at, i) => {
     const row = el('div', 'ms-row');
     const icon = el('span', 'ms-icon', '○');
-    row.append(icon, el('span', '', `${at}× ${t(unitKey)} — ${t(`${prefix}${i}`)}`));
+    row.append(icon, el('span', '', `${at}× ${t(unitKey)} — ${labels[i]}`));
     root.append(row);
     return { row, icon, at };
   });

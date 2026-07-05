@@ -117,7 +117,10 @@ export const ENDGAME_ENTROPY = 2500;
 
 // ── Meilensteine (je Ebene; Index 0/1 = QoL, danach Persistenz) ─────────────
 export const MS_IGNITION = [1, 5, 25];       // Max-Buttons · Sternklassen · Kompression bleibt
-export const MS_NOVA = [1, 2, 10, 15, 20, 25]; // Reaktor-Max · Auto-Zündung · je 1 Automation wird permanent
+export const MS_NOVA = [1, 2, 4, 8, 12, 16, 20, 25, 30, 35, 40, 50];
+// Ab MS_NOVA[2]: welches Plasma-Upgrade bei diesem Meilenstein permanent wird (-1 = alle übrigen).
+// Reihenfolge: erst die vier Automationen, dann die wichtigsten Boosts.
+export const MS_NOVA_KEEP = [4, 13, 8, 14, 1, 6, 10, 7, 11, -1];
 export const MS_GALAXY = [1, 8];             // Typ-Wahl · halbe Remnants bleiben
 export const MS_COLLAPSE = [1, 5];           // Perks · Keystones bleiben
 

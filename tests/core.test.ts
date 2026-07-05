@@ -85,7 +85,7 @@ describe('tick & actions', () => {
     s.star.elements[5] = D(1e6);
     s.star.upgrades[4] = true;   // Auto-Gen 1–4
     s.star.upgrades[13] = true;  // Auto-Kompression
-    s.stats.supernovae = 13;     // wird durch die Supernova 14: ≥10 hält 4, <15 hält 13 NICHT
+    s.stats.supernovae = 5;      // wird durch die Supernova 6: ≥4 hält Upgrade 4, <8 hält 13 NICHT
     expect(doSupernova(s, 0)).toBe(true);
     expect(s.star.upgrades[4]).toBe(true);
     expect(s.star.upgrades[13]).toBe(false);
