@@ -11,6 +11,7 @@ import { achLabel } from './hud';
 import { D, Decimal } from '../core/decimal';
 import { exportSave, importSave, saveGame, hardReset } from '../storage';
 import { attachTip } from './tooltip';
+import { spawnFloaty } from './floaty';
 
 type St = () => GameState;
 const M = (s: GameState) => F.computeMults(s);
@@ -50,10 +51,14 @@ export class DustPanel implements Panel {
   private cometNote = el('div', 'comet-note');
 
   constructor(private st: St, private hud: Hud) {
-    this.clickBtn = btn('big-click', t('dust.click'), () => {
+    this.clickBtn = el('button', 'big-click') as HTMLButtonElement;
+    this.clickBtn.textContent = t('dust.click');
+    this.clickBtn.addEventListener('click', e => {
+      e.stopPropagation();
       const s = this.st();
-      A.click(s, M(s));
+      const gain = A.click(s, M(s));
       emit('click');
+      spawnFloaty(e.clientX, e.clientY, `+${fmt(gain, s.settings.sciNotation)}`);
     });
     this.clickBtn.append(this.clickVal);
     attachTip(this.clickBtn, () => ({ title: t('dust.click'), body: t('dust.clickTip') }));
@@ -65,8 +70,10 @@ export class DustPanel implements Panel {
       if (hoverTimer) return;
       hoverTimer = setInterval(() => {
         const s = this.st();
-        A.click(s, M(s));
+        const gain = A.click(s, M(s));
         if (++hoverCount % 4 === 0) emit('click');
+        const r = this.clickBtn.getBoundingClientRect();
+        spawnFloaty(r.left + 20 + Math.random() * (r.width - 40), r.top + 6, `+${fmt(gain, s.settings.sciNotation)}`);
       }, 250);
     };
     const stopAuto = () => { clearInterval(hoverTimer); hoverTimer = undefined; };

@@ -21,6 +21,8 @@ import { AudioEngine } from './audio/engine';
 import { emit } from './events';
 import { AUTOSAVE_INTERVAL } from './core/constants';
 import { D } from './core/decimal';
+import { spawnFloaty } from './ui/floaty';
+import { fmt } from './ui/format';
 
 // ── State laden ──────────────────────────────────────────────────────────────
 let state: GameState = loadGame() ?? initialState();
@@ -38,11 +40,15 @@ engine.addLayer(2, new SupernovaScene());
 engine.addLayer(3, new GalaxyScene(engine.tier));
 engine.addLayer(4, new BlackHoleScene());
 
-// Canvas-Klick: Komet fangen oder Staub anziehen
-engine.onCanvasClick = hitComet => {
+// Canvas-Klick: Komet fangen oder Staub anziehen (mit fliegender Zahl)
+engine.onCanvasClick = (hitComet, x, y) => {
   const m = computeMults(state);
   if (hitComet && A.clickComet(state, m)) emit('comet-caught');
-  else if (state.ui.scene === 0) { A.click(state, m); emit('click'); }
+  else if (state.ui.scene === 0) {
+    const gain = A.click(state, m);
+    emit('click');
+    spawnFloaty(x, y, `+${fmt(gain, state.settings.sciNotation)}`);
+  }
 };
 
 // ── UI ───────────────────────────────────────────────────────────────────────

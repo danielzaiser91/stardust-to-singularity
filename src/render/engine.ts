@@ -35,7 +35,7 @@ export class Engine {
   private burstData: Float32Array;
   private burstLife: Float32Array;
   private starfield: THREE.Points;
-  onCanvasClick: ((hitComet: boolean) => void) | null = null;
+  onCanvasClick: ((hitComet: boolean, x: number, y: number) => void) | null = null;
   private raycaster = new THREE.Raycaster();
   cometMesh: THREE.Object3D | null = null;
 
@@ -200,7 +200,7 @@ export class Engine {
         if (Math.hypot(sp.x - ndc.x, sp.y - ndc.y) < 0.09) hitComet = true;
       }
     }
-    this.onCanvasClick?.(hitComet);
+    this.onCanvasClick?.(hitComet, e.clientX, e.clientY);
     // Burst an Klickstelle (auf Kugel um Ursprung projiziert)
     const dir = this.raycaster.ray.direction.clone();
     this.burst(this.camera.position.clone().add(dir.multiplyScalar(40)), 12);
