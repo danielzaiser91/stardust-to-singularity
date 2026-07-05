@@ -40,7 +40,8 @@ export const STAR_CLASSES = [
   { speed: 1.0, plasmaGain: 1.0 },  // Gelber Stern
   { speed: 1.8, plasmaGain: 0.5 },  // Blauer Riese
 ];
-export const PLASMA_UPGRADE_COSTS = [2, 4, 8, 15, 30, 60, 120, 300, 800, 2000, 6000, 15000, 25000];
+// Index 4 = Auto-Gen 1–4 · 8 = Auto-Gen 5–8 · 13 = Auto-Kompression · 14 = Auto-Reaktoren
+export const PLASMA_UPGRADE_COSTS = [2, 4, 8, 15, 30, 60, 120, 300, 800, 2000, 6000, 15000, 25000, 100, 1500];
 export const SOLAR_SAIL_CLICKS = 4;          // Upgrade 13: passiver Staub = 4 Klicks/s
 
 // ── Ebene 2: Supernova ───────────────────────────────────────────────────────
@@ -115,7 +116,7 @@ export const ENDGAME_ENTROPY = 2500;
 
 // ── Meilensteine (je Ebene; Index 0/1 = QoL, danach Persistenz) ─────────────
 export const MS_IGNITION = [1, 5, 25];       // Max-Buttons · Sternklassen · Kompression bleibt
-export const MS_NOVA = [1, 2, 10];           // Reaktor-Max · Auto-Zündung · Upgrades 1–6 bleiben
+export const MS_NOVA = [1, 2, 10, 15, 20, 25]; // Reaktor-Max · Auto-Zündung · je 1 Automation wird permanent
 export const MS_GALAXY = [1, 8];             // Typ-Wahl · halbe Remnants bleiben
 export const MS_COLLAPSE = [1, 5];           // Perks · Keystones bleiben
 

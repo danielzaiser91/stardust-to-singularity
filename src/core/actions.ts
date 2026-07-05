@@ -135,8 +135,14 @@ function resetStarLayer(s: GameState): void {
   const memory = s.sing.perks[8] ?? 0;
   if (memory < 2) s.star.reactors = s.star.reactors.map(() => 0);
   if (memory < 1) {
-    const keepFirstSix = s.stats.supernovae >= C.MS_NOVA[2];
-    s.star.upgrades = s.star.upgrades.map((u, i) => (keepFirstSix && i < 6 ? u : false));
+    // Meilensteine: je Schwelle wird eine Automation permanent (überlebt Supernovae)
+    const novae = s.stats.supernovae;
+    const keep = new Set<number>();
+    if (novae >= C.MS_NOVA[2]) keep.add(4);   // Auto-Gen 1–4
+    if (novae >= C.MS_NOVA[3]) keep.add(13);  // Auto-Kompression
+    if (novae >= C.MS_NOVA[4]) keep.add(8);   // Auto-Gen 5–8
+    if (novae >= C.MS_NOVA[5]) keep.add(14);  // Auto-Reaktoren
+    s.star.upgrades = s.star.upgrades.map((u, i) => (keep.has(i) ? u : false));
   }
   resetDustLayer(s);
 }

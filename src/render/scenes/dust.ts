@@ -20,6 +20,7 @@ export class DustScene implements LayerScene {
   private comet: THREE.Group;
   private cometT = 0;
   private pulses = new Float32Array(8);   // Kauf-Puls je Stufe (Planet hüpft statt Screen-Shake)
+  private bodySeen = new Float64Array(8); // Nachleuchte: Planeten überstehen schnelle Auto-Zündungen
 
   constructor(tier: QualityTier, engineCometRef: (o: THREE.Object3D) => void) {
     this.buildParticles(tier.dustParticles);
@@ -159,12 +160,13 @@ export class DustScene implements LayerScene {
     const coreScale = 2.5 + progress * 9 + (progress > 0.9 ? Math.sin(time * 6) * 0.8 : 0);
     this.core.scale.setScalar(coreScale);
 
-    // Orbitkörper: sichtbar ab Kauf, Größe mit bought
+    // Orbitkörper: sichtbar ab Kauf, mit 5 s Nachleuchte (kein Flackern bei Auto-Zünd-Zyklen)
     for (let t = 0; t < 8; t++) {
       const b = this.bodies[t];
       const bought = s.dust.gens[t].bought;
+      if (bought > 0) this.bodySeen[t] = time;
+      const target = bought > 0 || time - this.bodySeen[t] < 5 ? 0.95 : 0;
       const mat = b.material as THREE.MeshBasicMaterial;
-      const target = bought > 0 ? 0.95 : 0;
       mat.opacity += (target - mat.opacity) * Math.min(1, dt * 2);
       b.visible = mat.opacity > 0.02;
       if (b.visible) {

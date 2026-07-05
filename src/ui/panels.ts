@@ -50,6 +50,8 @@ export class DustPanel implements Panel {
   private classSeg: HTMLElement;
   private classBtns: HTMLButtonElement[] = [];
   private cometNote = el('div', 'comet-note');
+  /** Nachleuchte je Reihe: bei schnellen Auto-Zündungen flackern Reihen sonst weg und wieder her */
+  private rowSeen = new Float64Array(8);
 
   constructor(private st: St, private hud: Hud) {
     this.clickBtn = el('button', 'big-click') as HTMLButtonElement;
@@ -179,10 +181,14 @@ export class DustPanel implements Panel {
     setDisabled(this.compRow.querySelector('button')!, s.dust.amount.lt(F.compressionCost(s)));
 
     const top = F.maxTier(s);
+    const now = performance.now();
     for (let i = 0; i < C.GEN_COUNT; i++) {
       const r = this.genRows[i];
       const g = s.dust.gens[i];
-      const visible = i < top && (i === 0 || s.dust.gens[i - 1].bought > 0 || g.bought > 0);
+      const cond = i < top && (i === 0 || s.dust.gens[i - 1].bought > 0 || g.bought > 0);
+      if (cond) this.rowSeen[i] = now;
+      // 5 s Nachleuchte: Panel-Höhe bleibt bei schnellen Reset-Zyklen stabil
+      const visible = cond || now - this.rowSeen[i] < 5000;
       setVisible(r.row, visible);
       if (!visible) continue;
       setText(r.owned, `${fmtInt(g.amount)} (${g.bought})`);

@@ -61,22 +61,34 @@ describe('tick & actions', () => {
     expect(s.stats.clicks).toBe(1);
   });
 
-  it('autobuyer upgrade also buys compression (parity with balance sim)', () => {
+  it('auto-compression upgrade buys compression (parity with balance sim)', () => {
     const s = initialState(1);
     s.star.unlocked = true;
-    s.star.upgrades[4] = true;
+    s.star.upgrades[13] = true;
     s.dust.amount = D(1e6);
     tick(s, 1);
     expect(s.dust.compression).toBeGreaterThan(0);
   });
 
-  it('auto-accretion upgrade also buys fusion reactors', () => {
+  it('auto-reactors upgrade buys fusion reactors', () => {
     const s = initialState(1);
     s.star.unlocked = true;
-    s.star.upgrades[8] = true;
+    s.star.upgrades[14] = true;
     s.star.plasma = D(100);
     tick(s, 1);
     expect(s.star.reactors[0]).toBeGreaterThan(0);
+  });
+
+  it('automation milestones keep their upgrade through supernova', () => {
+    const s = initialState(1);
+    s.star.unlocked = true;
+    s.star.elements[5] = D(1e6);
+    s.star.upgrades[4] = true;   // Auto-Gen 1–4
+    s.star.upgrades[13] = true;  // Auto-Kompression
+    s.stats.supernovae = 13;     // wird durch die Supernova 14: ≥10 hält 4, <15 hält 13 NICHT
+    expect(doSupernova(s, 0)).toBe(true);
+    expect(s.star.upgrades[4]).toBe(true);
+    expect(s.star.upgrades[13]).toBe(false);
   });
 
   it('solar sail upgrade grants passive dust equal to 4 clicks/s', () => {
