@@ -136,10 +136,10 @@ requestAnimationFrame(frame);
 // ── Onboarding-Hints (je einmal pro Session) ─────────────────────────────────
 import { canIgnite } from './core/formulas';
 import { t } from './i18n';
-const hintsShown = new Set<string>();
 function hint(id: string, cond: boolean): void {
-  if (cond && !hintsShown.has(id)) {
-    hintsShown.add(id);
+  // persistent im Save — Tutorial-Hints erscheinen genau einmal, auch über Reloads hinweg
+  if (cond && !state.ui.hintsSeen.includes(id)) {
+    state.ui.hintsSeen.push(id);
     hud.toast('💡', t(`hint.${id}`));
   }
 }

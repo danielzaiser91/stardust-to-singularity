@@ -95,6 +95,7 @@ export interface GameState {
   ui: {
     scene: number;
     helpSeen: boolean;
+    hintsSeen: string[];       // bereits gezeigte Tutorial-Hints (persistent)
     nextClass: StarClass;      // Auswahl für nächste Ignition
     nextRemnant: 0 | 1 | 2;    // Auswahl für nächste Supernova
     nextGtype: GalaxyType;     // Auswahl für nächste Coalescence
@@ -164,6 +165,6 @@ export function initialState(seed = Date.now() >>> 0): GameState {
     achievements: Array.from({ length: 60 }, () => false),
     loreSeen: Array.from({ length: 32 }, () => false),
     pending: { lore: [], ach: [] },
-    ui: { scene: 0, helpSeen: false, nextClass: 1, nextRemnant: 0, nextGtype: 0 },
+    ui: { scene: 0, helpSeen: false, hintsSeen: [], nextClass: 1, nextRemnant: 0, nextGtype: 0 },
   };
 }

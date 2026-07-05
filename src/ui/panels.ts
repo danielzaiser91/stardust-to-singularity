@@ -39,6 +39,7 @@ export class DustPanel implements Panel {
   private compRow: HTMLElement;
   private compCost = el('span', 'cost');
   private compEff = el('span', 'sub row-note');
+  private compMax!: HTMLButtonElement;
   private genRows: { row: HTMLElement; owned: HTMLElement; rate: HTMLElement; b1: HTMLButtonElement; bm: HTMLButtonElement; c1: HTMLElement }[] = [];
   private igniteBox: HTMLElement;
   private igniteBar = bar('bar-hot');
@@ -64,11 +65,11 @@ export class DustPanel implements Panel {
       if (A.buyCompression(s)) emit('buy');
     });
     compBuy.append(this.compCost);
-    const compMax = btn('buy alt', t('btn.max'), () => {
+    this.compMax = btn('buy alt', t('btn.max'), () => {
       const s = this.st();
       if (A.buyCompressionMax(s)) emit('buy');
     });
-    this.compRow.append(compBuy, compMax, this.compEff);
+    this.compRow.append(compBuy, this.compMax, this.compEff);
     this.root.append(this.compRow);
 
     // Generatoren
@@ -123,7 +124,10 @@ export class DustPanel implements Panel {
     setText(this.cometNote, s.dust.comet.active ? '☄ ' + t('dust.comet')
       : t('dust.cometBoost', { v: fmtMult(m.cometBoostMult), t: Math.ceil(s.dust.comet.boost) }));
 
+    // Max-Buttons sind eine Belohnung der ersten Ignition
+    const maxUnlocked = s.stats.ignitions > 0;
     setVisible(this.compRow, s.nova.challenge !== 0);
+    setVisible(this.compMax, maxUnlocked);
     setText(this.compCost, fmt(F.compressionCost(s), sci));
     setText(this.compEff, `${s.dust.compression} × | ${t('dust.compressionDesc', { v: m.compressionEffect.toFixed(2) })}`);
     setDisabled(this.compRow.querySelector('button')!, s.dust.amount.lt(F.compressionCost(s)));
@@ -140,6 +144,7 @@ export class DustPanel implements Panel {
       setText(r.rate, `+${fmt(prod, sci)}${t('unit.perSec')} ${i === 0 ? t('dust.name') : t(`gen.${i - 1}`)}`);
       setText(r.c1, fmt(F.genCost(s, m, i, 1), sci));
       setDisabled(r.b1, s.dust.amount.lt(F.genCost(s, m, i, 1)));
+      setVisible(r.bm, maxUnlocked);
       setDisabled(r.bm, F.genMaxAfford(s, m, i) < 1);
     }
 
@@ -267,6 +272,8 @@ export class StarPanel implements Panel {
         const locked = e > 0 && s.star.reactors[e - 1] === 0;
         const cantAfford = s.star.plasma.lt(F.reactorCost(s, e));
         setDisabled(rb.b, locked || cantAfford);
+        // Reaktor-Max ist eine Belohnung der ersten Supernova
+        setVisible(rb.bm, s.stats.supernovae > 0);
         setDisabled(rb.bm, locked || cantAfford);
       }
     }
