@@ -407,6 +407,7 @@ export class NovaPanel implements Panel {
       });
       attachTip(enter, () => {
         const s = this.st();
+        if (s.nova.completed[c]) return { title: '✓ ' + t(`ch.${c}`), body: t('nova.chDone') };
         return s.stats.supernovae < C.CH_UNLOCK_NOVAE(c)
           ? { title: '🔒 ' + t(`ch.${c}`), body: t('nova.chLockedInfo', { v: C.CH_UNLOCK_NOVAE(c), c: s.stats.supernovae }) }
           : { title: t(`ch.${c}`), body: t('nova.chGoal') };
@@ -463,6 +464,7 @@ export class NovaPanel implements Panel {
       const locked = s.stats.supernovae < C.CH_UNLOCK_NOVAE(c);
       setClass(r.row, 'active', active);
       setClass(r.row, 'locked', locked && !s.nova.completed[c]);
+      setClass(r.row, 'completed', s.nova.completed[c]);
       setText(r.status, s.nova.completed[c] ? '✓' : active ? t('misc.active')
         : locked ? `🔒 ${s.stats.supernovae}/${C.CH_UNLOCK_NOVAE(c)}` : '');
       setText(r.enter, active ? t('nova.chExit') : t('nova.chEnter'));

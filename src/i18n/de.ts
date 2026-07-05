@@ -70,6 +70,7 @@ export const de: Record<string, string> = {
   'nova.chGoal': 'Erreiche die Zündung unter dieser Einschränkung.',
   'nova.chHow': 'Spezial-Runs mit Einschränkung: Ziel erreichen und zünden = Abschluss, Belohnungen sind permanent. Weitere Challenges werden mit deiner Supernova-Gesamtzahl frei.',
   'nova.chLockedInfo': 'Wird bei {v} Supernovae (gesamt) frei — du hast {c}.',
+  'nova.chDone': 'Abgeschlossen! Wiederholen ist möglich, bringt aber keine weitere Belohnung.',
   'ch.0': 'Kalte Leere', 'ch.0d': 'Kompression nicht kaufbar', 'ch.0r': 'Kompression +0,10 Stärke',
   'ch.1': 'Dünne Materie', 'ch.1d': 'Nur Generator-Stufen 1–4 existieren', 'ch.1r': 'Alle Generatoren ×2',
   'ch.2': 'Langsames Brennen', 'ch.2d': 'Fusions-Durchsatz ×0,1', 'ch.2r': 'Fusions-Durchsatz ×2',

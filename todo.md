@@ -28,6 +28,13 @@
 
 - [ ] Screenshots/GIF der 5 Szenen ins README (Browser-Capture; Preview-Panel war während der Entwicklung rAF-gedrosselt)
 
+## Feature-Ideen (User)
+
+- [ ] **Challenge-Schwierigkeitsstufen:** Ein späterer Layer (z. B. Singularität/NG+) schaltet
+      pro Challenge eine höhere Stufe frei (härtere Restriktion/höheres Ziel), die die permanente
+      Belohnung verbessert. Wiederholen abgeschlossener Challenges bekäme damit einen Sinn.
+      State-Vorschlag: `completed: boolean[]` → `completedTier: number[]` (Migration nötig).
+
 ## Features (bewusst v1 ausgeklammert)
 
 - [ ] Cloud-Saves (z. B. via Supabase/Firebase oder Google-Drive-Export)

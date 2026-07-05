@@ -186,6 +186,14 @@ button:disabled { opacity: 0.38; cursor: default; }
 /* ── Challenges ── */
 .ch-row.active { background: rgba(255, 200, 100, 0.08); border-radius: 8px; }
 .ch-row.locked { opacity: 0.55; }
+.ch-row.completed {
+  border-left: 3px solid #7dffb0; border-radius: 8px;
+  background: rgba(60, 140, 90, 0.10);
+  padding-left: 8px;
+}
+.ch-row.completed .ch-status { color: #7dffb0; font-size: 1rem; }
+.ch-row.completed .reward { color: #7dffb0; }
+.ch-row.completed .reward::before { content: '✓ '; }
 .ch-status { min-width: 30px; text-align: center; color: var(--gold); font-weight: 700; font-size: 0.72rem; }
 
 /* ── Skilltree ── */
