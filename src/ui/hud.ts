@@ -57,6 +57,15 @@ export class Hud {
     this.tabs.push({ id, btn: b, panel, scene, show });
   }
 
+  /** Alle Tabs+Panels entfernen (Sprachwechsel: UI wird ohne Reload neu aufgebaut) */
+  clearTabs(): void {
+    for (const tab of this.tabs) {
+      tab.btn.remove();
+      tab.panel.root.remove();
+    }
+    this.tabs = [];
+  }
+
   selectTab(id: string): void {
     hideTip();   // Panelwechsel kann das gehoverte Element verstecken — nie hängen lassen
     this.activeTab = id;

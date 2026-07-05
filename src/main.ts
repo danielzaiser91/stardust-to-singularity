@@ -46,26 +46,32 @@ engine.onCanvasClick = hitComet => {
 };
 
 // ── UI ───────────────────────────────────────────────────────────────────────
+// Panels erzeugen ihre Texte beim Aufbau — Sprachwechsel baut sie deshalb in-place
+// neu auf (KEIN Reload: Spiel-Loop und Musik laufen ununterbrochen weiter).
 const hud = new Hud(st);
-const settingsPanel = new SettingsPanel(st, hud);
-hud.addTab('dust', new DustPanel(st, hud), () => true, 0);
-hud.addTab('star', new StarPanel(st, hud), s => s.star.unlocked, 1);
-hud.addTab('nova', new NovaPanel(st, hud), s => s.nova.unlocked, 2);
-hud.addTab('galaxy', new GalaxyPanel(st, hud), s => s.galaxy.unlocked, 3);
-hud.addTab('sing', new SingPanel(st, hud), s => s.sing.unlocked, 4);
-hud.addTab('ach', new AchPanel(), () => true);
-hud.addTab('journal', new JournalPanel(), s => s.loreSeen.some(Boolean));
-hud.addTab('settings', settingsPanel, () => true);
+function buildTabs(): void {
+  hud.clearTabs();
+  const settingsPanel = new SettingsPanel(st, hud);
+  settingsPanel.onLangChange = () => {
+    saveGame(state);
+    buildTabs();
+    hud.selectTab('settings');
+  };
+  settingsPanel.onImport = imported => {
+    replaceSave(imported);
+    location.reload();  // Import ersetzt den kompletten State — hier ist Reload korrekt
+  };
+  hud.addTab('dust', new DustPanel(st, hud), () => true, 0);
+  hud.addTab('star', new StarPanel(st, hud), s => s.star.unlocked, 1);
+  hud.addTab('nova', new NovaPanel(st, hud), s => s.nova.unlocked, 2);
+  hud.addTab('galaxy', new GalaxyPanel(st, hud), s => s.galaxy.unlocked, 3);
+  hud.addTab('sing', new SingPanel(st, hud), s => s.sing.unlocked, 4);
+  hud.addTab('ach', new AchPanel(), () => true);
+  hud.addTab('journal', new JournalPanel(), s => s.loreSeen.some(Boolean));
+  hud.addTab('settings', settingsPanel, () => true);
+}
+buildTabs();
 hud.selectTab('dust');
-
-settingsPanel.onLangChange = () => {
-  saveGame(state);
-  location.reload();  // alle statisch gebauten Panel-Labels neu aufbauen
-};
-settingsPanel.onImport = imported => {
-  replaceSave(imported);
-  location.reload();  // sauberster Weg, alle Systeme zu resynchronisieren
-};
 
 // ── Audio ────────────────────────────────────────────────────────────────────
 const audio = new AudioEngine(st);
