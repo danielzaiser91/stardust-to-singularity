@@ -127,8 +127,10 @@ function resetStarLayer(s: GameState): void {
   s.star.plasma = ZERO;
   s.star.totalPlasma = ZERO;
   s.star.elements = s.star.elements.map(() => ZERO);
-  s.star.reactors = s.star.reactors.map(() => 0);
-  s.star.upgrades = s.star.upgrades.map(() => false);
+  // Sternen-Gedächtnis (Singularitäts-Perk 9): L1 schützt Upgrades, L2 auch Reaktoren
+  const memory = s.sing.perks[8] ?? 0;
+  if (memory < 2) s.star.reactors = s.star.reactors.map(() => 0);
+  if (memory < 1) s.star.upgrades = s.star.upgrades.map(() => false);
   resetDustLayer(s);
 }
 
@@ -179,8 +181,11 @@ export function exitChallenge(s: GameState): boolean {
 function resetNovaLayer(s: GameState): void {
   s.nova.shards = ZERO;
   s.nova.totalShards = ZERO;
-  s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
-  s.nova.cellsBought = 0;
+  // Sternen-Gedächtnis L3: Nebelgarten überlebt die Coalescence
+  if ((s.sing.perks[8] ?? 0) < 3) {
+    s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
+    s.nova.cellsBought = 0;
+  }
   s.nova.remnants = [0, 0, 0];
   s.nova.count = 0;
   s.nova.pulsarPhase = 0;
@@ -243,6 +248,7 @@ export function doCollapse(s: GameState): boolean {
 
 export function buyPerk(s: GameState, i: number): boolean {
   if (!s.sing.unlocked || i < 0 || i >= C.PERK_COUNT) return false;
+  if (i === 8 && s.sing.perks[8] >= C.STELLAR_MEMORY_MAX) return false;
   const cost = perkCost(s, i);
   if (s.sing.entropy.lt(cost)) return false;
   s.sing.entropy = s.sing.entropy.sub(cost);

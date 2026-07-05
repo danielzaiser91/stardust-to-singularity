@@ -123,6 +123,7 @@ export const en: Record<string, string> = {
   'perk.5': 'Photon Sphere', 'perk.5d': 'Click & comet power ×10 per level',
   'perk.6': 'Deep Gravity', 'perk.6d': 'Dark Matter gain ×(1+level)',
   'perk.7': 'Cosmic Memory', 'perk.7d': 'Dust production ^(1+0.01·level)',
+  'perk.8': 'Stellar Memory', 'perk.8d': 'Lv1: plasma upgrades survive supernovae · Lv2: reactors too · Lv3: nebulae survive coalescence (max 3)',
   'sing.endgame': 'BECOME A NEW UNIVERSE',
   'sing.endgameReq': 'Reach {v} total Entropy',
   'sing.endgameConfirm': 'You have reached the end of this universe. Begin a new one? Everything resets — but the new universe inherits ×10 production and ×2 prestige gains, forever. This can be repeated.',

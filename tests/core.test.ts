@@ -4,7 +4,7 @@ import { initialState } from '../src/core/state';
 import { serialize, deserialize } from '../src/core/save';
 import { tick } from '../src/core/tick';
 import { computeMults, genCost, plasmaGain, HEX_COORDS, HEX_NEIGHBORS, NODE_EFFECTS } from '../src/core/formulas';
-import { buyGenerator, click, doIgnite } from '../src/core/actions';
+import { buyGenerator, click, doIgnite, doSupernova } from '../src/core/actions';
 import { simulateOffline } from '../src/core/offline';
 import { ACHIEVEMENT_CHECKS } from '../src/core/achievements';
 import { LORE_TRIGGERS } from '../src/core/lore';
@@ -87,6 +87,27 @@ describe('tick & actions', () => {
     tick(s, 10);
     // ohne Generatoren: nur das Sonnensegel produziert (Klick-Basis 1 × 4/s × 10 s = 40)
     expect(s.dust.amount.sub(before).toNumber()).toBeGreaterThanOrEqual(40);
+  });
+
+  it('stellar memory perk protects upgrades/reactors across supernova', () => {
+    const s = initialState(1);
+    s.star.unlocked = true;
+    s.star.elements[5] = D(1e6);
+    s.star.upgrades[4] = true;
+    s.star.reactors[0] = 7;
+    s.sing.perks[8] = 2;   // L2: Upgrades + Reaktoren bleiben
+    expect(doSupernova(s, 0)).toBe(true);
+    expect(s.star.upgrades[4]).toBe(true);
+    expect(s.star.reactors[0]).toBe(7);
+    // ohne Perk: alles weg
+    const s2 = initialState(1);
+    s2.star.unlocked = true;
+    s2.star.elements[5] = D(1e6);
+    s2.star.upgrades[4] = true;
+    s2.star.reactors[0] = 7;
+    expect(doSupernova(s2, 0)).toBe(true);
+    expect(s2.star.upgrades[4]).toBe(false);
+    expect(s2.star.reactors[0]).toBe(0);
   });
 
   it('ignition resets dust layer and grants plasma', () => {

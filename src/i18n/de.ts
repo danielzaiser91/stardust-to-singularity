@@ -123,6 +123,7 @@ export const de: Record<string, string> = {
   'perk.5': 'Photonensphäre', 'perk.5d': 'Klick- & Kometen-Kraft ×10 pro Stufe',
   'perk.6': 'Tiefe Gravitation', 'perk.6d': 'Dunkle-Materie-Gewinn ×(1+Stufe)',
   'perk.7': 'Kosmisches Gedächtnis', 'perk.7d': 'Staubproduktion ^(1+0,01·Stufe)',
+  'perk.8': 'Sternen-Gedächtnis', 'perk.8d': 'St. 1: Plasma-Upgrades überleben Supernovae · St. 2: auch Reaktoren · St. 3: Nebel überleben die Coalescence (max. 3)',
   'sing.endgame': 'WERDE EIN NEUES UNIVERSUM',
   'sing.endgameReq': 'Erreiche {v} Entropie (gesamt)',
   'sing.endgameConfirm': 'Du hast das Ende dieses Universums erreicht. Ein neues beginnen? Alles wird zurückgesetzt — aber das neue Universum erbt ×10 Produktion und ×2 Prestige-Gewinne, für immer. Beliebig wiederholbar.',

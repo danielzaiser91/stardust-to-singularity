@@ -705,9 +705,10 @@ export class SingPanel implements Panel {
 
     for (let p = 0; p < C.PERK_COUNT; p++) {
       const pb = this.perkBtns[p];
+      const atMax = p === 8 && s.sing.perks[8] >= C.STELLAR_MEMORY_MAX;
       setText(pb.lvl, ` ${t('misc.level')}${s.sing.perks[p]} `);
-      setText(pb.cost, fmt(F.perkCost(s, p), sci));
-      setDisabled(pb.b, s.sing.entropy.lt(F.perkCost(s, p)));
+      setText(pb.cost, atMax ? 'MAX' : fmt(F.perkCost(s, p), sci));
+      setDisabled(pb.b, atMax || s.sing.entropy.lt(F.perkCost(s, p)));
     }
 
     setVisible(this.endBox, s.sing.totalEntropy.gte(C.ENDGAME_ENTROPY / 5) || s.sing.endgame);
