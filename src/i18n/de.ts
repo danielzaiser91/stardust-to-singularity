@@ -34,6 +34,7 @@ export const de: Record<string, string> = {
   'star.fusion': 'Fusionskette',
   'star.reactor': 'Reaktor',
   'star.upgrades': 'Plasma-Upgrades',
+  'star.autoUps': 'Automation',
   'el.0': 'Wasserstoff', 'el.1': 'Helium', 'el.2': 'Kohlenstoff', 'el.3': 'Sauerstoff', 'el.4': 'Silizium', 'el.5': 'Eisen',
   'el.boost.1': '× Staubproduktion', 'el.boost.2': '÷ Generator-Kosten', 'el.boost.3': '× Klick- & Kometen-Kraft',
   'el.boost.4': '+ Kompressionsstärke', 'el.boost.5': 'vergiftet den Kern — nährt die Supernova',

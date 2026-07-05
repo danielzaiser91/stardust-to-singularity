@@ -34,6 +34,7 @@ export const en: Record<string, string> = {
   'star.fusion': 'Fusion chain',
   'star.reactor': 'Reactor',
   'star.upgrades': 'Plasma upgrades',
+  'star.autoUps': 'Automation',
   'el.0': 'Hydrogen', 'el.1': 'Helium', 'el.2': 'Carbon', 'el.3': 'Oxygen', 'el.4': 'Silicon', 'el.5': 'Iron',
   'el.boost.1': '× dust production', 'el.boost.2': '÷ generator costs', 'el.boost.3': '× click & comet power',
   'el.boost.4': '+ compression strength', 'el.boost.5': 'poisons the core — fuels the Supernova',

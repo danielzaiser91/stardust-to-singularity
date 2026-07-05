@@ -268,8 +268,10 @@ export class StarPanel implements Panel {
       this.root.append(row);
     }
 
-    this.root.append(el('h3', '', t('star.upgrades')));
-    const grid = el('div', 'up-grid');
+    // Upgrades getrennt: normale Boosts vs. Automation (4, 8, 13, 14)
+    const AUTOMATION_IDS = [4, 8, 13, 14];
+    const gridNormal = el('div', 'up-grid');
+    const gridAuto = el('div', 'up-grid');
     for (let u = 0; u < C.PLASMA_UPGRADE_COSTS.length; u++) {
       const b = btn('up-btn', '', () => {
         const s = this.st();
@@ -278,9 +280,10 @@ export class StarPanel implements Panel {
       b.append(el('div', 'up-name', t(`up.${u}`)), el('div', 'sub', t(`up.${u}d`)),
         el('div', 'cost', `${C.PLASMA_UPGRADE_COSTS[u]} ${t('star.plasma')}`));
       this.upBtns.push(b);
-      grid.append(b);
+      (AUTOMATION_IDS.includes(u) ? gridAuto : gridNormal).append(b);
     }
-    this.root.append(grid);
+    this.root.append(el('h3', '', t('star.upgrades')), gridNormal);
+    this.root.append(el('h3', '', t('star.autoUps')), gridAuto);
 
     // Supernova-Box
     this.novaBox = el('div', 'reset-box nova');
