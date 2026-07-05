@@ -1,4 +1,4 @@
-import { Decimal, D, ZERO, ONE, affordGeometric, costGeometric } from './decimal';
+import { Decimal, D, ZERO, ONE, affordGeometric, costGeometric, softpow } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
 
@@ -73,13 +73,17 @@ export interface Mults {
 
 const log10p1 = (d: Decimal) => Decimal.max(d, 0).add(1).log10();
 
-/** Effektive Stärke jeder Nebula-Zelle inkl. Dark-Nachbar-Verdopplung und Light-Ast. */
-export function nebulaCellPower(s: GameState, i: number, nebulaNodeMult: number): number {
+/**
+ * Effektiver Multiplikator einer Nebula-Zelle: Basis (×3 Emission / ×2 Reflection),
+ * jeder dunkle Nachbar addiert +2 darauf. Bewusst NICHT exponentiell stapelbar.
+ */
+export function nebulaCellMult(s: GameState, i: number, nebulaNodeMult: number): number {
   const t = s.nova.cells[i];
-  if (t === 0 || t === 3) return 0;
-  let p = 1;
-  for (const n of HEX_NEIGHBORS[i]) if (s.nova.cells[n] === 3) p *= C.NEBULA_DARK_MULT;
-  return p * nebulaNodeMult;
+  if (t === 0 || t === 3) return 1;
+  let darks = 0;
+  for (const n of HEX_NEIGHBORS[i]) if (s.nova.cells[n] === 3) darks++;
+  const base = t === 1 ? C.NEBULA_EMISSION_MULT : C.NEBULA_REFLECTION_MULT;
+  return 1 + (base - 1 + C.NEBULA_DARK_BONUS * darks) * nebulaNodeMult;
 }
 
 export function computeMults(s: GameState): Mults {
@@ -152,24 +156,21 @@ export function computeMults(s: GameState): Mults {
   if (ch === 5) plasmaDustExp *= 0.5;                       // Challenge 6: Dim Star
   const plasmaDust = s.star.plasma.add(1).pow(plasmaDustExp);
 
-  // — Nebula —
-  const nebulaNodeMult = nNebula;
-  let emissionPower = 0, reflectionPower = 0;
+  // — Nebula: Produkt der Zell-Multiplikatoren (linear gestapelt, gedeckelt durch 19 Zellen) —
+  let nebulaDustMult = ONE, nebulaPlasmaMult = ONE;
   for (let i = 0; i < C.NEBULA_CELLS; i++) {
     const t = s.nova.cells[i];
-    if (t === 1) emissionPower += nebulaCellPower(s, i, nebulaNodeMult);
-    else if (t === 2) reflectionPower += nebulaCellPower(s, i, nebulaNodeMult);
+    if (t === 1) nebulaDustMult = nebulaDustMult.mul(nebulaCellMult(s, i, nNebula));
+    else if (t === 2) nebulaPlasmaMult = nebulaPlasmaMult.mul(nebulaCellMult(s, i, nNebula));
   }
-  const nebulaDustMult = D(C.NEBULA_EMISSION_MULT).pow(emissionPower);
-  const nebulaPlasmaMult = D(C.NEBULA_REFLECTION_MULT).pow(reflectionPower);
 
   // — Kometen-Boost —
   const cometBoostMult = C.COMET_BOOST_MULT + (done[4] ? 2 : 0) + nCometBoost;
   const cometActive = s.dust.comet.boost > 0 ? cometBoostMult : 1;
 
-  // — Kaskaden-Passiveffekte höherer Ebenen —
-  const shardDust = s.nova.totalShards.add(1).pow(C.SHARD_DUST_EXP);
-  const dmAll = s.galaxy.totalDM.add(1).pow(C.DM_ALL_EXP);
+  // — Kaskaden-Passiveffekte höherer Ebenen (Lifetime-Basen, resetten nie) —
+  const shardDust = s.stats.lifetimeShards.add(1).pow(C.SHARD_DUST_EXP);
+  const dmAll = s.stats.lifetimeDM.add(1).pow(C.DM_ALL_EXP);
   const entropyAll = s.sing.totalEntropy.add(1).pow(C.ENTROPY_ALL_EXP);
 
   // — Global zusammensetzen —
@@ -197,7 +198,7 @@ export function computeMults(s: GameState): Mults {
   const hRate = s.star.unlocked
     ? s.star.totalPlasma.add(1).pow(C.H_RATE_EXP).mul(C.STAR_CLASSES[s.star.cls].speed)
         .mul(s.star.upgrades[6] ? 3 : 1)
-        .mul(s.nova.totalShards.add(1).pow(C.SHARD_H_EXP))
+        .mul(s.stats.lifetimeShards.add(1).pow(C.SHARD_H_EXP))
         .mul(dmAll).mul(entropyAll)
     : ZERO;
 
@@ -260,7 +261,7 @@ export function genMaxAfford(s: GameState, m: Mults, tier: number): number {
 /** Produktion-Multiplikator einer Stufe (ohne dt), inkl. Basisrate der Stufe */
 export function tierMult(s: GameState, m: Mults, tier: number): Decimal {
   let mult = D(C.GEN_MULT_PER_10).pow(Math.floor(s.dust.gens[tier].bought / 10))
-    .mul(Math.pow(m.compressionEffect, s.dust.compression))
+    .mul(Decimal.pow(m.compressionEffect, s.dust.compression))  // Decimal: Number-Overflow ab ~5000 Stufen
     .mul(m.allGenMult)
     .mul(C.GEN_RATE[tier]);
   if (tier === 0 && s.nova.completed[7]) mult = mult.mul(8);  // Challenge-8-Belohnung
@@ -291,28 +292,57 @@ export function igniteReq(s: GameState): Decimal {
 }
 export function plasmaGain(s: GameState, m: Mults): Decimal {
   if (s.dust.total.lt(igniteReq(s))) return ZERO;
-  return s.dust.total.div(C.IGNITION_REQ).pow(m.plasmaGainExp).mul(m.plasmaGainMult).floor();
+  return softpow(s.dust.total.div(C.IGNITION_REQ), m.plasmaGainExp, C.GAIN_SOFTCAP, C.GAIN_TAIL_EXP)
+    .mul(m.plasmaGainMult).floor();
 }
 export function canIgnite(s: GameState): boolean { return s.dust.total.gte(igniteReq(s)); }
 
+/** Eskalierende Fe-Anforderung: jede Supernova verteuert die nächste (Pacing-Taktgeber) */
+export function novaReq(s: GameState): Decimal {
+  return D(C.SUPERNOVA_REQ).mul(Decimal.pow(C.NOVA_REQ_GROWTH, s.stats.supernovae));
+}
+/** Kein Reset darf die Gesamtsumme mehr als vervierfachen — Wachstum bleibt Kadenz-getrieben */
+function clampGain(raw: Decimal, total: Decimal): Decimal {
+  return Decimal.min(raw, total.mul(C.GAIN_CLAMP_MULT).add(C.GAIN_CLAMP_FLOOR)).floor();
+}
+
 export function shardGain(s: GameState, m: Mults): Decimal {
   const fe = s.star.elements[5];
-  if (fe.lt(C.SUPERNOVA_REQ)) return ZERO;
-  return fe.div(C.SUPERNOVA_REQ).pow(C.SHARD_EXP).mul(m.shardGainMult).floor();
+  const req = novaReq(s);
+  if (fe.lt(req)) return ZERO;
+  const charge = Math.min(1, s.stats.novaTime / C.NOVA_MIN_TIME);
+  const raw = softpow(fe.div(req), C.SHARD_EXP, C.GAIN_SOFTCAP, C.GAIN_TAIL_EXP)
+    .mul(m.shardGainMult).mul(charge);
+  return clampGain(raw, s.nova.totalShards);
 }
-export function canSupernova(s: GameState): boolean { return s.star.elements[5].gte(C.SUPERNOVA_REQ); }
+export function canSupernova(s: GameState): boolean { return s.star.elements[5].gte(novaReq(s)); }
 
+/** Eskalierende Anforderung: jede Coalescence verteuert die nächste */
+export function coalesceReq(s: GameState): Decimal {
+  return D(C.COALESCE_REQ).mul(Decimal.pow(C.COALESCE_REQ_GROWTH, s.stats.coalescences));
+}
 export function dmGain(s: GameState, m: Mults): Decimal {
-  if (s.nova.totalShards.lt(C.COALESCE_REQ)) return ZERO;
-  return s.nova.totalShards.div(C.COALESCE_REQ).pow(C.DM_EXP).mul(m.dmGainMult).floor();
+  const req = coalesceReq(s);
+  if (s.nova.totalShards.lt(req)) return ZERO;
+  const charge = Math.min(1, s.stats.galaxyTime / C.GALAXY_MIN_TIME);
+  const raw = softpow(s.nova.totalShards.div(req), C.DM_EXP, C.GAIN_SOFTCAP, C.GAIN_TAIL_EXP)
+    .mul(m.dmGainMult).mul(charge);
+  return clampGain(raw, s.galaxy.totalDM);
 }
-export function canCoalesce(s: GameState): boolean { return s.nova.totalShards.gte(C.COALESCE_REQ); }
+export function canCoalesce(s: GameState): boolean { return s.nova.totalShards.gte(coalesceReq(s)); }
 
-export function entropyGain(s: GameState, m: Mults): Decimal {
-  if (s.galaxy.totalDM.lt(C.COLLAPSE_REQ)) return ZERO;
-  return s.galaxy.totalDM.div(C.COLLAPSE_REQ).pow(C.ENTROPY_EXP).mul(m.entropyGainMult).floor();
+export function collapseReq(s: GameState): Decimal {
+  return D(C.COLLAPSE_REQ).mul(Decimal.pow(C.COLLAPSE_REQ_GROWTH, s.stats.collapses));
 }
-export function canCollapse(s: GameState): boolean { return s.galaxy.totalDM.gte(C.COLLAPSE_REQ); }
+export function entropyGain(s: GameState, m: Mults): Decimal {
+  const req = collapseReq(s);
+  if (s.galaxy.totalDM.lt(req)) return ZERO;
+  const charge = Math.min(1, s.stats.singTime / C.COLLAPSE_MIN_TIME);
+  const raw = softpow(s.galaxy.totalDM.div(req), C.ENTROPY_EXP, C.GAIN_SOFTCAP, C.GAIN_TAIL_EXP)
+    .mul(m.entropyGainMult).mul(charge);
+  return clampGain(raw, s.sing.totalEntropy);
+}
+export function canCollapse(s: GameState): boolean { return s.galaxy.totalDM.gte(collapseReq(s)); }
 
 // ── Kosten weiterer Systeme ──────────────────────────────────────────────────
 export function reactorCost(s: GameState, step: number): Decimal {

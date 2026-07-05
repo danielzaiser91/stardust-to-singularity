@@ -113,6 +113,7 @@ export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
   s.nova.unlocked = true;
   s.nova.shards = s.nova.shards.add(gain);
   s.nova.totalShards = s.nova.totalShards.add(gain);
+  s.stats.lifetimeShards = s.stats.lifetimeShards.add(gain);
   s.nova.remnants[remnant]++;
   s.stats.supernovae++;
   s.stats.novaTime = 0;
@@ -134,6 +135,7 @@ export function placeNebula(s: GameState, cell: number, type: NebulaCell): boole
 
 export function enterChallenge(s: GameState, i: number): boolean {
   if (!s.nova.unlocked || i < 0 || i >= C.CHALLENGE_COUNT) return false;
+  if (s.stats.supernovae < C.CH_UNLOCK_NOVAE(i)) return false;
   if (s.nova.challenge !== -1) return false;
   s.nova.challenge = i;
   resetDustLayer(s);  // nur Dust-Ebene frisch — Plasma/Upgrades bleiben (Challenge = Ignition unter Restriktion)
@@ -166,6 +168,7 @@ export function doCoalesce(s: GameState, gtype: GalaxyType): boolean {
   s.galaxy.unlocked = true;
   s.galaxy.dm = s.galaxy.dm.add(gain);
   s.galaxy.totalDM = s.galaxy.totalDM.add(gain);
+  s.stats.lifetimeDM = s.stats.lifetimeDM.add(gain);
   s.galaxy.gtype = gtype;
   s.stats.coalescences++;
   s.stats.galaxyTime = 0;

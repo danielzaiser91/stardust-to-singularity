@@ -43,19 +43,30 @@ export const STAR_CLASSES = [
 export const PLASMA_UPGRADE_COSTS = [2, 4, 8, 15, 30, 60, 120, 300, 800, 2000, 6000, 15000];
 
 // ── Ebene 2: Supernova ───────────────────────────────────────────────────────
-export const SUPERNOVA_REQ = 1e4;            // Fe
-export const SHARD_EXP = 0.45;               // shards = (Fe/REQ)^exp
-// ★ Kaskaden-Passiveffekte: jede Prestige-Währung boostet die Ebenen darunter
-export const SHARD_DUST_EXP = 0.8;           // Dust ×(1+totalShards)^exp
-export const SHARD_H_EXP = 0.4;              // H-Rate ×(1+totalShards)^exp
-export const DM_ALL_EXP = 1.2;               // Gesamtproduktion ×(1+totalDM)^exp
+export const SUPERNOVA_REQ = 1e4;            // Fe (Basis)
+export const NOVA_REQ_GROWTH = 2.5;          // Fe-Anforderung ×2,5 je bisheriger Supernova
+export const SHARD_EXP = 0.45;               // shards = (Fe/aktuelleReq)^exp
+export const GAIN_SOFTCAP = 1e3;             // ab diesem Verhältnis greift der Softcap-Tail
+export const GAIN_TAIL_EXP = 0.2;            // Exponent jenseits des Softcaps (alle Prestige-Gains)
+// Härtester Schutz gegen Layer-Leapfrogging: pro Reset max. Vervierfachung der Gesamtsumme.
+export const GAIN_CLAMP_MULT = 3;            // gain ≤ total×3 + GAIN_CLAMP_FLOOR
+export const GAIN_CLAMP_FLOOR = 10;
+// Aufladezeiten: voller Prestige-Gain erst nach dieser Zeit seit dem letzten Reset der Ebene
+export const NOVA_MIN_TIME = 600;            // 10 min
+export const GALAXY_MIN_TIME = 2400;         // 40 min
+export const COLLAPSE_MIN_TIME = 7200;       // 2 h
+export const CH_UNLOCK_NOVAE = (i: number) => 2 + 2 * i;  // Challenge i ab so vielen Supernovae
+// ★ Kaskaden-Passiveffekte auf LIFETIME-Werten (resetten nie → kein Prestige-Whiplash)
+export const SHARD_DUST_EXP = 0.6;           // Dust ×(1+lifetimeShards)^exp
+export const SHARD_H_EXP = 0.4;              // H-Rate ×(1+lifetimeShards)^exp
+export const DM_ALL_EXP = 0.6;               // Gesamtproduktion ×(1+lifetimeDM)^exp
 export const ENTROPY_ALL_EXP = 0.8;          // Gesamtproduktion ×(1+totalEntropy)^exp
 export const NEBULA_CELLS = 19;              // Hex-Grid Radius 2
 export const NEBULA_COST_BASE = 1;           // Shards
 export const NEBULA_COST_GROWTH = 2;
-export const NEBULA_EMISSION_MULT = 3;       // × Dust-Produktion je Zelle
-export const NEBULA_REFLECTION_MULT = 2;     // × Plasma-Gain je Zelle
-export const NEBULA_DARK_MULT = 2;           // × auf Effekt jeder Nachbarzelle
+export const NEBULA_EMISSION_MULT = 3;       // Basis-× Dust-Produktion je Zelle
+export const NEBULA_REFLECTION_MULT = 2;     // Basis-× Plasma-Gain je Zelle
+export const NEBULA_DARK_BONUS = 2;          // +2 auf Multiplikator jeder Nachbarzelle
 export const REMNANT_NEUTRON_FUSION = 1.5;   // × Fusion je Neutronenstern
 export const REMNANT_PULSAR_PERIOD = 60;
 export const REMNANT_PULSAR_DURATION = 10;
@@ -68,8 +79,9 @@ export const CH7_DECAY = 0.01;               // 1 %/s Dust-Zerfall in Challenge 
 export const CH4_COST_EXP = 1.2;
 
 // ── Ebene 3: Galaxy ──────────────────────────────────────────────────────────
-export const COALESCE_REQ = 1e8;             // total Nova Shards
-export const DM_EXP = 0.55;                  // dm = (totalShards/REQ)^exp
+export const COALESCE_REQ = 2500;            // total Nova Shards (Basis)
+export const COALESCE_REQ_GROWTH = 6;        // Anforderung ×6 je bisheriger Coalescence
+export const DM_EXP = 0.55;                  // dm = (totalShards/aktuelleReq)^exp
 export const CONSTELLATION_NODES = 45;       // 3 Äste à 15
 export const NODE_COST = (i: number) => Math.max(1, Math.floor(Math.pow(1.55, i % 15) * (1 + Math.floor(i / 15))));
 export const GALAXY_TYPES = [
@@ -79,7 +91,8 @@ export const GALAXY_TYPES = [
 ];
 
 // ── Ebene 4: Singularity ─────────────────────────────────────────────────────
-export const COLLAPSE_REQ = 1e4;             // total Dark Matter
+export const COLLAPSE_REQ = 300;             // total Dark Matter (Basis)
+export const COLLAPSE_REQ_GROWTH = 12;       // Anforderung ×12 je bisherigem Collapse
 export const ENTROPY_EXP = 0.45;
 export const PERK_COUNT = 8;
 export const PERK_BASE_COST = [1, 3, 10, 25, 100, 500, 2500, 10000];
@@ -88,7 +101,7 @@ export const FEED_ACCRETION_EXP = 2;         // global mult = (1+log10(1+fed))^e
 export const DILATION_MULT = 4;
 export const DILATION_TIME = 300;
 export const DILATION_CD = 3600;
-export const ENDGAME_ENTROPY = 1e9;
+export const ENDGAME_ENTROPY = 2500;
 
 // ── Querschnitt ──────────────────────────────────────────────────────────────
 export const ACH_MULT = 1.02;                // globale Produktion je Achievement

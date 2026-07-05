@@ -35,6 +35,9 @@ export interface GameState {
     singTime: number;
     totalDustEver: Decimal;
     bestPlasma: Decimal;
+    /** Lifetime-Summen — resetten NIE (Basis der Kaskaden-Passiveffekte, kein Prestige-Whiplash) */
+    lifetimeShards: Decimal;
+    lifetimeDM: Decimal;
   };
   dust: {
     amount: Decimal;
@@ -108,6 +111,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       ignitions: 0, supernovae: 0, coalescences: 0, collapses: 0,
       runTime: 0, novaTime: 0, galaxyTime: 0, singTime: 0,
       totalDustEver: ZERO, bestPlasma: ZERO,
+      lifetimeShards: ZERO, lifetimeDM: ZERO,
     },
     dust: {
       amount: D(10),

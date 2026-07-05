@@ -163,6 +163,11 @@ if (import.meta.env.DEV) {
       const [layer, field] = what.split('.');
       s[layer][field] = D(amount);
     },
+    /** n Sekunden Spielzeit simulieren (unabhängig vom RAF, z. B. für Tests) */
+    tick: (seconds: number) => {
+      for (let i = 0; i < seconds; i++) mults = tick(state, 1);
+      hud.update(state, mults);
+    },
   };
 }
 

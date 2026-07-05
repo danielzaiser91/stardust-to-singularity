@@ -1,5 +1,5 @@
 import type { GameState } from './state';
-import { D } from './decimal';
+import { ENDGAME_ENTROPY } from './constants';
 
 /** 32 Lore-Trigger — Texte in i18n unter lore.N. Die Reise vom Staubkorn zur Singularität. */
 type Trigger = (s: GameState) => boolean;
@@ -34,8 +34,8 @@ export const LORE_TRIGGERS: Trigger[] = [
   s => s.stats.collapses >= 1,                    // 26 KOLLAPS — Singularität
   s => s.sing.fed.gte(100),                       // 27 Das Loch frisst
   s => s.sing.perks.some(p => p > 0),             // 28 Erster Perk
-  s => s.sing.totalEntropy.gte(1e6),              // 29 Entropie steigt
-  s => s.sing.totalEntropy.gte(D(1e9)),           // 30 Am Rand des Endes
+  s => s.sing.totalEntropy.gte(ENDGAME_ENTROPY / 5),   // 29 Entropie steigt
+  s => s.sing.totalEntropy.gte(ENDGAME_ENTROPY),       // 30 Am Rand des Endes
   s => s.sing.universes >= 1,                     // 31 EIN NEUES UNIVERSUM
 ];
 

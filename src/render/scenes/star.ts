@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { GameState } from '../../core/state';
-import type { Mults } from '../../core/formulas';
+import { novaReq, type Mults } from '../../core/formulas';
 import type { LayerScene } from '../engine';
 import { radialTexture } from './dust';
 
@@ -119,8 +119,8 @@ export class StarScene implements LayerScene {
     const [a, b] = CLASS_COLORS[s.star.cls];
     (this.surfMat.uniforms.uColA.value as THREE.Color).lerp(a, dt * 2);
     (this.surfMat.uniforms.uColB.value as THREE.Color).lerp(b, dt * 2);
-    // Eisenanteil → bedrohliche Verdunkelung (0..1 bei Supernova-Schwelle)
-    const iron = Math.min(1, s.star.elements[5].div(1e4).toNumber());
+    // Eisenanteil → bedrohliche Verdunkelung (0..1 bei aktueller Supernova-Schwelle)
+    const iron = Math.min(1, s.star.elements[5].div(novaReq(s)).toNumber());
     this.surfMat.uniforms.uIron.value = iron;
 
     // Puls kurz vor Supernova

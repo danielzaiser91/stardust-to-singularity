@@ -17,6 +17,15 @@ export function affordGeometric(budget: Decimal, base: Decimal, growth: number, 
   return Math.max(n, 1);
 }
 
+/**
+ * Potenz mit Softcap: x^exp bis capAt, darüber nur noch ^tailExp.
+ * Verhindert Layer-Leapfrogging durch Overkill-Runs.
+ */
+export function softpow(x: Decimal, exp: number, capAt: number, tailExp: number): Decimal {
+  if (x.lte(capAt)) return x.pow(exp);
+  return Decimal.pow(capAt, exp).mul(x.div(capAt).pow(tailExp));
+}
+
 /** Gesamtkosten für n Käufe einer geometrischen Reihe ab `bought` */
 export function costGeometric(n: number, base: Decimal, growth: number, bought: number): Decimal {
   const first = base.mul(Decimal.pow(growth, bought));

@@ -24,9 +24,10 @@ function setBar(b: { fill: HTMLElement }, frac: number): void {
   b.fill.style.width = `${Math.min(100, Math.max(0, frac * 100)).toFixed(1)}%`;
 }
 /** Fortschritt in log-Skala (fühlt sich bei e-Zahlen richtig an) */
-function logFrac(cur: Decimal, req: number): number {
+function logFrac(cur: Decimal, req: Decimal | number): number {
   if (cur.lte(1)) return 0;
-  return Math.min(1, cur.log10().toNumber() / Math.log10(req));
+  const reqLog = req instanceof Decimal ? req.max(10).log10().toNumber() : Math.log10(req);
+  return Math.min(1, cur.log10().toNumber() / reqLog);
 }
 
 // ═══════════════ Ebene 0: Dust ═══════════════
@@ -264,13 +265,14 @@ export class StarPanel implements Panel {
     }
     const fe = s.star.elements[5];
     setVisible(this.novaBox, fe.gt(0) || s.nova.unlocked);
-    setBar(this.novaBar, logFrac(fe, C.SUPERNOVA_REQ));
+    const nReq = F.novaReq(s);
+    setBar(this.novaBar, logFrac(fe, nReq));
     const gain = F.shardGain(s, m);
     if (F.canSupernova(s)) {
       setText(this.novaLabel, t('nova.gain', { v: fmt(gain, sci) }));
       setDisabled(this.novaBtn, false);
     } else {
-      setText(this.novaLabel, t('nova.req', { v: fmt(D(C.SUPERNOVA_REQ), true) }));
+      setText(this.novaLabel, t('nova.req', { v: fmt(nReq, true) }));
       setDisabled(this.novaBtn, true);
     }
     this.remBtns.forEach((b, r) => setClass(b, 'active', s.ui.nextRemnant === r));
@@ -372,10 +374,12 @@ export class NovaPanel implements Panel {
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
       const r = this.chRows[c];
       const active = s.nova.challenge === c;
+      const locked = s.stats.supernovae < C.CH_UNLOCK_NOVAE(c);
       setClass(r.row, 'active', active);
-      setText(r.status, s.nova.completed[c] ? '✓' : active ? t('misc.active') : '');
+      setText(r.status, s.nova.completed[c] ? '✓' : active ? t('misc.active')
+        : locked ? `🔒 ${s.stats.supernovae}/${C.CH_UNLOCK_NOVAE(c)}` : '');
       setText(r.enter, active ? t('nova.chExit') : t('nova.chEnter'));
-      setDisabled(r.enter, !active && s.nova.challenge !== -1);
+      setDisabled(r.enter, locked || (!active && s.nova.challenge !== -1));
     }
 
     const autoOk = F.autoIgniteUnlocked(s);
@@ -453,13 +457,14 @@ export class GalaxyPanel implements Panel {
 
   update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
-    setBar(this.coalBar, logFrac(s.nova.totalShards, C.COALESCE_REQ));
+    const coalReq = F.coalesceReq(s);
+    setBar(this.coalBar, logFrac(s.nova.totalShards, coalReq));
     const gain = F.dmGain(s, m);
     if (F.canCoalesce(s)) {
       setText(this.coalLabel, t('galaxy.gain', { v: fmt(gain, sci) }));
       setDisabled(this.coalBtn, s.nova.challenge !== -1);
     } else {
-      setText(this.coalLabel, t('galaxy.req', { v: fmt(D(C.COALESCE_REQ), true) }));
+      setText(this.coalLabel, t('galaxy.req', { v: fmt(coalReq, true) }));
       setDisabled(this.coalBtn, true);
     }
     this.gtBtns.forEach((b, g) => setClass(b, 'active', s.ui.nextGtype === g));
@@ -552,19 +557,20 @@ export class SingPanel implements Panel {
         if (A.newUniverse(s)) { emit('universe'); this.hud.selectTab('dust'); }
       });
     });
-    this.endBox.append(el('div', 'sub center', t('sing.endgameReq', { v: '1e9' })), this.endBtn);
+    this.endBox.append(el('div', 'sub center', t('sing.endgameReq', { v: fmt(D(C.ENDGAME_ENTROPY), true) })), this.endBtn);
     this.root.append(this.endBox);
   }
 
   update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
-    setBar(this.colBar, logFrac(s.galaxy.totalDM, C.COLLAPSE_REQ));
+    const colReq = F.collapseReq(s);
+    setBar(this.colBar, logFrac(s.galaxy.totalDM, colReq));
     const gain = F.entropyGain(s, m);
     if (F.canCollapse(s)) {
       setText(this.colLabel, t('sing.gain', { v: fmt(gain, sci) }));
       setDisabled(this.colBtn, s.nova.challenge !== -1);
     } else {
-      setText(this.colLabel, t('sing.req', { v: fmt(D(C.COLLAPSE_REQ), true) }));
+      setText(this.colLabel, t('sing.req', { v: fmt(colReq, true) }));
       setDisabled(this.colBtn, true);
     }
     setText(this.uniLabel, s.sing.universes > 0 ? t('sing.universes', { v: String(s.sing.universes + 1) }) : '');
@@ -586,7 +592,7 @@ export class SingPanel implements Panel {
       setDisabled(pb.b, s.sing.entropy.lt(F.perkCost(s, p)));
     }
 
-    setVisible(this.endBox, s.sing.totalEntropy.gte(1e7) || s.sing.endgame);
+    setVisible(this.endBox, s.sing.totalEntropy.gte(C.ENDGAME_ENTROPY / 5) || s.sing.endgame);
     setBar(this.endBar, logFrac(s.sing.totalEntropy, C.ENDGAME_ENTROPY));
     setDisabled(this.endBtn, s.sing.totalEntropy.lt(C.ENDGAME_ENTROPY));
   }

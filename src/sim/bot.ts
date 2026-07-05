@@ -40,10 +40,12 @@ export function botStep(s: GameState, profile: Profile): void {
     A.activateDilation(s);
   }
 
-  // — Collapse, wenn Gain lohnt —
+  // — Collapse: lohnender Gain ODER lange genug gewartet —
   if (s.galaxy.unlocked || s.sing.unlocked) {
     const eg = entropyGain(s, m);
-    if (eg.gte(1) && (s.sing.totalEntropy.eq(0) || eg.gte(s.sing.totalEntropy.mul(0.25)))) {
+    const worth = eg.gte(s.sing.totalEntropy.mul(0.25).max(1))
+      || (eg.gte(1) && s.stats.singTime > 6 * 3600);
+    if (worth) {
       A.doCollapse(s);
       m = computeMults(s);
     }
@@ -64,10 +66,10 @@ export function botStep(s: GameState, profile: Profile): void {
     }
   }
 
-  // — Coalescence —
+  // — Coalescence: lohnender Gain ODER lange genug gewartet —
   if (s.nova.unlocked) {
     const dg = dmGain(s, m);
-    if (dg.gte(1) && (s.galaxy.totalDM.eq(0) || dg.gte(s.galaxy.totalDM.mul(0.2)))) {
+    if (dg.gte(s.galaxy.totalDM.mul(0.2).max(1)) || (dg.gte(1) && s.stats.galaxyTime > 2 * 3600)) {
       // Galaxientyp: aktiv → irregulär, idle → elliptisch, sonst spiral
       A.doCoalesce(s, profile === 'active' ? 2 : 1);
       m = computeMults(s);
