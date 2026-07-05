@@ -83,7 +83,7 @@ export const en: Record<string, string> = {
   'ch.6': 'Entropy Leak', 'ch.6d': 'Dust decays 1% per second', 'ch.6r': 'Dust production +25%',
   'ch.7': 'Singular Focus', 'ch.7d': 'Only Attractors exist', 'ch.7r': 'Attractors ×8',
   'nova.autoIgnite': 'Auto-Ignition',
-  'nova.autoIgniteTip': 'When active, ignites automatically at the golden point: the moment the plasma gain hits its ×{v} cap and no further increase is possible in this run.',
+  'nova.autoIgniteTip': 'When active, harvests the ignition gain automatically (up to once per second) whenever it sits at its golden ×{v} cap — continuously, WITHOUT collapsing your dust cloud.',
   'nova.autoIgniteLock': 'Unlocks at your 2nd supernova',
 
   // — Galaxy —

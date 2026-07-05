@@ -101,6 +101,23 @@ describe('tick & actions', () => {
     expect(s.dust.amount.sub(before).toNumber()).toBeGreaterThanOrEqual(40);
   });
 
+  it('auto-ignition at cap harvests plasma WITHOUT resetting the dust layer', () => {
+    const s = initialState(1);
+    s.star.unlocked = true;
+    s.nova.unlocked = true;
+    s.nova.autoIgnite.on = true;
+    s.stats.supernovae = 2;      // Auto-Zündung freigeschaltet
+    s.dust.total = D('1e120');   // Gain sicher am Cap
+    s.dust.gens[0].bought = 33;
+    s.dust.gens[0].amount = D(33);
+    s.stats.runTime = 5;
+    const ignBefore = s.stats.ignitions;
+    tick(s, 1);
+    expect(s.stats.ignitions).toBeGreaterThan(ignBefore);   // Gewinn kassiert
+    expect(s.dust.gens[0].bought).toBe(33);                 // KEIN Reset → kein Flackern
+    expect(s.star.plasma.gt(0)).toBe(true);
+  });
+
   it('stellar memory perk protects upgrades/reactors across supernova', () => {
     const s = initialState(1);
     s.star.unlocked = true;

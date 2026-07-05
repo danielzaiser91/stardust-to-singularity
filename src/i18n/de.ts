@@ -83,7 +83,7 @@ export const de: Record<string, string> = {
   'ch.6': 'Entropie-Leck', 'ch.6d': 'Staub zerfällt 1 %/s', 'ch.6r': 'Staubproduktion +25 %',
   'ch.7': 'Singulärer Fokus', 'ch.7d': 'Nur Attraktoren existieren', 'ch.7r': 'Attraktoren ×8',
   'nova.autoIgnite': 'Auto-Zündung',
-  'nova.autoIgniteTip': 'Zündet automatisch am goldenen Punkt: sobald der Plasma-Gewinn seinen ×{v}-Deckel erreicht und in diesem Run kein weiterer Zuwachs möglich ist.',
+  'nova.autoIgniteTip': 'Erntet den Zündgewinn automatisch (bis zu 1× pro Sekunde), sobald er am goldenen ×{v}-Deckel liegt — kontinuierlich, OHNE die Staubwolke zu kollabieren.',
   'nova.autoIgniteLock': 'Ab der 2. Supernova',
 
   // — Galaxy —

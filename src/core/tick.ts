@@ -2,7 +2,7 @@ import { Decimal } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
 import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, isGainCapped, type Mults } from './formulas';
-import { doIgnite, doSupernova, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax } from './actions';
+import { doSupernova, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
 import { checkLore } from './lore';
@@ -99,10 +99,18 @@ export function tick(s: GameState, dt: number): Mults {
       buyReactorsMax(s, r, 0.3);
     }
   }
-  if (s.nova.autoIgnite.on && s.nova.challenge === -1) {
-    // zündet am „goldenen Punkt": Gain am Clamp-Deckel → mehr geht in diesem Run nicht
+  if (s.nova.autoIgnite.on && s.nova.challenge === -1 && s.stats.runTime >= 1) {
+    // Kontinuierliche Zündung am goldenen Punkt: Am Cap hängt der Gewinn NUR am Plasma,
+    // nicht an der Staubmenge — die Wolke muss also nicht kollabieren. Max. 1×/s,
+    // ohne Dust-Reset → kein Flackern von Reihen/Planeten/Balken bei schnellen Zyklen.
     const gain = plasmaGain(s, m);
-    if (isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT)) doIgnite(s, s.star.cls);
+    if (isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT)) {
+      s.star.plasma = s.star.plasma.add(gain);
+      s.star.totalPlasma = s.star.totalPlasma.add(gain);
+      if (s.star.plasma.gt(s.stats.bestPlasma)) s.stats.bestPlasma = s.star.plasma;
+      s.stats.ignitions++;
+      s.stats.runTime = 0;
+    }
   }
   if (s.galaxy.autoNova.on && m.autoNovaUnlocked && s.nova.challenge === -1) {
     const gain = shardGain(s, m);
