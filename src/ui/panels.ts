@@ -1,4 +1,4 @@
-import { el, btn, setText, setVisible, setDisabled, setClass } from './dom';
+import { el, btn, setText, setVisible, setReserve, setDisabled, setClass } from './dom';
 import { fmt, fmtInt, fmtTime, fmtMult } from './format';
 import { t, setLang, getLang } from '../i18n';
 import type { GameState, NebulaCell, StarClass, GalaxyType } from '../core/state';
@@ -222,14 +222,14 @@ export class DustPanel implements Panel {
   update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
     setText(this.clickVal, `+${fmt(F.clickAmount(s, m), sci)}`);
-    setVisible(this.cometNote, s.dust.comet.active || s.dust.comet.boost > 0);
+    setReserve(this.cometNote, s.dust.comet.active || s.dust.comet.boost > 0);
     setText(this.cometNote, s.dust.comet.active ? '☄ ' + t('dust.comet')
       : t('dust.cometBoost', { v: fmtMult(m.cometBoostMult), t: Math.ceil(s.dust.comet.boost) }));
 
     // Max-Buttons sind eine Belohnung der ersten Ignition (dieser Galaxie)
     const maxUnlocked = s.stats.ignMs >= C.MS_IGNITION[0];
-    setVisible(this.compRow, s.nova.challenge !== 0);
-    setVisible(this.compMax, maxUnlocked);
+    setReserve(this.compRow, s.nova.challenge !== 0);
+    setReserve(this.compMax, maxUnlocked);
     setText(this.compCost, fmt(F.compressionCost(s), sci));
     setText(this.compEff, `${s.dust.compression} × | ${t('dust.compressionDesc', { v: m.compressionEffect.toFixed(2) })}`);
     setDisabled(this.compRow.querySelector('button')!, s.dust.amount.lt(F.compressionCost(s)));
@@ -253,7 +253,7 @@ export class DustPanel implements Panel {
       setText(r.rate, `+${fmt(prod, sci)}${t('unit.perSec')} ${i === 0 ? t('dust.name') : t(`gen.${i - 1}`)}`);
       setText(r.c1, fmt(F.genCost(s, m, i, 1), sci));
       setDisabled(r.b1, s.dust.amount.lt(F.genCost(s, m, i, 1)));
-      setVisible(r.bm, maxUnlocked);
+      setReserve(r.bm, maxUnlocked);
       setDisabled(r.bm, F.genMaxAfford(s, m, i) < 1);
     }
 
@@ -274,9 +274,9 @@ export class DustPanel implements Panel {
       }
       setClass(this.igniteLabel, 'capped',
         F.canIgnite(s) && F.isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT));
-      setVisible(this.classSeg, s.stats.ignMs >= C.MS_IGNITION[1]);
+      setReserve(this.classSeg, s.stats.ignMs >= C.MS_IGNITION[1]);
       this.classBtns.forEach((b, c) => setClass(b, 'active', s.ui.nextClass === c));
-      setVisible(this.autoBtn, s.nova.unlocked);
+      setReserve(this.autoBtn, s.nova.unlocked);
       const autoOk = F.autoIgniteUnlocked(s);
       setClass(this.autoBtn, 'dim', !autoOk);
       setClass(this.autoBtn, 'active', autoOk && s.nova.autoIgnite.on);
@@ -452,8 +452,8 @@ export class StarPanel implements Panel {
         const locked = e > 0 && s.star.reactors[e - 1] === 0;
         const cantAfford = s.star.plasma.lt(F.reactorCost(s, e));
         setDisabled(rb.b, locked || cantAfford);
-        // Reaktor-Max ist eine Belohnung der ersten Supernova (dieser Galaxie)
-        setVisible(rb.bm, s.stats.novaMs >= C.MS_NOVA[0]);
+        // Reaktor-Max ist eine Belohnung der ersten Supernova (dieser Galaxie) — Platz reservieren
+        setReserve(rb.bm, s.stats.novaMs >= C.MS_NOVA[0]);
         setDisabled(rb.bm, locked || cantAfford);
       }
     }

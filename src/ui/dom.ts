@@ -28,6 +28,12 @@ export function setVisible(elem: HTMLElement, visible: boolean): void {
   const want = visible ? '' : 'none';
   if (elem.style.display !== want) elem.style.display = want;
 }
+/** wie setVisible, aber der Platz bleibt im Layout erhalten (visibility statt display) —
+ *  für Elemente, die auftauchen/verschwinden, ohne den Rest zu verschieben. */
+export function setReserve(elem: HTMLElement, visible: boolean): void {
+  const want = visible ? '' : 'hidden';
+  if (elem.style.visibility !== want) elem.style.visibility = want;
+}
 
 export function setDisabled(b: HTMLButtonElement, disabled: boolean): void {
   if (b.disabled !== disabled) b.disabled = disabled;
