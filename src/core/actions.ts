@@ -192,6 +192,17 @@ export function placeNebula(s: GameState, cell: number, type: NebulaCell): boole
   return true;
 }
 
+/** Token direkt kaufen (Platzieren auf leerer Zelle kauft weiterhin automatisch nach) */
+export function buyNebulaToken(s: GameState): boolean {
+  s.nova.cellsBought = Math.min(s.nova.cellsBought, C.NEBULA_CELLS);
+  if (s.nova.cellsBought >= C.NEBULA_CELLS) return false;
+  const cost = nebulaCellCost(s);
+  if (s.nova.shards.lt(cost)) return false;
+  s.nova.shards = s.nova.shards.sub(cost);
+  s.nova.cellsBought++;
+  return true;
+}
+
 /** Alle Nebel entfernen — Tokens bleiben erhalten (freies Umplatzieren) */
 export function respecNebula(s: GameState): boolean {
   if (!s.nova.cells.some(c => c !== 0)) return false;

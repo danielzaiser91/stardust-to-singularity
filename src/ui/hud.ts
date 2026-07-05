@@ -30,12 +30,14 @@ export class Hud {
   constructor(private stateRef: () => GameState) {
     this.root = document.getElementById('ui')!;
     const top = el('div', 'topbar');
+    const resName = { dust: 'dust.name', plasma: 'star.plasma', shards: 'nova.shards', dm: 'galaxy.dm', entropy: 'sing.entropy' } as const;
     for (const [id, icon] of [['dust', '✦'], ['plasma', '☀'], ['shards', '✸'], ['dm', '◈'], ['entropy', '◉']] as const) {
       const wrap = el('div', `pill pill-${id}`);
       wrap.append(el('span', 'pill-icon', icon));
       const val = el('span', 'pill-val', '0');
       const rate = el('span', 'pill-rate', '');
       wrap.append(val, rate);
+      attachTip(wrap, () => ({ title: `${icon} ${t(resName[id])}`, body: '' }), { marker: false });
       this.pills[id] = { wrap, val, rate };
       top.append(wrap);
     }

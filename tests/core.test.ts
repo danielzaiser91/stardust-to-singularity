@@ -137,6 +137,10 @@ describe('tick & actions', () => {
     expect(s.nova.cellsBought).toBe(1);
     expect(placeNebula(s, 5, 3)).toBe(true);        // freier Token wird genutzt, kein Kauf
     expect(s.nova.cellsBought).toBe(1);
+    expect(actionsAll.buyNebulaToken(s)).toBe(true);  // direkter Token-Kauf (Kosten 2)
+    expect(s.nova.cellsBought).toBe(2);
+    s.nova.cellsBought = C.NEBULA_CELLS;
+    expect(actionsAll.buyNebulaToken(s)).toBe(false); // Cap erreicht
   });
 
   it('dark nebulae double neighboring cell multipliers (×2 each, as described)', () => {

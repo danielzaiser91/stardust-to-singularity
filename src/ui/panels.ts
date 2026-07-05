@@ -409,9 +409,8 @@ export class NovaPanel implements Panel {
   private brush: NebulaCell = 1;
   private brushBtns: HTMLButtonElement[] = [];
   private hexBtns: HTMLButtonElement[] = [];
-  private cellCost = el('div', 'sub center');
+  private tokenBtn!: HTMLButtonElement;
   private gardenTotal = el('div', 'sub center');
-  private remCounts = el('div', 'sub center');
   private chRows: { row: HTMLElement; enter: HTMLButtonElement; status: HTMLElement }[] = [];
   private autoRow: HTMLElement;
   private autoChk: HTMLInputElement;
@@ -450,10 +449,10 @@ export class NovaPanel implements Panel {
         if (A.placeNebula(s, i, this.brush)) {
           emit('nebula-placed');
         } else {
-          // nie still scheitern: Kostenzeile blitzt rot (zu teuer / gleicher Typ)
-          this.cellCost.classList.remove('flash-error');
-          void this.cellCost.offsetWidth;
-          this.cellCost.classList.add('flash-error');
+          // nie still scheitern: Token-Button blitzt rot (zu teuer / kein Token)
+          this.tokenBtn.classList.remove('flash-error');
+          void this.tokenBtn.offsetWidth;
+          this.tokenBtn.classList.add('flash-error');
         }
         this.update(s, M(s));  // sofortiger Resync — 10-Hz-Loop ist zu langsam für Doppelklicks
       };
@@ -494,15 +493,20 @@ export class NovaPanel implements Panel {
       this.hexBtns.push(b);
       grid.append(b);
     }
-    const respecBtn = btn('buy', t('nova.respec'), () => {
+    this.tokenBtn = btn('buy token-btn', '', () => {
+      const s = this.st();
+      if (A.buyNebulaToken(s)) this.update(s, M(s));
+    });
+    attachTip(this.tokenBtn, () => ({ title: t('nova.tokenTipT'), body: t('nova.tokenTip') }));
+    const respecBtn = btn('buy icon-btn', '↺', () => {
       const s = this.st();
       if (A.respecNebula(s)) this.update(s, M(s));
     });
     attachTip(respecBtn, () => ({ title: t('nova.respec'), body: t('nova.respecTip') }));
-    const tokenRow = el('div', 'row auto-row');
-    tokenRow.append(this.cellCost, respecBtn);
+    const ctl = el('div', 'garden-ctl');
+    ctl.append(this.tokenBtn, respecBtn);
     attachTip(this.gardenTotal, () => ({ title: t('nova.nebula'), body: t('nova.gardenTotalTip', { b: fmtMult(C.NEBULA_DARK_BONUS) }) }));
-    this.root.append(grid, tokenRow, this.gardenTotal, this.remCounts);
+    this.root.append(ctl, grid, this.gardenTotal);
 
     this.root.append(el('h3', '', t('nova.challenges')), el('div', 'sub', t('nova.chHow')));
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
@@ -606,10 +610,11 @@ export class NovaPanel implements Panel {
     const freeToken = tokens - placed > 0;
     const nextCost = F.nebulaCellCost(s);
     const canBuyToken = tokens < C.NEBULA_CELLS && s.nova.shards.gte(nextCost);
-    setText(this.cellCost, t('nova.tokenLine', {
-      p: placed, h: tokens, m: C.NEBULA_CELLS,
-      v: tokens >= C.NEBULA_CELLS ? t('nova.tokenMax') : `${fmt(nextCost, sci)} ✸`,
-    }));
+    const maxed = tokens >= C.NEBULA_CELLS;
+    setText(this.tokenBtn, maxed
+      ? t('nova.tokenBtnMax', { h: tokens })
+      : t('nova.tokenBtn', { h: tokens, v: `${fmt(nextCost, sci)} ✸` }));
+    setDisabled(this.tokenBtn, maxed || s.nova.shards.lt(nextCost));
     for (let i = 0; i < this.hexBtns.length; i++) {
       const b = this.hexBtns[i];
       const type = s.nova.cells[i];
@@ -625,9 +630,6 @@ export class NovaPanel implements Panel {
     setText(this.gardenTotal, t(s.stats.coalescences >= C.MS_GALAXY[1] ? 'nova.gardenTotalFe' : 'nova.gardenTotal', {
       d: fmt(m.nebulaDustMult, sci), p: fmt(m.nebulaPlasmaMult, sci),
     }));
-    setText(this.remCounts,
-      `${t('nova.rem0')}: ${s.nova.remnants[0]} · ${t('nova.rem1')}: ${s.nova.remnants[1]} · ${t('nova.rem2')}: ${s.nova.remnants[2]}`);
-
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
       const r = this.chRows[c];
       const active = s.nova.challenge === c;

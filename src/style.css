@@ -169,6 +169,8 @@ button:disabled { opacity: 0.38; cursor: default; }
 .seg-btn.active { background: rgba(100, 216, 255, 0.22); border-color: var(--cyan); box-shadow: 0 0 10px rgba(100, 216, 255, 0.3); }
 
 /* ── Hex-Grid ── */
+.garden-ctl { display: flex; gap: 8px; align-items: center; justify-content: flex-start; margin: 8px 0 0; }
+.garden-ctl .icon-btn { min-width: 36px; font-size: 1.05rem; padding: 5px 10px; }
 .hexgrid { position: relative; width: 100%; aspect-ratio: 1.15; margin: 8px 0; }
 .hex {
   position: absolute; width: 13.5%; aspect-ratio: 0.9; transform: translate(-50%, -50%);
