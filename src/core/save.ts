@@ -65,6 +65,24 @@ const migrations: Record<number, (raw: Record<string, unknown>) => void> = {
     stats.ignMs = coal === 0 && typeof stats.ignitions === 'number' ? stats.ignitions : 0;
     stats.novaMs = typeof nova?.count === 'number' ? nova.count : 0;
   },
+  // v2→v3: Wahl-Zähler von Lifetime auf „seit Eltern-Reset" umgestellt.
+  // classPicks proportional auf Summe == ignMs stutzen, gtypePicks auf galaxy.count;
+  // remnantPicks entfällt (identisch mit nova.remnants).
+  2: raw => {
+    const stats = raw.stats as Record<string, unknown> | undefined;
+    if (!stats) return;
+    const rescale = (arr: unknown, target: unknown): void => {
+      if (!Array.isArray(arr) || typeof target !== 'number') return;
+      const sum = arr.reduce((a: number, x) => a + (typeof x === 'number' ? x : 0), 0);
+      if (sum <= target || sum === 0) return;
+      let acc = 0;
+      for (let i = 0; i < arr.length; i++) { arr[i] = Math.floor((arr[i] as number) * target / sum); acc += arr[i] as number; }
+      arr[arr.indexOf(Math.max(...(arr as number[])))] += target - acc;  // Rundungsrest zum größten Eintrag
+    };
+    rescale(stats.classPicks, stats.ignMs);
+    rescale(stats.gtypePicks, (raw.galaxy as Record<string, unknown> | undefined)?.count);
+    delete stats.remnantPicks;
+  },
 };
 
 export function deserialize(json: string): GameState {

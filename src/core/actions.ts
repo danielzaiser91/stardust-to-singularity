@@ -160,7 +160,6 @@ export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
   s.nova.totalShards = s.nova.totalShards.add(gain);
   s.stats.lifetimeShards = s.stats.lifetimeShards.add(gain);
   s.nova.remnants[remnant]++;
-  s.stats.remnantPicks[remnant]++;
   s.nova.count++;
   s.stats.supernovae++;
   s.stats.novaMs++;
@@ -228,8 +227,9 @@ function resetNovaLayer(s: GameState): void {
   }
   // M2: Challenge-Abschlüsse bleiben
   if (coal < C.MS_GALAXY[1]) s.nova.completed = s.nova.completed.map(() => false);
-  // M3/M4: Meilenstein-Leitern der Dust-/Star-Ebene bleiben
-  if (coal < C.MS_GALAXY[2]) s.stats.ignMs = 0;
+  // M3/M4: Meilenstein-Leitern der Dust-/Star-Ebene bleiben (classPicks teilt das
+  // ignMs-Schicksal — Invariante: Summe(classPicks) == ignMs)
+  if (coal < C.MS_GALAXY[2]) { s.stats.ignMs = 0; s.stats.classPicks = [0, 0, 0]; }
   if (coal < C.MS_GALAXY[3]) s.stats.novaMs = 0;
   s.nova.remnants = [0, 0, 0];
   s.nova.count = 0;
@@ -275,6 +275,7 @@ function resetGalaxyLayer(s: GameState): void {
   s.galaxy.nodes = s.galaxy.nodes.map((owned, i) =>
     keepKeystones && (i === 14 || i === 29 || i === 44) ? owned : false);
   s.galaxy.count = 0;
+  s.stats.gtypePicks = [0, 0, 0];  // Invariante: Summe == galaxy.count
   s.galaxy.autoNova = { on: false, at: D(1) };
   resetNovaLayer(s);
 }

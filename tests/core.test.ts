@@ -146,6 +146,7 @@ describe('tick & actions', () => {
       s.stats.coalescences = coalescences;
       s.stats.ignMs = 30;
       s.stats.novaMs = 20;
+      s.stats.classPicks = [5, 20, 5];
       s.nova.completed = s.nova.completed.map(() => true);
       s.nova.cells[0] = 1;
       s.nova.cellsBought = 3;
@@ -156,12 +157,14 @@ describe('tick & actions', () => {
     expect(s1.nova.completed.every(c => !c)).toBe(true);
     expect(s1.stats.ignMs).toBe(0);
     expect(s1.stats.novaMs).toBe(0);
+    expect(s1.stats.classPicks).toEqual([0, 0, 0]);
     expect(s1.nova.cellsBought).toBe(0);
     const s2 = mk(11);  // 12. Coalescence: M2–M5 erreicht → alles bleibt
     expect(actionsAll.doCoalesce(s2, 0)).toBe(true);
     expect(s2.nova.completed.every(c => c)).toBe(true);
     expect(s2.stats.ignMs).toBe(30);
     expect(s2.stats.novaMs).toBe(20);
+    expect(s2.stats.classPicks).toEqual([5, 20, 5]);
     expect(s2.nova.cells[0]).toBe(1);
     expect(s2.nova.cellsBought).toBe(3);
   });
@@ -177,6 +180,22 @@ describe('tick & actions', () => {
     const restored = deserialize(JSON.stringify(raw));
     expect(restored.stats.ignMs).toBe(42);
     expect(restored.stats.novaMs).toBe(7);
+  });
+
+  it('save migration v2→v3 rescales pick counters to per-run sums', () => {
+    const s = initialState(1);
+    s.stats.ignMs = 100;
+    s.galaxy.count = 1;
+    const raw = JSON.parse(serialize(s));
+    raw.version = 2;
+    raw.stats.classPicks = [0, 32428, 6];     // Lifetime-Werte aus v2
+    raw.stats.remnantPicks = [6, 8, 7];       // entfällt in v3
+    raw.stats.gtypePicks = [1, 0, 0];         // Summe == galaxy.count → unverändert
+    const restored = deserialize(JSON.stringify(raw));
+    expect(restored.stats.classPicks.reduce((a, b) => a + b, 0)).toBe(100);
+    expect(restored.stats.classPicks[1]).toBeGreaterThan(90);  // proportional, Rest zum größten
+    expect(restored.stats.gtypePicks).toEqual([1, 0, 0]);
+    expect((restored.stats as Record<string, unknown>).remnantPicks).toBeUndefined();
   });
 
   it('stellar memory perk protects upgrades/reactors across supernova', () => {

@@ -144,7 +144,7 @@ export class DustPanel implements Panel {
       const b = btn('seg-btn', t(`star.class${c}`), () => { this.st().ui.nextClass = c as StarClass; });
       attachTip(b, () => ({
         title: t(`star.class${c}`),
-        body: `${t(`star.class${c}d`)}\n${t('choice.picked', { n: this.st().stats.classPicks[c] })}`,
+        body: `${t(`star.class${c}d`)}\n${t('choice.pickedGal', { n: this.st().stats.classPicks[c] })}`,
       }));
       this.classBtns.push(b);
       this.classSeg.append(b);
@@ -315,7 +315,7 @@ export class StarPanel implements Panel {
           : fmtMult(1 + C.REMNANT_BH_SHARDS * n);
         return {
           title: t(`nova.rem${r}`),
-          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v, p: C.REMNANT_PULSAR_PERIOD, d: C.REMNANT_PULSAR_DURATION })}\n${t('choice.picked', { n: s.stats.remnantPicks[r] })}`,
+          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v, p: C.REMNANT_PULSAR_PERIOD, d: C.REMNANT_PULSAR_DURATION })}`,
         };
       });
       this.remBtns.push(b);
@@ -513,7 +513,7 @@ export class NovaPanel implements Panel {
         const active = s.galaxy.unlocked && s.galaxy.gtype === g;
         return {
           title: t(`galaxy.t${g}`),
-          body: `${t(`galaxy.t${g}d`)}\n${t('choice.picked', { n: s.stats.gtypePicks[g] })}${active ? `\n${t('galaxy.activeNow')}` : ''}`,
+          body: `${t(`galaxy.t${g}d`)}\n${t('choice.pickedUni', { n: s.stats.gtypePicks[g] })}${active ? `\n${t('galaxy.activeNow')}` : ''}`,
         };
       });
       this.gtBtns.push(b);

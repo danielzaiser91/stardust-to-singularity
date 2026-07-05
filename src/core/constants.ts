@@ -4,7 +4,7 @@
  * (tests/balance.test.ts) validieren jede Änderung. Kein Magic Number außerhalb dieser Datei.
  */
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 // ── Ebene 0: Dust ────────────────────────────────────────────────────────────
 export const GEN_COUNT = 8;
