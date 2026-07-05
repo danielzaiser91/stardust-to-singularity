@@ -17,6 +17,26 @@ let titleEl: HTMLElement;
 let bodyEl: HTMLElement;
 let showTimer: ReturnType<typeof setTimeout> | undefined;
 let hideTimer: ReturnType<typeof setTimeout> | undefined;
+let currentTarget: HTMLElement | null = null;
+let watchdogArmed = false;
+
+/**
+ * Watchdog gegen hängende Tooltips: Panels können samt gehovertem Element
+ * versteckt werden (z. B. Tab-Wechsel nach Ignition), dann feuert nie ein
+ * pointerleave. Prüft deshalb periodisch, ob das Ziel noch sichtbar & gehovert ist.
+ */
+function armWatchdog(): void {
+  if (watchdogArmed) return;
+  watchdogArmed = true;
+  window.addEventListener('blur', hideTip);
+  document.documentElement.addEventListener('pointerleave', hideTip);  // Maus verlässt das Fenster
+  setInterval(() => {
+    if (!tip?.classList.contains('show') || !currentTarget) return;
+    if (!currentTarget.isConnected || currentTarget.offsetParent === null || !currentTarget.matches(':hover')) {
+      hideTip();
+    }
+  }, 500);
+}
 
 function ensure(): HTMLElement {
   if (tip) return tip;
@@ -32,6 +52,9 @@ function ensure(): HTMLElement {
 }
 
 function show(target: HTMLElement, content: TipContent): void {
+  // Ziel kann zwischen Timer-Start und -Ablauf versteckt worden sein (Tab-Wechsel)
+  if (!target.isConnected || target.offsetParent === null) return;
+  currentTarget = target;
   const el = ensure();
   titleEl.textContent = content.title ?? '';
   titleEl.style.display = content.title ? '' : 'none';
@@ -53,6 +76,7 @@ function show(target: HTMLElement, content: TipContent): void {
 
 export function hideTip(): void {
   clearTimeout(showTimer);
+  currentTarget = null;
   tip?.classList.remove('show');
 }
 
@@ -61,6 +85,7 @@ export function attachTip(target: HTMLElement, content: () => TipContent, opts?:
   if (opts?.marker !== false) target.classList.add('has-tip');  // kleines ?-Eck als Hinweis
   const canHover = window.matchMedia('(hover: hover)').matches;
   if (canHover) {
+    armWatchdog();
     target.addEventListener('pointerenter', () => {
       clearTimeout(showTimer);
       showTimer = setTimeout(() => show(target, content()), SHOW_DELAY_MS);

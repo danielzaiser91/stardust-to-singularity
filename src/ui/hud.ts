@@ -7,6 +7,7 @@ import { dustPerSecond } from '../core/formulas';
 import type { OfflineSummary } from '../core/offline';
 import { on } from '../events';
 import { ACHIEVEMENT_META } from '../core/achievements';
+import { hideTip } from './tooltip';
 
 export interface Panel { root: HTMLElement; update(s: GameState, m: Mults): void; }
 
@@ -57,6 +58,7 @@ export class Hud {
   }
 
   selectTab(id: string): void {
+    hideTip();   // Panelwechsel kann das gehoverte Element verstecken — nie hängen lassen
     this.activeTab = id;
     const s = this.stateRef();
     for (const tab of this.tabs) {
