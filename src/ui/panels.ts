@@ -162,7 +162,7 @@ export class DustPanel implements Panel {
 
     this.ms = milestoneSection(
       [t('ms.ign0'), t('ms.ign1'), t('ms.ign2')],
-      C.MS_IGNITION, 'ms.u.ign', s => s.stats.ignitions);
+      C.MS_IGNITION, 'ms.u.ign', s => s.stats.ignMs);
     this.root.append(this.ms.root);
   }
   private ms!: ReturnType<typeof milestoneSection>;
@@ -174,8 +174,8 @@ export class DustPanel implements Panel {
     setText(this.cometNote, s.dust.comet.active ? '☄ ' + t('dust.comet')
       : t('dust.cometBoost', { v: fmtMult(m.cometBoostMult), t: Math.ceil(s.dust.comet.boost) }));
 
-    // Max-Buttons sind eine Belohnung der ersten Ignition
-    const maxUnlocked = s.stats.ignitions > 0;
+    // Max-Buttons sind eine Belohnung der ersten Ignition (dieser Galaxie)
+    const maxUnlocked = s.stats.ignMs >= C.MS_IGNITION[0];
     setVisible(this.compRow, s.nova.challenge !== 0);
     setVisible(this.compMax, maxUnlocked);
     setText(this.compCost, fmt(F.compressionCost(s), sci));
@@ -219,7 +219,7 @@ export class DustPanel implements Panel {
       }
       setClass(this.igniteLabel, 'capped',
         F.canIgnite(s) && F.isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT));
-      setVisible(this.classSeg, s.stats.ignitions >= C.MS_IGNITION[1]);
+      setVisible(this.classSeg, s.stats.ignMs >= C.MS_IGNITION[1]);
       this.classBtns.forEach((b, c) => setClass(b, 'active', s.ui.nextClass === c));
     }
     this.ms.update(s);
@@ -324,7 +324,7 @@ export class StarPanel implements Panel {
         ...C.MS_NOVA_KEEP.map(id => id === -1
           ? t('ms.novaKeepAll')
           : t('ms.novaKeep', { v: t(`up.${id}`) }))],
-      C.MS_NOVA, 'ms.u.nova', s => s.stats.supernovae);
+      C.MS_NOVA, 'ms.u.nova', s => s.stats.novaMs);
     this.root.append(this.ms.root);
   }
   private ms!: ReturnType<typeof milestoneSection>;
@@ -351,8 +351,8 @@ export class StarPanel implements Panel {
         const locked = e > 0 && s.star.reactors[e - 1] === 0;
         const cantAfford = s.star.plasma.lt(F.reactorCost(s, e));
         setDisabled(rb.b, locked || cantAfford);
-        // Reaktor-Max ist eine Belohnung der ersten Supernova
-        setVisible(rb.bm, s.stats.supernovae > 0);
+        // Reaktor-Max ist eine Belohnung der ersten Supernova (dieser Galaxie)
+        setVisible(rb.bm, s.stats.novaMs >= C.MS_NOVA[0]);
         setDisabled(rb.bm, locked || cantAfford);
       }
     }
@@ -508,7 +508,7 @@ export class NovaPanel implements Panel {
     this.root.append(coalesceBox);
 
     this.ms = milestoneSection(
-      [t('ms.gal0'), t('ms.gal1')],
+      [t('ms.gal0'), t('ms.gal1'), t('ms.gal2'), t('ms.gal3'), t('ms.gal4')],
       C.MS_GALAXY, 'ms.u.gal', s => s.stats.coalescences);
     this.root.append(this.ms.root);
     this.syncBrush();

@@ -64,8 +64,8 @@ function resetDustLayer(s: GameState): void {
   s.dust.amount = D(10);
   s.dust.total = D(10);
   for (const g of s.dust.gens) { g.amount = ZERO; g.bought = 0; }
-  // Meilenstein 25 Zündungen: Kompression bleibt vollständig; sonst Upgrade 10: bis zu 10
-  if (s.stats.ignitions < C.MS_IGNITION[2]) {
+  // Meilenstein 25 Zündungen (dieser Galaxie): Kompression bleibt; sonst Upgrade 10: bis zu 10
+  if (s.stats.ignMs < C.MS_IGNITION[2]) {
     if (!s.star.upgrades[9]) s.dust.compression = 0;
     else s.dust.compression = Math.min(s.dust.compression, 10);
   }
@@ -88,6 +88,7 @@ export function doIgnite(s: GameState, cls: StarClass): boolean {
   if (s.star.plasma.gt(s.stats.bestPlasma)) s.stats.bestPlasma = s.star.plasma;
   s.star.cls = cls;
   s.stats.ignitions++;
+  s.stats.ignMs++;
   s.stats.runTime = 0;
   resetDustLayer(s);
   return true;
@@ -135,8 +136,8 @@ function resetStarLayer(s: GameState): void {
   const memory = s.sing.perks[8] ?? 0;
   if (memory < 2) s.star.reactors = s.star.reactors.map(() => 0);
   if (memory < 1) {
-    // Meilenstein-Leiter: je Schwelle wird ein Upgrade permanent, die letzte hält alle übrigen
-    const novae = s.stats.supernovae;
+    // Meilenstein-Leiter (pro Galaxie): je Schwelle wird ein Upgrade permanent, die letzte alle übrigen
+    const novae = s.stats.novaMs;
     const keep = new Set<number>();
     for (let k = 0; k < C.MS_NOVA_KEEP.length; k++) {
       if (novae < C.MS_NOVA[k + 2]) break;
@@ -160,6 +161,7 @@ export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
   s.nova.remnants[remnant]++;
   s.nova.count++;
   s.stats.supernovae++;
+  s.stats.novaMs++;
   s.stats.novaTime = 0;
   s.stats.runTime = 0;
   resetStarLayer(s);
@@ -215,18 +217,21 @@ export function exitChallenge(s: GameState): boolean {
 function resetNovaLayer(s: GameState): void {
   s.nova.shards = ZERO;
   s.nova.totalShards = ZERO;
-  // Sternen-Gedächtnis L3: Nebelgarten überlebt die Coalescence
-  if ((s.sing.perks[8] ?? 0) < 3) {
+  // Galaxie-Meilensteine bestimmen, was die Coalescence überlebt:
+  const coal = s.stats.coalescences;
+  // M5 (oder Sternen-Gedächtnis L3): Nebelgarten bleibt
+  if (coal < C.MS_GALAXY[4] && (s.sing.perks[8] ?? 0) < 3) {
     s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
     s.nova.cellsBought = 0;
   }
-  // Meilenstein 8 Coalescences: die Hälfte der Remnants überlebt
-  s.nova.remnants = s.stats.coalescences >= C.MS_GALAXY[1]
-    ? [Math.floor(s.nova.remnants[0] / 2), Math.floor(s.nova.remnants[1] / 2), Math.floor(s.nova.remnants[2] / 2)]
-    : [0, 0, 0];
+  // M2: Challenge-Abschlüsse bleiben
+  if (coal < C.MS_GALAXY[1]) s.nova.completed = s.nova.completed.map(() => false);
+  // M3/M4: Meilenstein-Leitern der Dust-/Star-Ebene bleiben
+  if (coal < C.MS_GALAXY[2]) s.stats.ignMs = 0;
+  if (coal < C.MS_GALAXY[3]) s.stats.novaMs = 0;
+  s.nova.remnants = [0, 0, 0];
   s.nova.count = 0;
   s.nova.pulsarPhase = 0;
-  // completed-Challenges bleiben permanent
   resetStarLayer(s);
 }
 

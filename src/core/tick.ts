@@ -109,6 +109,7 @@ export function tick(s: GameState, dt: number): Mults {
       s.star.totalPlasma = s.star.totalPlasma.add(gain);
       if (s.star.plasma.gt(s.stats.bestPlasma)) s.stats.bestPlasma = s.star.plasma;
       s.stats.ignitions++;
+      s.stats.ignMs++;
       s.stats.runTime = 0;
     }
   }

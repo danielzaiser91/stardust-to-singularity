@@ -86,7 +86,7 @@ describe('tick & actions', () => {
     s.star.elements[5] = D(1e6);
     s.star.upgrades[4] = true;   // Auto-Gen 1–4
     s.star.upgrades[13] = true;  // Auto-Kompression
-    s.stats.supernovae = 5;      // wird durch die Supernova 6: ≥4 hält Upgrade 4, <8 hält 13 NICHT
+    s.stats.novaMs = 5;          // wird durch die Supernova 6: ≥4 hält Upgrade 4, <8 hält 13 NICHT
     expect(doSupernova(s, 0)).toBe(true);
     expect(s.star.upgrades[4]).toBe(true);
     expect(s.star.upgrades[13]).toBe(false);
@@ -107,7 +107,7 @@ describe('tick & actions', () => {
     s.star.unlocked = true;
     s.nova.unlocked = true;
     s.nova.autoIgnite.on = true;
-    s.stats.supernovae = 2;      // Auto-Zündung freigeschaltet
+    s.stats.novaMs = 2;          // Auto-Zündung freigeschaltet (Meilenstein dieser Galaxie)
     s.dust.total = D('1e120');   // Gain sicher am Cap
     s.dust.gens[0].bought = 33;
     s.dust.gens[0].amount = D(33);
@@ -135,6 +135,47 @@ describe('tick & actions', () => {
     expect(s.nova.cellsBought).toBe(1);
     expect(placeNebula(s, 5, 3)).toBe(true);        // freier Token wird genutzt, kein Kauf
     expect(s.nova.cellsBought).toBe(1);
+  });
+
+  it('coalescence resets challenges & lower milestones until galaxy milestones keep them', () => {
+    const mk = (coalescences: number) => {
+      const s = initialState(1);
+      s.nova.unlocked = true;
+      s.nova.totalShards = D('1e9');
+      s.stats.coalescences = coalescences;
+      s.stats.ignMs = 30;
+      s.stats.novaMs = 20;
+      s.nova.completed = s.nova.completed.map(() => true);
+      s.nova.cells[0] = 1;
+      s.nova.cellsBought = 3;
+      return s;
+    };
+    const s1 = mk(0);   // 1. Coalescence: nichts davon erreicht → alles resettet
+    expect(actionsAll.doCoalesce(s1, 0)).toBe(true);
+    expect(s1.nova.completed.every(c => !c)).toBe(true);
+    expect(s1.stats.ignMs).toBe(0);
+    expect(s1.stats.novaMs).toBe(0);
+    expect(s1.nova.cellsBought).toBe(0);
+    const s2 = mk(11);  // 12. Coalescence: M2–M5 erreicht → alles bleibt
+    expect(actionsAll.doCoalesce(s2, 0)).toBe(true);
+    expect(s2.nova.completed.every(c => c)).toBe(true);
+    expect(s2.stats.ignMs).toBe(30);
+    expect(s2.stats.novaMs).toBe(20);
+    expect(s2.nova.cells[0]).toBe(1);
+    expect(s2.nova.cellsBought).toBe(3);
+  });
+
+  it('save migration v1→v2 seeds milestone counters from legacy stats', () => {
+    const s = initialState(1);
+    s.stats.ignitions = 42;
+    s.nova.count = 7;
+    const raw = JSON.parse(serialize(s));
+    raw.version = 1;
+    delete raw.stats.ignMs;
+    delete raw.stats.novaMs;
+    const restored = deserialize(JSON.stringify(raw));
+    expect(restored.stats.ignMs).toBe(42);
+    expect(restored.stats.novaMs).toBe(7);
   });
 
   it('stellar memory perk protects upgrades/reactors across supernova', () => {

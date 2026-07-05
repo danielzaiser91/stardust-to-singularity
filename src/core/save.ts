@@ -54,7 +54,17 @@ function structuredCloneSafe(v: unknown): unknown {
 
 /** Migrationskette: migrations[n] hebt Version n auf n+1. Rohdaten-Ebene (vor revive). */
 const migrations: Record<number, (raw: Record<string, unknown>) => void> = {
-  // Beispiel künftig: 1: raw => { raw.neuesFeld = ... }
+  // v1→v2: Meilenstein-Zähler ignMs/novaMs eingeführt (resetten bei Coalescence).
+  // Seed aus Bestandsdaten: novaMs = Supernovae seit letzter Coalescence (nova.count),
+  // ignMs = Lifetime-Zündungen, sofern noch nie coalesced (dann identisch), sonst 0.
+  1: raw => {
+    const stats = raw.stats as Record<string, unknown> | undefined;
+    const nova = raw.nova as Record<string, unknown> | undefined;
+    if (!stats || stats.ignMs !== undefined) return;
+    const coal = typeof stats.coalescences === 'number' ? stats.coalescences : 0;
+    stats.ignMs = coal === 0 && typeof stats.ignitions === 'number' ? stats.ignitions : 0;
+    stats.novaMs = typeof nova?.count === 'number' ? nova.count : 0;
+  },
 };
 
 export function deserialize(json: string): GameState {

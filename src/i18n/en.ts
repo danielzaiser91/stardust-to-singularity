@@ -222,7 +222,10 @@ export const en: Record<string, string> = {
   'ms.novaKeep': '{v} survives supernovae',
   'ms.novaKeepAll': 'ALL remaining upgrades survive supernovae',
   'ms.gal0': 'Galaxy type choice',
-  'ms.gal1': 'Half your remnants survive coalescence',
+  'ms.gal1': 'Challenge completions survive coalescence',
+  'ms.gal2': 'Ignition milestones survive coalescence',
+  'ms.gal3': 'Supernova milestones survive coalescence',
+  'ms.gal4': 'The nebula garden survives coalescence',
   'ms.col0': 'Singularity perks',
   'ms.col1': 'Keystone constellations survive collapse',
 

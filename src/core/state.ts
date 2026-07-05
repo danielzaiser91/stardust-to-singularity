@@ -39,6 +39,10 @@ export interface GameState {
     /** Lifetime-Summen — resetten NIE (Basis der Kaskaden-Passiveffekte, kein Prestige-Whiplash) */
     lifetimeShards: Decimal;
     lifetimeDM: Decimal;
+    /** Meilenstein-Zähler der unteren Ebenen — resetten bei Coalescence,
+     *  außer die jeweiligen Galaxie-Meilensteine machen sie permanent */
+    ignMs: number;
+    novaMs: number;
   };
   dust: {
     amount: Decimal;
@@ -117,6 +121,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       runTime: 0, novaTime: 0, galaxyTime: 0, singTime: 0,
       totalDustEver: ZERO, bestPlasma: ZERO,
       lifetimeShards: ZERO, lifetimeDM: ZERO,
+      ignMs: 0, novaMs: 0,
     },
     dust: {
       amount: D(10),

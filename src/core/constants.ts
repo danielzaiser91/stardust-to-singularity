@@ -4,7 +4,7 @@
  * (tests/balance.test.ts) validieren jede Änderung. Kein Magic Number außerhalb dieser Datei.
  */
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 // ── Ebene 0: Dust ────────────────────────────────────────────────────────────
 export const GEN_COUNT = 8;
@@ -121,7 +121,9 @@ export const MS_NOVA = [1, 2, 4, 8, 12, 16, 20, 25, 30, 35, 40, 50];
 // Ab MS_NOVA[2]: welches Plasma-Upgrade bei diesem Meilenstein permanent wird (-1 = alle übrigen).
 // Reihenfolge: erst die vier Automationen, dann die wichtigsten Boosts.
 export const MS_NOVA_KEEP = [4, 13, 8, 14, 1, 6, 10, 7, 11, -1];
-export const MS_GALAXY = [1, 8];             // Typ-Wahl · halbe Remnants bleiben
+// Galaxie-Meilensteine: Typ-Wahl · Challenges bleiben · Zündungs-Meilensteine bleiben ·
+// Supernova-Meilensteine bleiben · Nebelgarten bleibt (alles „bleiben" = über Coalescence)
+export const MS_GALAXY = [1, 3, 6, 9, 12];
 export const MS_COLLAPSE = [1, 5];           // Perks · Keystones bleiben
 
 // ── Querschnitt ──────────────────────────────────────────────────────────────

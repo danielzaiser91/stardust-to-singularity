@@ -33,6 +33,17 @@ NaN-Overflows, 47.000 Zündungen/Tag). Vier Mechanismen halten die Progression i
    sich anreichern). Der Plasma-Softcap (Tail ^0,2 ab ratio 1e3) glättet zusätzlich
    Overkill-Spitzen im Frühspiel.
 
+## Meilenstein-Persistenz (Roguelite-Prinzip)
+
+Die Meilenstein-Leitern der Dust-/Star-Ebene (Max-Buttons, Sternklassen, Auto-Zündung,
+Upgrade-Überleben) laufen auf **Pro-Galaxie-Zählern** (`stats.ignMs`, `stats.novaMs`) — eine
+Coalescence setzt sie zurück, bis die Galaxie-Meilensteine (`MS_GALAXY`) sie dauerhaft machen:
+Typ-Wahl (1) · Challenges bleiben (3) · Zündungs-Meilensteine (6) · Supernova-Meilensteine (9) ·
+Nebelgarten (12). Wichtig: eigene Zähler, NICHT `nova.count`/`galaxy.count` wiederverwenden —
+die treiben die Anforderungs-Leitern (Mechanismus 2) und dürfen niemals persistieren.
+Sim-validiert: erste Singularität weiterhin ~4,5 d (aktiv, Seed 42), die Re-Earn-Schleife
+pro Galaxie kostet den Bot nur Minuten.
+
 ## Kaskade ohne Whiplash
 
 Jede Prestige-Währung boostet die Ebenen darunter — aber auf Basis von **Lifetime-Summen**
