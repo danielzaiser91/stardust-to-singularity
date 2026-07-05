@@ -43,6 +43,10 @@ export interface GameState {
      *  außer die jeweiligen Galaxie-Meilensteine machen sie permanent */
     ignMs: number;
     novaMs: number;
+    /** Wie oft jede Reset-Wahl getroffen wurde (Lifetime): Sternklasse, Remnant, Galaxientyp */
+    classPicks: [number, number, number];
+    remnantPicks: [number, number, number];
+    gtypePicks: [number, number, number];
   };
   dust: {
     amount: Decimal;
@@ -122,6 +126,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       totalDustEver: ZERO, bestPlasma: ZERO,
       lifetimeShards: ZERO, lifetimeDM: ZERO,
       ignMs: 0, novaMs: 0,
+      classPicks: [0, 0, 0], remnantPicks: [0, 0, 0], gtypePicks: [0, 0, 0],
     },
     dust: {
       amount: D(10),

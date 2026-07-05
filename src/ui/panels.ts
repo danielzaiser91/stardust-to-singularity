@@ -142,7 +142,10 @@ export class DustPanel implements Panel {
     this.classSeg = el('div', 'seg');
     for (let c = 0; c < 3; c++) {
       const b = btn('seg-btn', t(`star.class${c}`), () => { this.st().ui.nextClass = c as StarClass; });
-      attachTip(b, () => ({ title: t(`star.class${c}`), body: t(`star.class${c}d`) }));
+      attachTip(b, () => ({
+        title: t(`star.class${c}`),
+        body: `${t(`star.class${c}d`)}\n${t('choice.picked', { n: this.st().stats.classPicks[c] })}`,
+      }));
       this.classBtns.push(b);
       this.classSeg.append(b);
     }
@@ -220,7 +223,10 @@ export class DustPanel implements Panel {
       setClass(this.igniteLabel, 'capped',
         F.canIgnite(s) && F.isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT));
       setVisible(this.classSeg, s.stats.ignMs >= C.MS_IGNITION[1]);
-      this.classBtns.forEach((b, c) => setClass(b, 'active', s.ui.nextClass === c));
+      this.classBtns.forEach((b, c) => {
+        setClass(b, 'active', s.ui.nextClass === c);
+        setText(b, `${t(`star.class${c}`)} (${s.stats.classPicks[c]})`);
+      });
     }
     this.ms.update(s);
   }
@@ -301,7 +307,17 @@ export class StarPanel implements Panel {
     this.remSeg = el('div', 'seg');
     for (let r = 0; r < 3; r++) {
       const b = btn('seg-btn', t(`nova.rem${r}`), () => { this.st().ui.nextRemnant = r as 0 | 1 | 2; });
-      attachTip(b, () => ({ title: t(`nova.rem${r}`), body: t(`nova.rem${r}d`) }));
+      attachTip(b, () => {
+        const s = this.st();
+        const n = s.nova.remnants[r];
+        const v = r === 0 ? fmt(D(C.REMNANT_NEUTRON_FUSION).pow(n), s.settings.sciNotation)
+          : r === 1 ? fmtMult(n > 0 ? C.REMNANT_PULSAR_MULT + 2 * (n - 1) : 1)
+          : fmtMult(1 + C.REMNANT_BH_SHARDS * n);
+        return {
+          title: t(`nova.rem${r}`),
+          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v, p: C.REMNANT_PULSAR_PERIOD, d: C.REMNANT_PULSAR_DURATION })}\n${t('choice.picked', { n: s.stats.remnantPicks[r] })}`,
+        };
+      });
       this.remBtns.push(b);
       this.remSeg.append(b);
     }
@@ -373,7 +389,10 @@ export class StarPanel implements Panel {
       setDisabled(this.novaBtn, true);
     }
     setClass(this.novaLabel, 'capped', F.canSupernova(s) && F.isGainCapped(gain, s.nova.totalShards));
-    this.remBtns.forEach((b, r) => setClass(b, 'active', s.ui.nextRemnant === r));
+    this.remBtns.forEach((b, r) => {
+      setClass(b, 'active', s.ui.nextRemnant === r);
+      setText(b, `${t(`nova.rem${r}`)} (${s.nova.remnants[r]})`);
+    });
     this.ms.update(s);
   }
 }
@@ -489,7 +508,14 @@ export class NovaPanel implements Panel {
     const gtSeg = el('div', 'seg');
     for (let g = 0; g < 3; g++) {
       const b = btn('seg-btn', t(`galaxy.t${g}`), () => { this.st().ui.nextGtype = g as GalaxyType; });
-      attachTip(b, () => ({ title: t(`galaxy.t${g}`), body: t(`galaxy.t${g}d`) }));
+      attachTip(b, () => {
+        const s = this.st();
+        const active = s.galaxy.unlocked && s.galaxy.gtype === g;
+        return {
+          title: t(`galaxy.t${g}`),
+          body: `${t(`galaxy.t${g}d`)}\n${t('choice.picked', { n: s.stats.gtypePicks[g] })}${active ? `\n${t('galaxy.activeNow')}` : ''}`,
+        };
+      });
       this.gtBtns.push(b);
       gtSeg.append(b);
     }
@@ -575,7 +601,10 @@ export class NovaPanel implements Panel {
       setDisabled(this.coalBtn, true);
     }
     setClass(this.coalLabel, 'capped', F.canCoalesce(s) && F.isGainCapped(dmG, s.galaxy.totalDM));
-    this.gtBtns.forEach((b, g) => setClass(b, 'active', s.ui.nextGtype === g));
+    this.gtBtns.forEach((b, g) => {
+      setClass(b, 'active', s.ui.nextGtype === g);
+      setText(b, `${t(`galaxy.t${g}`)} (${s.stats.gtypePicks[g]})`);
+    });
 
     this.ms.update(s);
   }

@@ -87,6 +87,7 @@ export function doIgnite(s: GameState, cls: StarClass): boolean {
   s.star.totalPlasma = s.star.totalPlasma.add(gain);
   if (s.star.plasma.gt(s.stats.bestPlasma)) s.stats.bestPlasma = s.star.plasma;
   s.star.cls = cls;
+  s.stats.classPicks[cls]++;
   s.stats.ignitions++;
   s.stats.ignMs++;
   s.stats.runTime = 0;
@@ -159,6 +160,7 @@ export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
   s.nova.totalShards = s.nova.totalShards.add(gain);
   s.stats.lifetimeShards = s.stats.lifetimeShards.add(gain);
   s.nova.remnants[remnant]++;
+  s.stats.remnantPicks[remnant]++;
   s.nova.count++;
   s.stats.supernovae++;
   s.stats.novaMs++;
@@ -245,6 +247,7 @@ export function doCoalesce(s: GameState, gtype: GalaxyType): boolean {
   s.galaxy.totalDM = s.galaxy.totalDM.add(gain);
   s.stats.lifetimeDM = s.stats.lifetimeDM.add(gain);
   s.galaxy.gtype = gtype;
+  s.stats.gtypePicks[gtype]++;
   s.galaxy.count++;
   s.stats.coalescences++;
   s.stats.galaxyTime = 0;
