@@ -70,6 +70,15 @@ describe('tick & actions', () => {
     expect(s.dust.compression).toBeGreaterThan(0);
   });
 
+  it('auto-accretion upgrade also buys fusion reactors', () => {
+    const s = initialState(1);
+    s.star.unlocked = true;
+    s.star.upgrades[8] = true;
+    s.star.plasma = D(100);
+    tick(s, 1);
+    expect(s.star.reactors[0]).toBeGreaterThan(0);
+  });
+
   it('ignition resets dust layer and grants plasma', () => {
     const s = initialState(1);
     s.dust.total = D(C.IGNITION_REQ).mul(100);

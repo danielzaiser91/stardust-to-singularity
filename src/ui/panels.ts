@@ -168,7 +168,7 @@ export class DustPanel implements Panel {
 export class StarPanel implements Panel {
   root = el('div');
   private elRows: { row: HTMLElement; stock: HTMLElement; boost: HTMLElement }[] = [];
-  private reactorBtns: { b: HTMLButtonElement; lvl: HTMLElement; cost: HTMLElement }[] = [];
+  private reactorBtns: { b: HTMLButtonElement; bm: HTMLButtonElement; lvl: HTMLElement; cost: HTMLElement }[] = [];
   private upBtns: HTMLButtonElement[] = [];
   private novaBox: HTMLElement;
   private novaBar = bar('bar-nova');
@@ -197,8 +197,12 @@ export class StarPanel implements Panel {
           if (A.buyReactor(s, e)) emit('buy');
         });
         b.append(lvl, cost);
-        this.reactorBtns.push({ b, lvl, cost });
-        row.append(b);
+        const bm = btn('buy alt', t('btn.max'), () => {
+          const s = this.st();
+          if (A.buyReactorsMax(s, e, 1)) emit('buy');
+        });
+        this.reactorBtns.push({ b, bm, lvl, cost });
+        row.append(b, bm);
       }
       this.elRows.push({ row, stock, boost });
       this.root.append(row);
@@ -261,7 +265,9 @@ export class StarPanel implements Panel {
         setText(rb.lvl, ` ${t('misc.level')}${s.star.reactors[e]} `);
         setText(rb.cost, fmt(F.reactorCost(s, e), sci));
         const locked = e > 0 && s.star.reactors[e - 1] === 0;
-        setDisabled(rb.b, locked || s.star.plasma.lt(F.reactorCost(s, e)));
+        const cantAfford = s.star.plasma.lt(F.reactorCost(s, e));
+        setDisabled(rb.b, locked || cantAfford);
+        setDisabled(rb.bm, locked || cantAfford);
       }
     }
     for (let u = 0; u < this.upBtns.length; u++) {

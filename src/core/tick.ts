@@ -2,7 +2,7 @@ import { Decimal } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
 import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, type Mults } from './formulas';
-import { doIgnite, doSupernova, buyGenerator, buyCompressionMax } from './actions';
+import { doIgnite, doSupernova, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
 import { checkLore } from './lore';
@@ -87,7 +87,14 @@ export function tick(s: GameState, dt: number): Mults {
     for (let t = 0; t < Math.min(4, top); t++) autoBuyGen(s, m, t);
     buyCompressionMax(s);
   }
-  if (s.star.upgrades[8]) for (let t = 4; t < Math.min(8, top); t++) autoBuyGen(s, m, t);
+  if (s.star.upgrades[8]) {
+    for (let t = 4; t < Math.min(8, top); t++) autoBuyGen(s, m, t);
+    // Reaktoren mit-automatisieren (Sim-Parität: der Balance-Bot kauft sie kontinuierlich)
+    for (let r = 0; r < C.FUSION_STEPS; r++) {
+      if (s.star.reactors[r] === 0) buyReactor(s, r);
+      buyReactorsMax(s, r, 0.3);
+    }
+  }
   if (s.nova.autoIgnite.on && s.nova.challenge === -1) {
     const gain = plasmaGain(s, m);
     if (gain.gte(s.nova.autoIgnite.at)) doIgnite(s, s.star.cls);

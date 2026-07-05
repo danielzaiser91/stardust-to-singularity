@@ -44,7 +44,7 @@ export const en: Record<string, string> = {
   'up.5': 'Long Tail', 'up.5d': 'Comet boosts last twice as long',
   'up.6': 'Proton Rain', 'up.6d': 'Hydrogen production ×3',
   'up.7': 'Magnetic Grip', 'up.7d': 'Click power ×5',
-  'up.8': 'Auto-Accretion', 'up.8d': 'Autobuy generator tiers 5–8',
+  'up.8': 'Auto-Accretion', 'up.8d': 'Autobuy generator tiers 5–8 and fusion reactors',
   'up.9': 'Memory of Pressure', 'up.9d': 'Keep up to 10 Compression levels on Ignition',
   'up.10': 'Catalyst', 'up.10d': 'Fusion throughput ×2',
   'up.11': 'Deep Ignition', 'up.11d': 'Plasma gain exponent +0.05',

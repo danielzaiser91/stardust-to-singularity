@@ -44,7 +44,7 @@ export const de: Record<string, string> = {
   'up.5': 'Langer Schweif', 'up.5d': 'Kometen-Boosts halten doppelt so lang',
   'up.6': 'Protonenregen', 'up.6d': 'Wasserstoff-Produktion ×3',
   'up.7': 'Magnetgriff', 'up.7d': 'Klick-Kraft ×5',
-  'up.8': 'Auto-Akkretion', 'up.8d': 'Kauft Generator-Stufen 5–8 automatisch',
+  'up.8': 'Auto-Akkretion', 'up.8d': 'Kauft Generator-Stufen 5–8 und Fusionsreaktoren automatisch',
   'up.9': 'Erinnerung an Druck', 'up.9d': 'Behalte bis zu 10 Kompressionsstufen bei Zündung',
   'up.10': 'Katalysator', 'up.10d': 'Fusions-Durchsatz ×2',
   'up.11': 'Tiefe Zündung', 'up.11d': 'Plasma-Gewinn-Exponent +0,05',
