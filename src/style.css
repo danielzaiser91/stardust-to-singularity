@@ -211,6 +211,25 @@ button:disabled { opacity: 0.38; cursor: default; }
 .stat-row { justify-content: space-between; font-variant-numeric: tabular-nums; }
 .version { margin-top: 12px; opacity: 0.5; }
 
+/* ── Rich-Tooltips ── */
+.tooltip {
+  position: fixed; z-index: 300; pointer-events: none;
+  max-width: 270px; padding: 9px 13px;
+  background: rgba(10, 14, 30, 0.96);
+  border: 1px solid rgba(100, 216, 255, 0.35); border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 12px rgba(100, 216, 255, 0.12);
+  backdrop-filter: blur(10px);
+  font-size: 0.8rem; line-height: 1.45; color: var(--text);
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.tooltip.show { opacity: 1; transform: none; }
+.tooltip .tip-title {
+  font-weight: 700; font-size: 0.82rem; color: var(--cyan);
+  letter-spacing: 0.04em; margin-bottom: 3px;
+}
+.tooltip .tip-body { color: var(--text); }
+
 /* ── Update-Banner ── */
 #update-banner {
   position: absolute; top: 0; left: 0; right: 0; z-index: 200;

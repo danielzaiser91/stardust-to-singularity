@@ -10,6 +10,7 @@ import type { Panel, Hud } from './hud';
 import { achLabel } from './hud';
 import { D, Decimal } from '../core/decimal';
 import { exportSave, importSave, saveGame, hardReset } from '../storage';
+import { attachTip } from './tooltip';
 
 type St = () => GameState;
 const M = (s: GameState) => F.computeMults(s);
@@ -99,7 +100,7 @@ export class DustPanel implements Panel {
     this.classSeg = el('div', 'seg');
     for (let c = 0; c < 3; c++) {
       const b = btn('seg-btn', t(`star.class${c}`), () => { this.st().ui.nextClass = c as StarClass; });
-      b.title = t(`star.class${c}d`);
+      attachTip(b, () => ({ title: t(`star.class${c}`), body: t(`star.class${c}d`) }));
       this.classBtns.push(b);
       this.classSeg.append(b);
     }
@@ -224,7 +225,7 @@ export class StarPanel implements Panel {
     this.remSeg = el('div', 'seg');
     for (let r = 0; r < 3; r++) {
       const b = btn('seg-btn', t(`nova.rem${r}`), () => { this.st().ui.nextRemnant = r as 0 | 1 | 2; });
-      b.title = t(`nova.rem${r}d`);
+      attachTip(b, () => ({ title: t(`nova.rem${r}`), body: t(`nova.rem${r}d`) }));
       this.remBtns.push(b);
       this.remSeg.append(b);
     }
@@ -301,7 +302,7 @@ export class NovaPanel implements Panel {
     const seg = el('div', 'seg');
     for (const b of [1, 2, 3] as NebulaCell[]) {
       const bb = btn('seg-btn', t(`nova.cell${b}`), () => { this.brush = b; this.syncBrush(); });
-      bb.title = t(`nova.cell${b}d`);
+      attachTip(bb, () => ({ title: t(`nova.cell${b}`), body: t(`nova.cell${b}d`) }));
       this.brushBtns.push(bb);
       seg.append(bb);
     }
@@ -414,7 +415,7 @@ export class GalaxyPanel implements Panel {
     this.gtSeg = el('div', 'seg');
     for (let g = 0; g < 3; g++) {
       const b = btn('seg-btn', t(`galaxy.t${g}`), () => { this.st().ui.nextGtype = g as GalaxyType; });
-      b.title = t(`galaxy.t${g}d`);
+      attachTip(b, () => ({ title: t(`galaxy.t${g}`), body: t(`galaxy.t${g}d`) }));
       this.gtBtns.push(b);
       this.gtSeg.append(b);
     }
@@ -442,6 +443,10 @@ export class GalaxyPanel implements Panel {
           if (A.buyNode(s, idx)) emit('node-bought');
         });
         nb.append(el('div', 'sub', nodeLabel(idx)), cost);
+        attachTip(nb, () => ({
+          title: `${t(`galaxy.branch${b}`)} ${i + 1}/15`,
+          body: `${nodeLabel(idx)} · ${t('misc.cost')}: ${fmtInt(F.nodeCost(idx))} ◈`,
+        }));
         this.nodeBtns.push({ b: nb, cost });
         col.append(nb);
       }
@@ -613,7 +618,10 @@ export class AchPanel implements Panel {
     const grid = el('div', 'ach-grid');
     for (let i = 0; i < 60; i++) {
       const c = el('div', 'ach-cell', '?');
-      c.title = achLabel(i);
+      attachTip(c, () => ({
+        title: `${this.cells[i].classList.contains('got') ? '★' : '·'} #${i + 1}`,
+        body: achLabel(i),
+      }));
       this.cells.push(c);
       grid.append(c);
     }
