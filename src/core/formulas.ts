@@ -347,6 +347,46 @@ export function gainCapBound(total: Decimal, mult: number = C.GAIN_CLAMP_MULT): 
   return total.mul(mult).add(C.GAIN_CLAMP_FLOOR).floor();
 }
 
+/**
+ * Umkehrung der Gain-Formel fürs UI: Wie viel der zugrunde liegenden Währung nötig ist,
+ * damit der (noch ungeclampte) Gewinn den Clamp-Deckel erreicht — dann lohnt der Reset.
+ * Rechnet mit der AKTUELLEN Aufladung; gibt null zurück, wenn schon am Deckel oder Gain 0.
+ * Nur einmal beim Tooltip-Öffnen aufrufen (keine Live-Schleife).
+ */
+export function currencyForCap(
+  s: GameState, m: Mults, layer: 'ignite' | 'nova' | 'coalesce' | 'collapse',
+): { target: Decimal; current: Decimal } | null {
+  if (layer === 'ignite') {
+    if (s.dust.total.lt(igniteReq(s))) return null;
+    const cap = gainCapBound(s.star.totalPlasma, C.PLASMA_CLAMP_MULT);
+    const y = cap.div(m.plasmaGainMult);                       // Ziel-Rohwert der Softpow
+    const capRatio = Decimal.pow(C.GAIN_SOFTCAP, m.plasmaGainExp);
+    const ratio = y.lte(capRatio)
+      ? y.pow(1 / m.plasmaGainExp)
+      : D(C.GAIN_SOFTCAP).mul(y.div(capRatio).pow(1 / C.GAIN_TAIL_EXP));
+    const target = D(C.IGNITION_REQ).mul(ratio);
+    return s.dust.total.gte(target) ? null : { target, current: s.dust.total };
+  }
+  let current: Decimal, req: Decimal, exp: number, mult: Decimal, charge: number, cap: Decimal;
+  if (layer === 'nova') {
+    current = s.star.elements[5]; req = novaReq(s); exp = C.SHARD_EXP;
+    mult = m.shardGainMult; charge = Math.min(1, s.stats.novaTime / C.NOVA_MIN_TIME);
+    cap = gainCapBound(s.nova.totalShards);
+  } else if (layer === 'coalesce') {
+    current = s.nova.totalShards; req = coalesceReq(s); exp = C.DM_EXP;
+    mult = m.dmGainMult; charge = Math.min(1, s.stats.galaxyTime / C.GALAXY_MIN_TIME);
+    cap = gainCapBound(s.galaxy.totalDM);
+  } else {
+    current = s.galaxy.totalDM; req = collapseReq(s); exp = C.ENTROPY_EXP;
+    mult = m.entropyGainMult; charge = Math.min(1, s.stats.singTime / C.COLLAPSE_MIN_TIME);
+    cap = gainCapBound(s.sing.totalEntropy);
+  }
+  if (current.lt(req) || charge <= 0 || mult.lte(0)) return null;
+  // (currency/req)^exp * mult * charge = cap → currency = req * (cap/(mult*charge))^(1/exp)
+  const target = req.mul(cap.div(mult.mul(charge)).pow(1 / exp));
+  return current.gte(target) ? null : { target, current };
+}
+
 /** Ist der angezeigte Gain am Clamp-Deckel? (→ UI: „jetzt resetten, mehr geht nicht") */
 export function isGainCapped(gain: Decimal, total: Decimal, mult: number = C.GAIN_CLAMP_MULT): boolean {
   return gain.gt(0) && gain.gte(total.mul(mult).add(C.GAIN_CLAMP_FLOOR).floor());

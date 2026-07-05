@@ -269,6 +269,29 @@ describe('tick & actions', () => {
     expect(computeMults(s).pulsarBurst).toBe(1);              // Phase 45 > 20 → inaktiv
   });
 
+  it('currencyForCap: reaching the target currency lifts the gain to the cap', () => {
+    // Coalescence (der gemeldete Fall): Deckel = totalDM*3+10
+    const s = initialState(1);
+    s.galaxy.unlocked = true;
+    s.nova.totalShards = D('1e5');
+    s.galaxy.totalDM = D('12');                 // Deckel = 46
+    s.stats.galaxyTime = C.GALAXY_MIN_TIME;     // voll aufgeladen
+    const m = computeMults(s);
+    const cap = F.gainCapBound(s.galaxy.totalDM);
+    expect(F.dmGain(s, m).lt(cap)).toBe(true);  // vorher unter dem Deckel
+    const need = F.currencyForCap(s, m, 'coalesce');
+    expect(need).not.toBeNull();
+    expect(need!.target.gt(need!.current)).toBe(true);
+    s.nova.totalShards = need!.target;
+    expect(F.dmGain(s, computeMults(s)).gte(cap.sub(2))).toBe(true);  // an der Zielwährung: am Deckel
+
+    // Ignition (Softpow-Pfad): bei genug Staub ist der Gewinn geclampt → kein Ziel mehr
+    const s2 = initialState(1);
+    s2.dust.total = D('1e300');
+    s2.star.totalPlasma = D('10');
+    expect(F.currencyForCap(s2, computeMults(s2), 'ignite')).toBeNull();
+  });
+
   it('coalescence resets challenges & lower milestones until galaxy milestones keep them', () => {
     const mk = (coalescences: number) => {
       const s = initialState(1);

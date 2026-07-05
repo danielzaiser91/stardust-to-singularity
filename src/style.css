@@ -172,6 +172,8 @@ button:disabled { opacity: 0.38; cursor: default; }
 .pill-class.cls0 .pill-icon { color: #ff8a8a; }
 .pill-class.cls1 .pill-icon { color: #ffd970; }
 .pill-class.cls2 .pill-icon { color: #8ad4ff; }
+/* reservierte Generator-Zeile: Höhe bleibt erhalten, Inhalt unsichtbar/nicht klickbar */
+.row-reserved { visibility: hidden; }
 .ignite-row { display: flex; gap: 8px; align-items: stretch; }
 .ignite-row .reset-btn { flex: 1; }
 .auto-btn.dim { opacity: 0.4; cursor: default; }

@@ -33,6 +33,21 @@ function logFrac(cur: Decimal, req: Decimal | number): number {
   return Math.min(1, cur.log10().toNumber() / reqLog);
 }
 
+/** Gemeinsamer Gain-Deckel-Tooltip: Erklärung · aktueller Deckelwert · Währung bis zum Deckel. */
+function capTipBody(
+  s: GameState, m: F.Mults, total: Decimal, clampMult: number, isCapped: boolean,
+  layer: 'ignite' | 'nova' | 'coalesce' | 'collapse', unitKey: string,
+): { title: string; body: string } {
+  const sci = s.settings.sciNotation;
+  const max = t('cap.max', { v: fmt(F.gainCapBound(total, clampMult), sci) });
+  let body = `${t(isCapped ? 'cap.body' : 'cap.hint', { v: clampMult + 1 })}\n${max}`;
+  if (!isCapped) {
+    const need = F.currencyForCap(s, m, layer);
+    if (need) body += `\n${t('cap.need', { c: fmt(need.target, sci), u: t(unitKey), v: fmt(need.current, sci) })}`;
+  }
+  return { title: (isCapped ? '⚠ ' : '') + t('cap.title'), body };
+}
+
 // ═══════════════ Ebene 0: Dust ═══════════════
 export class DustPanel implements Panel {
   root = el('div');
@@ -43,6 +58,7 @@ export class DustPanel implements Panel {
   private compEff = el('span', 'sub row-note');
   private compMax!: HTMLButtonElement;
   private genRows: { row: HTMLElement; owned: HTMLElement; rate: HTMLElement; b1: HTMLButtonElement; bm: HTMLButtonElement; c1: HTMLElement }[] = [];
+  private rowHigh = -1;   // höchste je gezeigte Generator-Stufe: reserviert Höhe, damit das Panel nicht springt
   private igniteBox: HTMLElement;
   private igniteBar = bar('bar-hot');
   private igniteLabel = el('div', 'sub center');
@@ -135,10 +151,7 @@ export class DustPanel implements Panel {
       const s = this.st();
       const m = M(s);
       const capped = F.isGainCapped(F.plasmaGain(s, m), s.star.totalPlasma, C.PLASMA_CLAMP_MULT);
-      const max = t('cap.max', { v: fmt(F.gainCapBound(s.star.totalPlasma, C.PLASMA_CLAMP_MULT), s.settings.sciNotation) });
-      return capped
-        ? { title: '⚠ ' + t('cap.title'), body: `${t('cap.body', { v: C.PLASMA_CLAMP_MULT + 1 })}\n${max}` }
-        : { title: t('cap.title'), body: `${t('cap.hint', { v: C.PLASMA_CLAMP_MULT + 1 })}\n${max}` };
+      return capTipBody(s, m, s.star.totalPlasma, C.PLASMA_CLAMP_MULT, capped, 'ignite', 'dust.name');
     });
     this.classSeg = el('div', 'seg');
     for (let c = 0; c < 3; c++) {
@@ -228,7 +241,12 @@ export class DustPanel implements Panel {
       // Direkt an den Zustand gekoppelt — die Auto-Zündung resettet seit dem Trickle
       // nichts mehr, die frühere 5-s-Nachleuchte machte das Panel nur träge
       const visible = i < top && (i === 0 || s.dust.gens[i - 1].bought > 0 || g.bought > 0);
-      setVisible(r.row, visible);
+      if (visible) this.rowHigh = Math.max(this.rowHigh, i);
+      // Einmal gezeigte Zeilen behalten ihren Platz (visibility statt display) — so springt
+      // das Panel bei Resets nicht in der Höhe und Buttons bleiben unter dem Cursor.
+      const reserved = !visible && i < top && i <= this.rowHigh;
+      r.row.style.display = (visible || reserved) ? '' : 'none';
+      setClass(r.row, 'row-reserved', reserved);
       if (!visible) continue;
       setText(r.owned, `${fmtInt(g.amount)} (${g.bought})`);
       const prod = g.amount.mul(F.tierMult(s, m, i)).mul(i === 0 ? m.dustMult : D(1));
@@ -343,11 +361,9 @@ export class StarPanel implements Panel {
       el('div', 'sub center', t('nova.remnant')));
     attachTip(this.novaLabel, () => {
       const s = this.st();
-      const capped = F.isGainCapped(F.shardGain(s, M(s)), s.nova.totalShards);
-      const max = t('cap.max', { v: fmt(F.gainCapBound(s.nova.totalShards), s.settings.sciNotation) });
-      return capped
-        ? { title: '⚠ ' + t('cap.title'), body: `${t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` }
-        : { title: t('cap.title'), body: `${t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` };
+      const m = M(s);
+      const capped = F.isGainCapped(F.shardGain(s, m), s.nova.totalShards);
+      return capTipBody(s, m, s.nova.totalShards, C.GAIN_CLAMP_MULT, capped, 'nova', 'el.5');
     });
     this.remSeg = el('div', 'seg');
     for (let r = 0; r < 3; r++) {
@@ -356,15 +372,19 @@ export class StarPanel implements Panel {
         const s = this.st();
         const n = s.nova.remnants[r];
         const rp = F.remnantParams(s);
-        const v = r === 0 ? fmt(D(rp.neutronBase).pow(n), s.settings.sciNotation)
-          : r === 1 ? fmtMult(n > 0 ? C.REMNANT_PULSAR_MULT + rp.pulsarPer * (n - 1) : 1)
-          : fmtMult(1 + rp.bhPer * n);
+        const sci = s.settings.sciNotation;
+        // aktueller Gesamteffekt bei n bzw. n+1 Stück (Remnants stapeln — Vorschau hilft der Wahl)
+        const effAt = (k: number) => r === 0 ? fmt(D(rp.neutronBase).pow(k), sci)
+          : r === 1 ? fmtMult(k > 0 ? C.REMNANT_PULSAR_MULT + rp.pulsarPer * (k - 1) : 1)
+          : fmtMult(1 + rp.bhPer * k);
+        const v = effAt(n);
         const tier = F.remnantTier(s, r as 0 | 1 | 2);
         const sms = s.stats.collapses >= C.MS_COLLAPSE[1]
           ? `\n${t('sms.tier', { t: tier, c: n, n: (tier + 1) * C.SPECIAL_REMNANT_STEP })}` : '';
         return {
           title: t(`nova.rem${r}`),
-          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v, p: C.REMNANT_PULSAR_PERIOD, d: rp.pulsarDur })}${sms}`,
+          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v, p: C.REMNANT_PULSAR_PERIOD, d: rp.pulsarDur })}`
+            + `\n${t('nova.remNext', { v: effAt(n + 1) })}${sms}`,
         };
       });
       this.remBtns.push(b);
@@ -612,11 +632,9 @@ export class NovaPanel implements Panel {
     coalesceBox.append(this.coalBar.wrap, this.coalLabel, el('div', 'sub center', t('galaxy.type')));
     attachTip(this.coalLabel, () => {
       const s = this.st();
-      const capped = F.isGainCapped(F.dmGain(s, M(s)), s.galaxy.totalDM);
-      const max = t('cap.max', { v: fmt(F.gainCapBound(s.galaxy.totalDM), s.settings.sciNotation) });
-      return capped
-        ? { title: '⚠ ' + t('cap.title'), body: `${t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` }
-        : { title: t('cap.title'), body: `${t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` };
+      const m = M(s);
+      const capped = F.isGainCapped(F.dmGain(s, m), s.galaxy.totalDM);
+      return capTipBody(s, m, s.galaxy.totalDM, C.GAIN_CLAMP_MULT, capped, 'coalesce', 'nova.shards');
     });
     const gtSeg = el('div', 'seg');
     for (let g = 0; g < 3; g++) {
@@ -780,11 +798,9 @@ export class GalaxyPanel implements Panel {
     collapseBox.append(this.colBar.wrap, this.colLabel);
     attachTip(this.colLabel, () => {
       const s = this.st();
-      const capped = F.isGainCapped(F.entropyGain(s, M(s)), s.sing.totalEntropy);
-      const max = t('cap.max', { v: fmt(F.gainCapBound(s.sing.totalEntropy), s.settings.sciNotation) });
-      return capped
-        ? { title: '⚠ ' + t('cap.title'), body: `${t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` }
-        : { title: t('cap.title'), body: `${t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` };
+      const m = M(s);
+      const capped = F.isGainCapped(F.entropyGain(s, m), s.sing.totalEntropy);
+      return capTipBody(s, m, s.sing.totalEntropy, C.GAIN_CLAMP_MULT, capped, 'collapse', 'galaxy.dm');
     });
     this.colBtn = btn('reset-btn sing', t('sing.go'), () => {
       const s = this.st();
