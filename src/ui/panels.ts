@@ -618,10 +618,11 @@ export class AchPanel implements Panel {
     const grid = el('div', 'ach-grid');
     for (let i = 0; i < 60; i++) {
       const c = el('div', 'ach-cell', '?');
+      // Achievement-Zellen zeigen selbst schon '?' — kein zusätzliches Eck-Icon
       attachTip(c, () => ({
         title: `${this.cells[i].classList.contains('got') ? '★' : '·'} #${i + 1}`,
         body: achLabel(i),
-      }));
+      }), { marker: false });
       this.cells.push(c);
       grid.append(c);
     }

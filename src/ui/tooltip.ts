@@ -57,7 +57,8 @@ export function hideTip(): void {
 }
 
 /** content als Getter, damit Texte zur Hover-Zeit entstehen (Sprache, Zustand) */
-export function attachTip(target: HTMLElement, content: () => TipContent): void {
+export function attachTip(target: HTMLElement, content: () => TipContent, opts?: { marker?: boolean }): void {
+  if (opts?.marker !== false) target.classList.add('has-tip');  // kleines ?-Eck als Hinweis
   const canHover = window.matchMedia('(hover: hover)').matches;
   if (canHover) {
     target.addEventListener('pointerenter', () => {

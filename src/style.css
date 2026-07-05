@@ -212,6 +212,16 @@ button:disabled { opacity: 0.38; cursor: default; }
 .version { margin-top: 12px; opacity: 0.5; }
 
 /* ── Rich-Tooltips ── */
+.has-tip { position: relative; }
+.has-tip::after {
+  content: '?';
+  position: absolute; top: 1px; right: 4px;
+  font-size: 0.58rem; line-height: 1; font-weight: 700;
+  color: var(--text-dim); opacity: 0.65;
+  pointer-events: none;
+}
+.has-tip:hover::after { color: var(--cyan); opacity: 1; }
+
 .tooltip {
   position: fixed; z-index: 300; pointer-events: none;
   max-width: 270px; padding: 9px 13px;
