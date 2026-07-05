@@ -390,8 +390,12 @@ export class NovaPanel implements Panel {
   private autoRow: HTMLElement;
   private autoChk: HTMLInputElement;
   private autoLock = el('div', 'sub center');
+  private coalBar = bar('bar-gal');
+  private coalLabel = el('div', 'sub center');
+  private coalBtn!: HTMLButtonElement;
+  private gtBtns: HTMLButtonElement[] = [];
 
-  constructor(private st: St, _hud: Hud) {
+  constructor(private st: St, private hud: Hud) {
     this.root.append(el('h3', '', t('nova.nebula')), el('div', 'sub', t('nova.nebulaDesc')));
     const seg = el('div', 'seg');
     for (const b of [1, 2, 3] as NebulaCell[]) {
@@ -465,6 +469,37 @@ export class NovaPanel implements Panel {
     this.autoRow.append(label);
     this.root.append(this.autoRow, this.autoLock);
 
+    // Coalescence-Box lebt HIER (Ebene darunter) — der Galaxy-Tab existiert ja erst danach
+    const coalesceBox = el('div', 'reset-box gal');
+    coalesceBox.append(this.coalBar.wrap, this.coalLabel, el('div', 'sub center', t('galaxy.type')));
+    attachTip(this.coalLabel, () => {
+      const s = this.st();
+      const capped = F.isGainCapped(F.dmGain(s, M(s)), s.galaxy.totalDM);
+      return capped
+        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 }) }
+        : { title: t('cap.title'), body: t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 }) };
+    });
+    const gtSeg = el('div', 'seg');
+    for (let g = 0; g < 3; g++) {
+      const b = btn('seg-btn', t(`galaxy.t${g}`), () => { this.st().ui.nextGtype = g as GalaxyType; });
+      attachTip(b, () => ({ title: t(`galaxy.t${g}`), body: t(`galaxy.t${g}d`) }));
+      this.gtBtns.push(b);
+      gtSeg.append(b);
+    }
+    this.coalBtn = btn('reset-btn gal', t('galaxy.go'), () => {
+      const s = this.st();
+      const doIt = () => {
+        if (A.doCoalesce(s, s.ui.nextGtype)) {
+          emit('coalesce');
+          if (s.settings.autoTab) this.hud.selectTab('galaxy');
+        }
+      };
+      if (s.stats.coalescences === 0) this.hud.confirm(t('galaxy.go'), t('galaxy.confirm'), doIt);
+      else doIt();
+    });
+    coalesceBox.append(gtSeg, this.coalBtn);
+    this.root.append(coalesceBox);
+
     this.ms = milestoneSection(
       [t('ms.gal0'), t('ms.gal1')],
       C.MS_GALAXY, 'ms.u.gal', s => s.stats.coalescences);
@@ -477,7 +512,7 @@ export class NovaPanel implements Panel {
     this.brushBtns.forEach((b, i) => setClass(b, 'active', this.brush === ([1, 2, 3] as NebulaCell[])[i]));
   }
 
-  update(s: GameState, _m: F.Mults): void {
+  update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
     const cellCost = F.nebulaCellCost(s);
     const affordable = s.nova.shards.gte(cellCost);
@@ -514,6 +549,21 @@ export class NovaPanel implements Panel {
     setVisible(this.autoLock, !autoOk);
     setText(this.autoLock, t('nova.autoIgniteLock'));
     if (this.autoChk.checked !== s.nova.autoIgnite.on) this.autoChk.checked = s.nova.autoIgnite.on;
+
+    // Coalescence
+    const coalReq = F.coalesceReq(s);
+    setBar(this.coalBar, logFrac(s.nova.totalShards, coalReq));
+    const dmG = F.dmGain(s, m);
+    if (F.canCoalesce(s)) {
+      setText(this.coalLabel, t('galaxy.gain', { v: fmt(dmG, sci) }));
+      setDisabled(this.coalBtn, s.nova.challenge !== -1);
+    } else {
+      setText(this.coalLabel, t('galaxy.req', { v: fmt(coalReq, true) }));
+      setDisabled(this.coalBtn, true);
+    }
+    setClass(this.coalLabel, 'capped', F.canCoalesce(s) && F.isGainCapped(dmG, s.galaxy.totalDM));
+    this.gtBtns.forEach((b, g) => setClass(b, 'active', s.ui.nextGtype === g));
+
     this.ms.update(s);
   }
 }
@@ -521,48 +571,15 @@ export class NovaPanel implements Panel {
 // ═══════════════ Ebene 3: Galaxy ═══════════════
 export class GalaxyPanel implements Panel {
   root = el('div');
-  private coalesceBox: HTMLElement;
-  private coalBar = bar('bar-gal');
-  private coalLabel = el('div', 'sub center');
-  private coalBtn: HTMLButtonElement;
-  private gtSeg: HTMLElement;
-  private gtBtns: HTMLButtonElement[] = [];
   private nodeBtns: { b: HTMLButtonElement; cost: HTMLElement }[] = [];
   private autoRow: HTMLElement;
   private autoChk: HTMLInputElement;
   private autoLockNote = el('div', 'sub center');
+  private colBar = bar('bar-sing');
+  private colLabel = el('div', 'sub center');
+  private colBtn!: HTMLButtonElement;
 
   constructor(private st: St, private hud: Hud) {
-    this.coalesceBox = el('div', 'reset-box gal');
-    this.coalesceBox.append(this.coalBar.wrap, this.coalLabel, el('div', 'sub center', t('galaxy.type')));
-    attachTip(this.coalLabel, () => {
-      const s = this.st();
-      const capped = F.isGainCapped(F.dmGain(s, M(s)), s.galaxy.totalDM);
-      return capped
-        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 }) }
-        : { title: t('cap.title'), body: t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 }) };
-    });
-    this.gtSeg = el('div', 'seg');
-    for (let g = 0; g < 3; g++) {
-      const b = btn('seg-btn', t(`galaxy.t${g}`), () => { this.st().ui.nextGtype = g as GalaxyType; });
-      attachTip(b, () => ({ title: t(`galaxy.t${g}`), body: t(`galaxy.t${g}d`) }));
-      this.gtBtns.push(b);
-      this.gtSeg.append(b);
-    }
-    this.coalBtn = btn('reset-btn gal', t('galaxy.go'), () => {
-      const s = this.st();
-      const doIt = () => {
-        if (A.doCoalesce(s, s.ui.nextGtype)) {
-          emit('coalesce');
-          if (s.settings.autoTab) this.hud.selectTab('galaxy');
-        }
-      };
-      if (s.stats.coalescences === 0) this.hud.confirm(t('galaxy.go'), t('galaxy.confirm'), doIt);
-      else doIt();
-    });
-    this.coalesceBox.append(this.gtSeg, this.coalBtn);
-    this.root.append(this.coalesceBox);
-
     this.root.append(el('h3', '', t('galaxy.tree')));
     const tree = el('div', 'tree');
     for (let b = 0; b < 3; b++) {
@@ -596,6 +613,30 @@ export class GalaxyPanel implements Panel {
     this.autoRow.append(label);
     this.root.append(this.autoRow, this.autoLockNote);
 
+    // Collapse-Box lebt HIER (Ebene darunter) — der Singularity-Tab existiert erst danach
+    const collapseBox = el('div', 'reset-box sing');
+    collapseBox.append(this.colBar.wrap, this.colLabel);
+    attachTip(this.colLabel, () => {
+      const s = this.st();
+      const capped = F.isGainCapped(F.entropyGain(s, M(s)), s.sing.totalEntropy);
+      return capped
+        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 }) }
+        : { title: t('cap.title'), body: t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 }) };
+    });
+    this.colBtn = btn('reset-btn sing', t('sing.go'), () => {
+      const s = this.st();
+      const doIt = () => {
+        if (A.doCollapse(s)) {
+          emit('collapse');
+          if (s.settings.autoTab) this.hud.selectTab('sing');
+        }
+      };
+      if (s.stats.collapses === 0) this.hud.confirm(t('sing.go'), t('sing.confirm'), doIt);
+      else doIt();
+    });
+    collapseBox.append(this.colBtn);
+    this.root.append(collapseBox);
+
     this.ms = milestoneSection(
       [t('ms.col0'), t('ms.col1')],
       C.MS_COLLAPSE, 'ms.u.col', s => s.stats.collapses);
@@ -605,19 +646,6 @@ export class GalaxyPanel implements Panel {
 
   update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
-    const coalReq = F.coalesceReq(s);
-    setBar(this.coalBar, logFrac(s.nova.totalShards, coalReq));
-    const gain = F.dmGain(s, m);
-    if (F.canCoalesce(s)) {
-      setText(this.coalLabel, t('galaxy.gain', { v: fmt(gain, sci) }));
-      setDisabled(this.coalBtn, s.nova.challenge !== -1);
-    } else {
-      setText(this.coalLabel, t('galaxy.req', { v: fmt(coalReq, true) }));
-      setDisabled(this.coalBtn, true);
-    }
-    setClass(this.coalLabel, 'capped', F.canCoalesce(s) && F.isGainCapped(gain, s.galaxy.totalDM));
-    this.gtBtns.forEach((b, g) => setClass(b, 'active', s.ui.nextGtype === g));
-
     for (let i = 0; i < C.CONSTELLATION_NODES; i++) {
       const nb = this.nodeBtns[i];
       const bought = s.galaxy.nodes[i];
@@ -631,6 +659,20 @@ export class GalaxyPanel implements Panel {
     setVisible(this.autoLockNote, !unlocked);
     setText(this.autoLockNote, t('galaxy.autoNovaLock'));
     if (this.autoChk.checked !== s.galaxy.autoNova.on) this.autoChk.checked = s.galaxy.autoNova.on;
+
+    // Collapse
+    const colReq = F.collapseReq(s);
+    setBar(this.colBar, logFrac(s.galaxy.totalDM, colReq));
+    const entG = F.entropyGain(s, m);
+    if (F.canCollapse(s)) {
+      setText(this.colLabel, t('sing.gain', { v: fmt(entG, sci) }));
+      setDisabled(this.colBtn, s.nova.challenge !== -1);
+    } else {
+      setText(this.colLabel, t('sing.req', { v: fmt(colReq, true) }));
+      setDisabled(this.colBtn, true);
+    }
+    setClass(this.colLabel, 'capped', F.canCollapse(s) && F.isGainCapped(entG, s.sing.totalEntropy));
+
     this.ms.update(s);
   }
 }
@@ -671,10 +713,6 @@ function nodeLabel(i: number): string {
 // ═══════════════ Ebene 4: Singularity ═══════════════
 export class SingPanel implements Panel {
   root = el('div');
-  private collapseBox: HTMLElement;
-  private colBar = bar('bar-sing');
-  private colLabel = el('div', 'sub center');
-  private colBtn: HTMLButtonElement;
   private feedBtn: HTMLButtonElement;
   private feedInfo = el('div', 'sub center');
   private dilateBtn: HTMLButtonElement;
@@ -686,28 +724,7 @@ export class SingPanel implements Panel {
   private uniLabel = el('div', 'sub center');
 
   constructor(private st: St, private hud: Hud) {
-    this.collapseBox = el('div', 'reset-box sing');
-    this.collapseBox.append(this.colBar.wrap, this.colLabel);
-    attachTip(this.colLabel, () => {
-      const s = this.st();
-      const capped = F.isGainCapped(F.entropyGain(s, M(s)), s.sing.totalEntropy);
-      return capped
-        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 }) }
-        : { title: t('cap.title'), body: t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 }) };
-    });
-    this.colBtn = btn('reset-btn sing', t('sing.go'), () => {
-      const s = this.st();
-      const doIt = () => {
-        if (A.doCollapse(s)) {
-          emit('collapse');
-          if (s.settings.autoTab) this.hud.selectTab('sing');
-        }
-      };
-      if (s.stats.collapses === 0) this.hud.confirm(t('sing.go'), t('sing.confirm'), doIt);
-      else doIt();
-    });
-    this.collapseBox.append(this.colBtn);
-    this.root.append(this.collapseBox, this.uniLabel);
+    this.root.append(this.uniLabel);
 
     this.feedBtn = btn('reset-btn feed', t('sing.feed'), () => {
       const s = this.st();
@@ -755,17 +772,7 @@ export class SingPanel implements Panel {
 
   update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
-    const colReq = F.collapseReq(s);
-    setBar(this.colBar, logFrac(s.galaxy.totalDM, colReq));
-    const gain = F.entropyGain(s, m);
-    if (F.canCollapse(s)) {
-      setText(this.colLabel, t('sing.gain', { v: fmt(gain, sci) }));
-      setDisabled(this.colBtn, s.nova.challenge !== -1);
-    } else {
-      setText(this.colLabel, t('sing.req', { v: fmt(colReq, true) }));
-      setDisabled(this.colBtn, true);
-    }
-    setClass(this.colLabel, 'capped', F.canCollapse(s) && F.isGainCapped(gain, s.sing.totalEntropy));
+    void m;
     setText(this.uniLabel, s.sing.universes > 0 ? t('sing.universes', { v: String(s.sing.universes + 1) }) : '');
 
     const mass = F.feedMass(s);
