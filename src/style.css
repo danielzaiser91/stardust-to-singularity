@@ -178,6 +178,9 @@ button:disabled { opacity: 0.38; cursor: default; }
 .hex { color: var(--cyan); font-size: 1rem; font-weight: 700; }
 .hex:not(.dim):hover { background: rgba(120, 150, 220, 0.55); box-shadow: 0 0 14px rgba(100, 216, 255, 0.4); }
 .hex.dim { opacity: 0.35; cursor: default; }
+/* Press-Feedback OHNE Verschiebung: die globale :active-Regel (scale) würde das
+   zentrierende translate(-50%,-50%) ersetzen und das Hex unterm Zeiger wegschieben */
+.hex:active:not(:disabled) { transform: translate(-50%, -50%) scale(0.94); }
 .hex.hex-1 { background: radial-gradient(#ff8ab5, #b03060); box-shadow: 0 0 16px #ff64a8aa; opacity: 1; }
 .hex.hex-2 { background: radial-gradient(#8ad4ff, #2060a8); box-shadow: 0 0 16px #64c3ffaa; opacity: 1; }
 .hex.hex-3 { background: radial-gradient(#3d2b66, #17102e); box-shadow: 0 0 16px #5b2a86aa; opacity: 1; }

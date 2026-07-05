@@ -443,7 +443,7 @@ export class NovaPanel implements Panel {
     const grid = el('div', 'hexgrid');
     for (let i = 0; i < F.HEX_COORDS.length; i++) {
       const [q, r] = F.HEX_COORDS[i];
-      const b = btn('hex', '', () => {
+      const place = () => {
         const s = this.st();
         if (s.nova.cells[i] === this.brush) return;  // gleicher Typ: nichts zu tun, kein Fehler-Blitz
         if (A.placeNebula(s, i, this.brush)) {
@@ -455,6 +455,19 @@ export class NovaPanel implements Panel {
           this.cellCost.classList.add('flash-error');
         }
         this.update(s, M(s));  // sofortiger Resync — 10-Hz-Loop ist zu langsam für Doppelklicks
+      };
+      // pointerdown statt click: click braucht mousedown+mouseup auf DEMSELBEN Element —
+      // die :active-Animation verschiebt das Hex aber unterm Zeiger weg, mouseup landet
+      // daneben und der Klick verpufft. pointerdown feuert sofort an der Druckposition.
+      const b = el('button', 'hex', '') as HTMLButtonElement;
+      b.addEventListener('pointerdown', e => {
+        if (e.button !== 0) return;
+        e.stopPropagation();
+        place();
+      });
+      b.addEventListener('click', e => {
+        e.stopPropagation();
+        if (e.detail === 0) place();  // Tastatur (Enter/Leertaste) feuert click ohne Pointer
       });
       b.style.left = `${50 + (q + r / 2) * 16.5}%`;
       b.style.top = `${50 + r * 17}%`;
