@@ -83,7 +83,7 @@ export const CH4_COST_EXP = 1.2;
 
 // ── Ebene 3: Galaxy ──────────────────────────────────────────────────────────
 export const COALESCE_REQ = 2500;            // total Nova Shards (Basis)
-export const COALESCE_REQ_GROWTH = 4;        // Anforderung ×4 je Coalescence (im Takt des ×4-Clamps)
+export const COALESCE_REQ_GROWTH = 3;        // Anforderung ×3 je Coalescence (unter dem ×4-Clamp-Takt)
 export const DM_EXP = 0.55;                  // dm = (totalShards/aktuelleReq)^exp
 export const CONSTELLATION_NODES = 45;       // 3 Äste à 15
 export const NODE_COST = (i: number) => Math.max(1, Math.floor(Math.pow(1.55, i % 15) * (1 + Math.floor(i / 15))));
