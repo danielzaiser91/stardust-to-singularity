@@ -110,6 +110,7 @@ export function tick(s: GameState, dt: number): Mults {
       if (s.star.plasma.gt(s.stats.bestPlasma)) s.stats.bestPlasma = s.star.plasma;
       s.stats.ignitions++;
       s.stats.ignMs++;
+      s.stats.classPicks[s.star.cls]++;  // Harvest zündet mit der aktuellen Klasse
       s.stats.runTime = 0;
     }
   }

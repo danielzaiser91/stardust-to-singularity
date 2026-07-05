@@ -115,6 +115,7 @@ describe('tick & actions', () => {
     const ignBefore = s.stats.ignitions;
     tick(s, 1);
     expect(s.stats.ignitions).toBeGreaterThan(ignBefore);   // Gewinn kassiert
+    expect(s.stats.classPicks[s.star.cls]).toBeGreaterThan(0);  // Harvest zählt als Klassen-Pick
     expect(s.dust.gens[0].bought).toBe(33);                 // KEIN Reset → kein Flackern
     expect(s.star.plasma.gt(0)).toBe(true);
   });

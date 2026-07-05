@@ -5,3 +5,6 @@ sim/reports/
 .DS_Store
 .vite/
 coverage/
+.claude/
+.github/
+.secrets/
