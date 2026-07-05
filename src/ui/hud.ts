@@ -8,7 +8,8 @@ import type { OfflineSummary } from '../core/offline';
 import { on } from '../events';
 import { ACHIEVEMENT_META } from '../core/achievements';
 import { hideTip, attachTip } from './tooltip';
-import { REMNANT_PULSAR_MULT, REMNANT_PULSAR_DURATION } from '../core/constants';
+import { REMNANT_PULSAR_MULT, REMNANT_PULSAR_DURATION, STAR_CLASSES } from '../core/constants';
+import { fmtMult } from './format';
 
 export interface Panel { root: HTMLElement; update(s: GameState, m: Mults): void; }
 
@@ -25,6 +26,8 @@ export class Hud {
   private collapsed = false;
   private pulsarPill!: HTMLElement;
   private pulsarVal!: HTMLElement;
+  private classPill!: HTMLElement;
+  private classVal!: HTMLElement;
   private lastPulsarPeriod = 60;
 
   constructor(private stateRef: () => GameState) {
@@ -41,6 +44,21 @@ export class Hud {
       this.pills[id] = { wrap, val, rate };
       top.append(wrap);
     }
+    // Sternklassen-Buff: permanent aktiv, gewählt bei der Zündung
+    this.classPill = el('div', 'pill pill-class');
+    this.classPill.append(el('span', 'pill-icon', '★'));
+    this.classVal = el('span', 'pill-val', '');
+    this.classPill.append(this.classVal);
+    attachTip(this.classPill, () => {
+      const s = this.stateRef();
+      const cls = STAR_CLASSES[s.star.cls];
+      return {
+        title: `★ ${t(`star.class${s.star.cls}`)}`,
+        body: `${t('star.classEff', { s: fmtMult(cls.speed), p: fmtMult(cls.plasmaGain) })}\n${t('hud.classTip')}`,
+      };
+    });
+    top.append(this.classPill);
+
     // Pulsar-Burst-Status: aktiv = Restdauer, sonst Countdown bis zum nächsten Burst
     this.pulsarPill = el('div', 'pill pill-pulsar');
     this.pulsarPill.append(el('span', 'pill-icon', '⚡'));
@@ -113,6 +131,13 @@ export class Hud {
     setText(this.pills.dm.val, fmt(s.galaxy.dm, s.settings.sciNotation));
     setVisible(this.pills.entropy.wrap, s.sing.unlocked);
     setText(this.pills.entropy.val, fmt(s.sing.entropy, s.settings.sciNotation));
+
+    // Sternklassen-Pill: sichtbar sobald ein Stern brennt; Farbe je Klasse
+    setVisible(this.classPill, s.star.unlocked);
+    if (s.star.unlocked) {
+      setText(this.classVal, t(`star.class${s.star.cls}`));
+      for (let c = 0; c < 3; c++) setClass(this.classPill, `cls${c}`, s.star.cls === c);
+    }
 
     // Pulsar-Burst-Pill
     const pulsars = s.nova.remnants[1];

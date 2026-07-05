@@ -149,7 +149,7 @@ export class DustPanel implements Panel {
         return {
           title: t(`star.class${c}`),
           body: `${t(`star.class${c}d`)}\n${t('star.classEff', { s: fmtMult(cls.speed), p: fmtMult(cls.plasmaGain) })}`
-            + `\n${t('choice.pickedGal', { n: s.stats.classPicks[c] })}${active ? `\n${t('star.classActive')}` : ''}`,
+            + `${active ? `\n${t('star.classActive')}` : ''}`,
         };
       });
       this.classBtns.push(b);
@@ -229,10 +229,7 @@ export class DustPanel implements Panel {
       setClass(this.igniteLabel, 'capped',
         F.canIgnite(s) && F.isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT));
       setVisible(this.classSeg, s.stats.ignMs >= C.MS_IGNITION[1]);
-      this.classBtns.forEach((b, c) => {
-        setClass(b, 'active', s.ui.nextClass === c);
-        setText(b, `${t(`star.class${c}`)} (${s.stats.classPicks[c]})`);
-      });
+      this.classBtns.forEach((b, c) => setClass(b, 'active', s.ui.nextClass === c));
     }
     this.ms.update(s);
   }

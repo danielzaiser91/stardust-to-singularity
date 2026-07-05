@@ -169,6 +169,9 @@ button:disabled { opacity: 0.38; cursor: default; }
 .seg-btn.active { background: rgba(100, 216, 255, 0.22); border-color: var(--cyan); box-shadow: 0 0 10px rgba(100, 216, 255, 0.3); }
 
 /* ── Hex-Grid ── */
+.pill-class.cls0 .pill-icon { color: #ff8a8a; }
+.pill-class.cls1 .pill-icon { color: #ffd970; }
+.pill-class.cls2 .pill-icon { color: #8ad4ff; }
 .garden-ctl { display: flex; gap: 8px; align-items: center; justify-content: flex-start; margin: 8px 0 0; }
 .garden-ctl .icon-btn { min-width: 36px; font-size: 1.05rem; padding: 5px 10px; }
 .hexgrid { position: relative; width: 100%; aspect-ratio: 1.15; margin: 8px 0; }
