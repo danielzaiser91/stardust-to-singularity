@@ -100,6 +100,7 @@ export const COLLAPSE_REQ = 300;             // total Dark Matter (Basis)
 export const COLLAPSE_REQ_GROWTH = 8;        // Anforderung ×8 je bisherigem Collapse
 export const ENTROPY_EXP = 0.6;
 export const PERK_COUNT = 8;
+export const PERK_HAWKING_H = 2.5;           // Hawking: H-Rate ×2,5 je Level (geometrischer Endgame-Motor)
 export const PERK_BASE_COST = [1, 3, 10, 25, 100, 500, 2500, 10000];
 export const PERK_COST_GROWTH = [3, 4, 5, 6, 8, 10, 12, 15];
 export const FEED_ACCRETION_EXP = 2;         // global mult = (1+log10(1+fed))^exp

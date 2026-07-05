@@ -200,6 +200,9 @@ export function computeMults(s: GameState): Mults {
         .mul(s.star.upgrades[6] ? 3 : 1)
         .mul(s.stats.lifetimeShards.add(1).pow(C.SHARD_H_EXP))
         .mul(dmAll).mul(entropyAll)
+        // Hawking-Strahlung: GEOMETRISCHER Motor der Singularitäts-Phase — jeder Kollaps
+        // finanziert Level, die den nächsten Kollaps tragen (sonst polynomieller Kriechgang)
+        .mul(D(C.PERK_HAWKING_H).pow(perks[1]))
     : ZERO;
 
   let fusionMult = nFusion * perkFusion

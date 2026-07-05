@@ -110,7 +110,7 @@ export const en: Record<string, string> = {
   'sing.dilateCd': 'Cooldown: {v}',
   'sing.perks': 'Singularity perks',
   'perk.0': 'Event Horizon', 'perk.0d': 'Dust production ×10 per level',
-  'perk.1': 'Hawking Radiation', 'perk.1d': 'Passive plasma trickle + prestige gains ×(1+level)',
+  'perk.1': 'Hawking Radiation', 'perk.1d': 'Hydrogen production ×2.5 per level + passive plasma',
   'perk.2': 'Frame Drag', 'perk.2d': 'Game speed +25% per level',
   'perk.3': 'Spaghettification', 'perk.3d': 'Fusion throughput +50% per level',
   'perk.4': 'Ergosphere', 'perk.4d': 'All prestige gains ×2 per level',

@@ -13,6 +13,8 @@ export type Profile = 'active' | 'idle';
 import type { Decimal } from '../core/decimal';
 /** Plasma-Stand beim letzten Challenge-Versuch (Backoff-Heuristik des Bots) */
 const challengeAttempts = new WeakMap<GameState, Decimal[]>();
+/** Spielzeit der letzten Schwarzloch-Fütterung (Cooldown) */
+const lastFeed = new WeakMap<GameState, number>();
 
 export interface Milestone { name: string; at: number; }  // at = gespielte Sekunden
 
@@ -30,20 +32,18 @@ export function botStep(s: GameState, profile: Profile): void {
     for (let i = 0; i < 4; i++) A.click(s, m);
   }
 
-  // — Singularity —
+  // — Singularity: Hawking (geometrischer Motor) zuerst, dann Rest; Fütterung s. u. —
   if (s.sing.unlocked) {
-    for (let p = 0; p < C.PERK_COUNT; p++) {
+    for (const p of [1, 0, 2, 3, 4, 5, 6, 7]) {
       while (s.sing.entropy.gte(perkCost(s, p))) A.buyPerk(s, p);
     }
-    // füttern, wenn Ressourcen substanziell (alle ~10 min Spielzeit implizit durch Bedingung)
-    if (s.galaxy.dm.gte(100) || s.nova.shards.gte(1e4)) A.feedBlackHole(s);
     A.activateDilation(s);
   }
 
   // — Collapse: lohnender Gain ODER lange genug gewartet —
   if (s.galaxy.unlocked || s.sing.unlocked) {
     const eg = entropyGain(s, m);
-    // aufs Clamp-Optimum warten (×4): ohne Softcap immer in endlicher Zeit erreichbar
+    // aufs Clamp-Optimum warten (×4); erster Kollaps sofort bei Gain 1 (Warten auf 3 kostet ~1 Woche)
     const worth = eg.gte(s.sing.totalEntropy.mul(3).max(1));
     if (worth) {
       A.doCollapse(s);
@@ -141,6 +141,16 @@ export function botStep(s: GameState, profile: Profile): void {
     s.galaxy.autoNova.on = true;
     s.galaxy.autoNova.at = s.nova.shards.mul(0.15).max(1);
     s.nova.autoIgnite.on = autoIgniteUnlocked(s);
+  }
+
+  // — Schwarzes Loch füttern: höchstens alle 2 h und erst nachdem Nodes/Zellen gekauft
+  //   wurden (sonst sabotiert der Bot seine eigene Engine — Nodes kosten das DM, das er verfüttert) —
+  if (s.sing.unlocked && (s.galaxy.dm.gte(100) || s.nova.shards.gte(1e4))) {
+    const last = lastFeed.get(s) ?? -1e9;
+    if (s.stats.played - last > 7200) {
+      lastFeed.set(s, s.stats.played);
+      A.feedBlackHole(s);
+    }
   }
 
   // — Dust: Generatoren von oben nach unten max kaufen, dann Compression —

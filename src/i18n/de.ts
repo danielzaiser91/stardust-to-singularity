@@ -110,7 +110,7 @@ export const de: Record<string, string> = {
   'sing.dilateCd': 'Abklingzeit: {v}',
   'sing.perks': 'Singularitäts-Perks',
   'perk.0': 'Ereignishorizont', 'perk.0d': 'Staubproduktion ×10 pro Stufe',
-  'perk.1': 'Hawking-Strahlung', 'perk.1d': 'Passives Plasma + Prestige-Gewinne ×(1+Stufe)',
+  'perk.1': 'Hawking-Strahlung', 'perk.1d': 'Wasserstoff-Produktion ×2,5 pro Stufe + passives Plasma',
   'perk.2': 'Frame-Dragging', 'perk.2d': 'Spielgeschwindigkeit +25 % pro Stufe',
   'perk.3': 'Spaghettisierung', 'perk.3d': 'Fusions-Durchsatz +50 % pro Stufe',
   'perk.4': 'Ergosphäre', 'perk.4d': 'Alle Prestige-Gewinne ×2 pro Stufe',

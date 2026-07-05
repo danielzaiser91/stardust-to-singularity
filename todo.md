@@ -13,11 +13,18 @@
 - [ ] **galaxy.click** — neue, von der Incremental-Community betriebene Plattform (Nachfolger-Spirit von Kongregate), sehr passende Zielgruppe.
 - [ ] Reddit r/incremental_games — kein Hoster, aber Launch-Post („WIP Wednesday" / „Feedback Friday") für erste Spieler.
 
-## Balance-Feintuning (v1 spielbar, Größenordnung validiert)
+## Balance: Singularitäts-Endgame-Redesign (v1 spielbar bis Ebene 5 ~Tag 11)
 
-- [ ] Singularitäts-Phase straffen: Galaxie-Zyklen tief im Run strecken sich (~+0,4 d/Stufe).
-      Kandidaten-Knöpfe: `COALESCE_REQ_GROWTH` 4→3, `DM_EXP` 0,55→0,65, Ergosphere-Basispreis senken.
-      Workflow: Knopf drehen → `npm run sim -- --until endgame` → Timeline prüfen (BALANCE.md).
+- [ ] **Kollaps #2+ braucht einen geometrischen Wachstumsmotor, keinen Knopf.** Befund aus
+      Sim v16–v18: Prestige-Gains ~ ratio^0,45 wachsen nur polynomiell, weil die Fe-Rate pro
+      Nova-Zyklus quasi-konstant ist (Plasma resettet je Nova auf ähnliche Ceiling). Jede
+      geometrische Anforderungs-Leiter kreuzt eine polynomielle Ökonomie → Kriechgang nach
+      Kollaps #1 (~Tag 11). Knöpfe (Leiter-Wachstum, Caps, Exponenten) verschieben nur den
+      Kreuzungspunkt — mehrfach empirisch belegt.
+      Lösungsrichtung: Entropie-Perks müssen Raten GEOMETRISCH skalieren, z. B.
+      „Hawking-Strahlung: H-Rate ×3^Level" oder „Ereignishorizont: Fe-Durchsatz ×2^Level" —
+      dann trägt jeder Kollaps den nächsten. Danach Endgame-Timeline neu vermessen
+      (`npm run sim -- --until endgame`).
 - [ ] Idle-Voll-Progression bis Endgame simulieren (bisher bis Galaxie validiert: ~1,7× langsamer)
 
 ## Kleinkram
