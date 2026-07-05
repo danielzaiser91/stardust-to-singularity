@@ -15,16 +15,13 @@
 
 ## Balance: Singularitäts-Endgame-Redesign (v1 spielbar bis Ebene 5 ~Tag 11)
 
-- [ ] **Kollaps #2+ braucht einen geometrischen Wachstumsmotor, keinen Knopf.** Befund aus
-      Sim v16–v18: Prestige-Gains ~ ratio^0,45 wachsen nur polynomiell, weil die Fe-Rate pro
-      Nova-Zyklus quasi-konstant ist (Plasma resettet je Nova auf ähnliche Ceiling). Jede
-      geometrische Anforderungs-Leiter kreuzt eine polynomielle Ökonomie → Kriechgang nach
-      Kollaps #1 (~Tag 11). Knöpfe (Leiter-Wachstum, Caps, Exponenten) verschieben nur den
-      Kreuzungspunkt — mehrfach empirisch belegt.
-      Lösungsrichtung: Entropie-Perks müssen Raten GEOMETRISCH skalieren, z. B.
-      „Hawking-Strahlung: H-Rate ×3^Level" oder „Ereignishorizont: Fe-Durchsatz ×2^Level" —
-      dann trägt jeder Kollaps den nächsten. Danach Endgame-Timeline neu vermessen
-      (`npm run sim -- --until endgame`).
+- [ ] **Endgame-Durchstich per Langzeit-Sim validieren.** Der geometrische Motor ist
+      eingebaut (Hawking-Strahlung: H-Rate ×2,5 je Level; Befund dazu in BALANCE.md:
+      polynomielle Ökonomie vs. geometrische Leitern → Kriechgang nach Kollaps #1 ~Tag 11).
+      Offen ist der Nachweis, dass der Motor die Kollaps-Kadenz ab #2/#3 trägt und das
+      Endgame (2500 Entropie) in ~Tag 20–30 fällt: `npm run sim -- --until endgame
+      --profile active --maxDays 40` (~30–60 min Rechenzeit). Falls die Hawking-Kosten
+      (3×4^Level) dem Einkommen davonlaufen: Kostenwachstum 4→3 oder PERK_HAWKING_H 2,5→3.
 - [ ] Idle-Voll-Progression bis Endgame simulieren (bisher bis Galaxie validiert: ~1,7× langsamer)
 
 ## Kleinkram
