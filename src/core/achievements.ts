@@ -1,6 +1,9 @@
 import type { GameState } from './state';
 import type { Mults } from './formulas';
 import { D } from './decimal';
+import * as C from './constants';
+
+const last = <T>(a: T[]): T => a[a.length - 1];
 
 /** 60 Achievements — Reihenfolge ist stabil (Index = i18n-Key ach.N). Je +2 % globale Produktion. */
 type Check = (s: GameState, m: Mults) => boolean;
@@ -47,6 +50,14 @@ export const ACHIEVEMENT_CHECKS: Check[] = [
   s => s.sing.universes >= 1,
   // 60: Overflow — 1e308 Plasma (die Grenze normaler Floats)
   s => s.stats.bestPlasma.gte(D('1e308')),
+  // 61–62: weitere Konstellations-Stufen (angehängt → Save-Indizes bleiben stabil)
+  s => s.galaxy.nodes.filter(Boolean).length >= 15,
+  s => s.galaxy.nodes.filter(Boolean).length >= 30,
+  // 63–66: die jeweils LETZTE Meilenstein-Stufe jeder Ebene
+  s => s.stats.ignMs >= last(C.MS_IGNITION),
+  s => s.stats.novaMs >= last(C.MS_NOVA),
+  s => s.stats.coalescences >= last(C.MS_GALAXY),
+  s => s.stats.collapses >= last(C.MS_COLLAPSE),
 ];
 
 export const ACH_COUNT = ACHIEVEMENT_CHECKS.length;
@@ -69,6 +80,8 @@ export const ACHIEVEMENT_META: { k: string; v: string }[] = [
   { k: 'nodes', v: '5' }, { k: 'keystone', v: '' }, { k: 'nodes', v: '45' },
   { k: 'collapse', v: '' }, { k: 'entropy', v: '' }, { k: 'universe', v: '' },
   { k: 'plasma', v: '1e308' },
+  { k: 'nodes', v: '15' }, { k: 'nodes', v: '30' },
+  { k: 'msIgnAll', v: '' }, { k: 'msNovaAll', v: '' }, { k: 'msGalAll', v: '' }, { k: 'msColAll', v: '' },
 ];
 
 export function checkAchievements(s: GameState, m: Mults): void {

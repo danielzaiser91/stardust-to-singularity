@@ -232,6 +232,10 @@ export const en: Record<string, string> = {
   'achd.challenges': 'Complete {v} challenges', 'achd.coalescences': 'Coalesce {v} galaxies',
   'achd.nodes': 'Light {v} constellation nodes', 'achd.keystone': 'Reach any keystone constellation',
   'achd.collapse': 'Collapse into a singularity', 'achd.entropy': 'Reach 100 Entropy', 'achd.universe': 'Begin a new universe',
+  'achd.msIgnAll': 'Reach every ignition milestone',
+  'achd.msNovaAll': 'Reach every supernova milestone',
+  'achd.msGalAll': 'Reach every galaxy milestone',
+  'achd.msColAll': 'Reach every collapse milestone',
 
   // — Pulsar-Status —
   'pulsar.title': '⚡ Pulsar burst',

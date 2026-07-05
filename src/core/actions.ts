@@ -77,6 +77,7 @@ export function doIgnite(s: GameState, cls: StarClass): boolean {
   if (!canIgnite(s)) return false;
   const m = computeMults(s);
   const gain = plasmaGain(s, m);
+  if (gain.lte(0)) return false;   // kein Reset für +0
   // Challenge im Lauf? → abgeschlossen
   if (s.nova.challenge >= 0) {
     s.nova.completed[s.nova.challenge] = true;
@@ -174,6 +175,7 @@ export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
   if (!canSupernova(s)) return false;
   const m = computeMults(s);
   const gain = shardGain(s, m);
+  if (gain.lte(0)) return false;   // kein Reset für +0 (z. B. Ladung noch bei 0)
   s.nova.unlocked = true;
   s.nova.shards = s.nova.shards.add(gain);
   s.nova.totalShards = s.nova.totalShards.add(gain);
@@ -275,6 +277,7 @@ export function doCoalesce(s: GameState, gtype: GalaxyType): boolean {
   if (s.nova.challenge !== -1) return false;
   const m = computeMults(s);
   const gain = dmGain(s, m);
+  if (gain.lte(0)) return false;   // kein Reset für +0
   s.galaxy.unlocked = true;
   s.galaxy.dm = s.galaxy.dm.add(gain);
   s.galaxy.totalDM = s.galaxy.totalDM.add(gain);
@@ -317,6 +320,7 @@ export function doCollapse(s: GameState): boolean {
   if (!canCollapse(s) || s.nova.challenge !== -1) return false;
   const m = computeMults(s);
   const gain = entropyGain(s, m);
+  if (gain.lte(0)) return false;   // kein Reset für +0
   s.sing.unlocked = true;
   s.sing.entropy = s.sing.entropy.add(gain);
   s.sing.totalEntropy = s.sing.totalEntropy.add(gain);

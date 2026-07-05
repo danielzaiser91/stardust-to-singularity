@@ -8,7 +8,7 @@ import * as F from '../src/core/formulas';
 import { buyGenerator, click, doIgnite, doSupernova } from '../src/core/actions';
 import * as actionsAll from '../src/core/actions';
 import { simulateOffline } from '../src/core/offline';
-import { ACHIEVEMENT_CHECKS } from '../src/core/achievements';
+import { ACHIEVEMENT_CHECKS, checkAchievements } from '../src/core/achievements';
 import { LORE_TRIGGERS } from '../src/core/lore';
 import * as C from '../src/core/constants';
 
@@ -91,6 +91,7 @@ describe('tick & actions', () => {
     s.stats.ignMs = 40;
     s.stats.classPicks = [0, 40, 0];
     s.dust.compression = 500;
+    s.stats.novaTime = C.NOVA_MIN_TIME;   // volle Ladung → Gewinn > 0
     expect(doSupernova(s, 0)).toBe(true);
     expect(s.star.upgrades[4]).toBe(true);
     expect(s.star.upgrades[13]).toBe(false);
@@ -107,6 +108,7 @@ describe('tick & actions', () => {
     s.stats.coalescences = 6;    // MS_GALAXY[3]
     s.stats.ignMs = 40;
     s.stats.classPicks = [0, 40, 0];
+    s.stats.novaTime = C.NOVA_MIN_TIME;
     expect(doSupernova(s, 0)).toBe(true);
     expect(s.stats.ignMs).toBe(40);
     expect(s.stats.classPicks).toEqual([0, 40, 0]);
@@ -269,6 +271,32 @@ describe('tick & actions', () => {
     expect(computeMults(s).pulsarBurst).toBe(1);              // Phase 45 > 20 → inaktiv
   });
 
+  it('resets are blocked when the gain would floor to +0 (e.g. charge at 0)', () => {
+    const s = initialState(1);
+    s.star.unlocked = true;
+    s.star.elements[5] = D(C.SUPERNOVA_REQ);   // genau an der Fe-Anforderung
+    s.stats.novaTime = 0;                        // Ladung 0 → Gewinn floored auf 0
+    expect(F.canSupernova(s)).toBe(true);        // Anforderung erfüllt …
+    expect(F.shardGain(s, computeMults(s)).lte(0)).toBe(true);  // … aber Gewinn 0
+    const before = s.stats.supernovae;
+    expect(doSupernova(s, 0)).toBe(false);       // kein Reset für +0
+    expect(s.stats.supernovae).toBe(before);
+  });
+
+  it('final-milestone achievements unlock at the last threshold of each track', () => {
+    const s = initialState(1);
+    s.galaxy.nodes = s.galaxy.nodes.map((_, i) => i < 15);   // genau 15 Nodes
+    s.stats.ignMs = C.MS_IGNITION[C.MS_IGNITION.length - 1];
+    s.stats.novaMs = C.MS_NOVA[C.MS_NOVA.length - 1];
+    s.stats.coalescences = C.MS_GALAXY[C.MS_GALAXY.length - 1];
+    s.stats.collapses = C.MS_COLLAPSE[C.MS_COLLAPSE.length - 1];
+    checkAchievements(s, computeMults(s));
+    // Indizes 61 (15 Nodes) + 63–66 (finale Meilensteine) gesetzt, 62 (30 Nodes) NICHT
+    expect(s.achievements[61]).toBe(true);
+    expect(s.achievements[62]).toBe(false);
+    expect(s.achievements.slice(63, 67).every(Boolean)).toBe(true);
+  });
+
   it('currencyForCap: reaching the target currency lifts the gain to the cap', () => {
     // Coalescence (der gemeldete Fall): Deckel = totalDM*3+10
     const s = initialState(1);
@@ -305,6 +333,7 @@ describe('tick & actions', () => {
       s.nova.completed = s.nova.completed.map(() => true);
       s.nova.cells[0] = 1;
       s.nova.cellsBought = 3;
+      s.stats.galaxyTime = C.GALAXY_MIN_TIME;   // volle Ladung → DM-Gewinn > 0
       return s;
     };
     const s1 = mk(0);   // 1. Coalescence: nichts davon erreicht → alles resettet
@@ -369,6 +398,7 @@ describe('tick & actions', () => {
     s.star.upgrades[4] = true;
     s.star.reactors[0] = 7;
     s.sing.perks[8] = 2;   // L2: Upgrades + Reaktoren bleiben
+    s.stats.novaTime = C.NOVA_MIN_TIME;
     expect(doSupernova(s, 0)).toBe(true);
     expect(s.star.upgrades[4]).toBe(true);
     expect(s.star.reactors[0]).toBe(7);
@@ -378,6 +408,7 @@ describe('tick & actions', () => {
     s2.star.elements[5] = D(1e6);
     s2.star.upgrades[4] = true;
     s2.star.reactors[0] = 7;
+    s2.stats.novaTime = C.NOVA_MIN_TIME;
     expect(doSupernova(s2, 0)).toBe(true);
     expect(s2.star.upgrades[4]).toBe(false);
     expect(s2.star.reactors[0]).toBe(0);

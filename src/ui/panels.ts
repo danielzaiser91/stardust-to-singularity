@@ -267,7 +267,7 @@ export class DustPanel implements Panel {
       const gain = F.plasmaGain(s, m);
       if (F.canIgnite(s)) {
         setText(this.igniteLabel, t('star.igniteGain', { v: fmt(gain, s.settings.sciNotation) }));
-        setDisabled(this.igniteBtn, false);
+        setDisabled(this.igniteBtn, gain.lte(0));
       } else {
         setText(this.igniteLabel, t('star.igniteReq', { v: fmt(req, true) }));
         setDisabled(this.igniteBtn, true);
@@ -468,7 +468,7 @@ export class StarPanel implements Panel {
     const gain = F.shardGain(s, m);
     if (F.canSupernova(s)) {
       setText(this.novaLabel, t('nova.gain', { v: fmt(gain, sci) }));
-      setDisabled(this.novaBtn, false);
+      setDisabled(this.novaBtn, gain.lte(0));
     } else {
       setText(this.novaLabel, t('nova.req', { v: fmt(nReq, true) }));
       setDisabled(this.novaBtn, true);
@@ -729,7 +729,7 @@ export class NovaPanel implements Panel {
     const dmG = F.dmGain(s, m);
     if (F.canCoalesce(s)) {
       setText(this.coalLabel, t('galaxy.gain', { v: fmt(dmG, sci) }));
-      setDisabled(this.coalBtn, s.nova.challenge !== -1);
+      setDisabled(this.coalBtn, s.nova.challenge !== -1 || dmG.lte(0));
     } else {
       setText(this.coalLabel, t('galaxy.req', { v: fmt(coalReq, true) }));
       setDisabled(this.coalBtn, true);
@@ -845,7 +845,7 @@ export class GalaxyPanel implements Panel {
     const entG = F.entropyGain(s, m);
     if (F.canCollapse(s)) {
       setText(this.colLabel, t('sing.gain', { v: fmt(entG, sci) }));
-      setDisabled(this.colBtn, s.nova.challenge !== -1);
+      setDisabled(this.colBtn, s.nova.challenge !== -1 || entG.lte(0));
     } else {
       setText(this.colLabel, t('sing.req', { v: fmt(colReq, true) }));
       setDisabled(this.colBtn, true);
