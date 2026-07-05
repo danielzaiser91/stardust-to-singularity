@@ -752,6 +752,7 @@ export class SettingsPanel implements Panel {
       this.root.append(row);
     }
     this.root.append(el('div', 'sub center version', `v${__APP_VERSION__}`));
+    this.root.append(el('div', 'sub center credits', 'Music: Kevin MacLeod (incompetech.com) · CC BY 4.0'));
   }
 
   onImport: ((s: GameState) => void) | null = null;

@@ -31,6 +31,11 @@ Architecture & game design: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) · 
 The entire game logic is a pure, headless-testable core — the balance bot in `src/sim` plays
 the whole game from dust to endgame, and CI rejects any change that breaks the progression bands.
 
+## Credits
+
+Music: ["Floating Cities", "Deep Haze", "Frozen Star"](https://incompetech.com) by Kevin MacLeod (incompetech.com),
+licensed under [Creative Commons: By Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 ## License
 
-[MIT](LICENSE)
+Code: [MIT](LICENSE) · Music: CC BY 4.0 (see Credits)
