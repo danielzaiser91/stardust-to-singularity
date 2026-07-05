@@ -383,7 +383,15 @@ export class NovaPanel implements Panel {
       const [q, r] = F.HEX_COORDS[i];
       const b = btn('hex', '', () => {
         const s = this.st();
-        if (A.placeNebula(s, i, this.brush)) emit('nebula-placed');
+        if (A.placeNebula(s, i, this.brush)) {
+          emit('nebula-placed');
+        } else {
+          // nie still scheitern: Kostenzeile blitzt rot (zu teuer / gleicher Typ)
+          this.cellCost.classList.remove('flash-error');
+          void this.cellCost.offsetWidth;
+          this.cellCost.classList.add('flash-error');
+        }
+        this.update(s, M(s));  // sofortiger Resync — 10-Hz-Loop ist zu langsam für Doppelklicks
       });
       b.style.left = `${50 + (q + r / 2) * 16.5}%`;
       b.style.top = `${50 + r * 17}%`;
