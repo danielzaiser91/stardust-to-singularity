@@ -122,7 +122,7 @@ describe('tick & actions', () => {
     expect(s.dust.amount.sub(before).toNumber()).toBeGreaterThanOrEqual(40);
   });
 
-  it('auto-ignition trickles 1%/s of the gain per tick, event at 100%', () => {
+  it('auto-ignition trickles the gain per tick without resetting, event on accumulation', () => {
     const s = initialState(1);
     s.star.unlocked = true;
     s.nova.unlocked = true;
@@ -134,11 +134,33 @@ describe('tick & actions', () => {
     const ignBefore = s.stats.ignitions;
     tick(s, 1);
     expect(s.star.plasma.gt(0)).toBe(true);                 // Trickle zahlt sofort anteilig
-    expect(s.stats.ignitions).toBe(ignBefore);              // aber noch kein Zündungs-Event
+    expect(s.stats.ignitions).toBe(ignBefore);              // aber noch kein Zündungs-Event nach 1 s
     expect(s.dust.gens[0].bought).toBe(33);                 // KEIN Reset → kein Flackern
-    for (let i = 0; i < 100; i++) tick(s, 1);
-    expect(s.stats.ignitions).toBe(ignBefore + 1);          // Event bei 100 % Akkumulation
-    expect(s.stats.classPicks[s.star.cls]).toBe(1);
+    // Rate ≈ ln(20)/19 ≈ 15,8 %/s → ein Zündungs-Event nach ~7 s Akkumulation
+    const ticksToEvent = Math.ceil(1 / C.AUTO_IGNITE_RATE);
+    for (let i = 0; i < ticksToEvent; i++) tick(s, 1);
+    expect(s.stats.ignitions).toBeGreaterThan(ignBefore);   // Event bei 100 % Akkumulation
+    expect(s.stats.classPicks[s.star.cls]).toBeGreaterThan(0);
+  });
+
+  it('auto-ignition matches one full manual ignition per second (parity, not slower)', () => {
+    // Kernbeweis für den Fix: der Trickle über 1 s hebt totalPlasma um ~×20 (Clamp+1) —
+    // exakt so viel wie eine volle manuelle Zündung am Deckel. Kein Zünd-Spam nötig.
+    const mk = () => {
+      const s = initialState(1);
+      s.star.unlocked = true; s.nova.unlocked = true; s.stats.novaMs = 2;
+      s.dust.total = D('1e120');                 // Gain sicher am ×19-Clamp
+      s.star.plasma = D('1e6'); s.star.totalPlasma = D('1e6');
+      return s;
+    };
+    const auto = mk(); auto.nova.autoIgnite.on = true;
+    const t0 = auto.star.totalPlasma;
+    for (let i = 0; i < 100; i++) tick(auto, 0.01);  // 1 s, feinkörnig → nahe am kont. Ideal
+    const growth = auto.star.totalPlasma.div(t0).toNumber();
+    // Kont. Äquivalent von ×20/s: e^(rate*19) = e^ln(20) = 20; diskret leicht darunter (~19),
+    // aber weit über dem alten 1-%-Trickle (×1,19/s). Obergrenze = das ×20-Ideal.
+    expect(growth).toBeGreaterThan(17);
+    expect(growth).toBeLessThan(C.PLASMA_CLAMP_MULT + 1);
   });
 
   it('auto-supernova (10th coalescence) trickles shards, real supernova at 100%', () => {

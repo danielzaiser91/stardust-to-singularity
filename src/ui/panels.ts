@@ -770,7 +770,7 @@ export class GalaxyPanel implements Panel {
     label.prepend(this.autoChk);
     attachTip(label, () => ({
       title: t('galaxy.autoNova'),
-      body: t('galaxy.autoNovaTip', { r: C.AUTO_HARVEST_RATE * 100 }),
+      body: t('galaxy.autoNovaTip', { r: C.AUTO_NOVA_RATE * 100 }),
     }));
     this.autoRow.append(label);
     this.root.append(this.autoRow, this.autoLockNote);

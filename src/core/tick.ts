@@ -102,13 +102,14 @@ export function tick(s: GameState, dt: number): Mults {
       buyReactorsMax(s, r, 0.3);
     }
   }
-  // Auto-Zündung: kontinuierlicher Trickle — 1 %/s des aktuellen Zündungs-Gewinns,
-  // pro Tick berechnet, OHNE Dust-Reset (kein Flackern). Bei 100 % Akkumulation zählt
-  // ein Zündungs-Event (Meilenstein-Zähler), die Auszahlung lief bereits kontinuierlich.
+  // Auto-Zündung: kontinuierlicher Trickle des aktuellen Zündungs-Gewinns, pro Tick berechnet,
+  // OHNE Dust-Reset (kein Flackern). Rate = ln(20)/19 ≈ 15,8 %/s = kontinuierliches Äquivalent
+  // EINER vollen Zündung pro Sekunde am ×20-Clamp → so stark wie optimaler manueller Spam.
+  // Bei 100 % Akkumulation zählt eine Zündung für die Meilenstein-Zähler.
   if (s.nova.autoIgnite.on && autoIgniteUnlocked(s) && s.nova.challenge === -1) {
     const gain = plasmaGain(s, m);
     if (gain.gt(0)) {
-      const frac = C.AUTO_HARVEST_RATE * gdt;
+      const frac = C.AUTO_IGNITE_RATE * gdt;
       const pay = gain.mul(frac);
       s.star.plasma = s.star.plasma.add(pay);
       s.star.totalPlasma = s.star.totalPlasma.add(pay);
@@ -127,7 +128,7 @@ export function tick(s: GameState, dt: number): Mults {
   if (s.galaxy.autoNova.on && m.autoNovaUnlocked && s.nova.challenge === -1) {
     const gain = shardGain(s, m);
     if (gain.gt(0)) {
-      const frac = C.AUTO_HARVEST_RATE * gdt;
+      const frac = C.AUTO_NOVA_RATE * gdt;
       const pay = gain.mul(frac);
       s.nova.unlocked = true;
       s.nova.shards = s.nova.shards.add(pay);

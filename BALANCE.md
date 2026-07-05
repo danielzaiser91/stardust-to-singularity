@@ -47,12 +47,26 @@ pro Galaxie kostet den Bot nur Minuten.
 
 ## Auto-Trickle (Auto-Zündung & Auto-Supernova)
 
-Automation zahlt **kontinuierlich `AUTO_HARVEST_RATE` (1 %/s) des aktuellen Prestige-Gewinns**
-pro Tick aus; bei 100 % Akkumulation zählt ein echtes Reset-Event (Meilenstein-Zähler bzw.
-volle Supernova mit Remnant, Fe-Leiter und Charge-Neustart). Dadurch bleiben alle vier
-Pacing-Mechanismen intakt — insbesondere kollabiert der Scherben-Trickle nach jedem Event
-über die Aufladezeit, statt mit 3 %/s am Clamp zu compounden. Manuelles Spiel bleibt
-strikt stärker (aktiv: Singularität ~2,5 d · idle: erste Galaxie ~20 h, Seed 42).
+Automation zahlt **kontinuierlich einen Anteil des aktuellen Prestige-Gewinns pro Tick** aus;
+bei 100 % Akkumulation zählt ein echtes Reset-Event (Meilenstein-Zähler bzw. volle Supernova
+mit Remnant, Fe-Leiter und Charge-Neustart).
+
+**Die Rate MUSS zur Clamp-Wachstumsrate der Ebene passen**, sonst fühlt sich Auto zwingend
+schwächer an als manuelles Spammen und der Spieler wird zum Klicken genötigt (empirischer
+Fehler: 1 %/s bei ×19-Clamp = Wachstum ×1,19/s statt der ×20/s des Spams — Faktor-Trilliarden
+Rückstand pro Minute). Ein voller manueller Reset am Clamp multipliziert die Gesamtwährung um
+`(mult+1)`; das kontinuierliche Äquivalent EINES solchen Resets pro Sekunde ist
+`ln(mult+1)/mult`. Daher:
+- **Auto-Zündung** (`AUTO_IGNITE_RATE = ln(20)/19 ≈ 15,8 %/s`): so stark wie perfekter
+  1×/s-Zünd-Spam am ×19-Plasma-Clamp. Aktiver Hyper-Spam behält durch Diskretisierung nur
+  einen hauchdünnen Vorsprung.
+- **Auto-Supernova** (`AUTO_NOVA_RATE = 1 %/s`): bewusst niedriger — die 10-min-Aufladezeit
+  (`NOVA_MIN_TIME`) limitiert die Supernova ohnehin, das Reset-Event bei 100 % startet die
+  Ladung neu, sodass patientes manuelles Novaen stärker bleibt.
+
+Sim-validiert (Seed 42): aktiv Singularität ~2,5 d (unverändert), idle erste Galaxie ~8,8 h
+(vorher ~20 h) — Auto-Zündung schließt im ignitionsdominierten Frühspiel fast zum aktiven
+Spiel auf, der aktive Vorsprung verlagert sich in die tieferen Ebenen.
 
 ## Kaskade ohne Whiplash
 

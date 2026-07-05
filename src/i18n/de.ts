@@ -110,7 +110,7 @@ export const de: Record<string, string> = {
   'ch.6': 'Entropie-Leck', 'ch.6d': 'Staub zerfällt 1 %/s', 'ch.6r': 'Staubproduktion +25 %',
   'ch.7': 'Singulärer Fokus', 'ch.7d': 'Nur Attraktoren existieren', 'ch.7r': 'Attraktoren ×8',
   'nova.autoIgnite': 'Auto-Zündung',
-  'nova.autoIgniteTip': 'Sammelt kontinuierlich 1 % des aktuellen Zündungs-Gewinns pro Sekunde (pro Tick berechnet), OHNE die Staubwolke zu kollabieren. Je 100 % zählt eine Zündung für die Meilensteine. Manuelles Zünden bleibt stärker.',
+  'nova.autoIgniteTip': 'Zündet kontinuierlich am goldenen Punkt (pro Tick berechnet), OHNE die Staubwolke zu kollabieren — genauso stark wie perfektes manuelles Spammen einer Zündung pro Sekunde. Du musst also nicht mehr zünden.',
   'nova.autoIgniteLock': 'Ab der 2. Supernova',
 
   // — Galaxy —

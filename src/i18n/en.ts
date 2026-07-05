@@ -110,7 +110,7 @@ export const en: Record<string, string> = {
   'ch.6': 'Entropy Leak', 'ch.6d': 'Dust decays 1% per second', 'ch.6r': 'Dust production +25%',
   'ch.7': 'Singular Focus', 'ch.7d': 'Only Attractors exist', 'ch.7r': 'Attractors ×8',
   'nova.autoIgnite': 'Auto-Ignition',
-  'nova.autoIgniteTip': 'Continuously collects 1% of the current ignition gain per second (computed per tick), WITHOUT collapsing your dust cloud. Every 100% counts one ignition for the milestones. Manual ignition stays stronger.',
+  'nova.autoIgniteTip': 'Continuously ignites at the golden point (computed per tick), WITHOUT collapsing your dust cloud — as strong as perfectly spamming one ignition per second. No need to ignite manually anymore.',
   'nova.autoIgniteLock': 'Unlocks at your 2nd supernova',
 
   // — Galaxy —

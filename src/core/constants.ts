@@ -125,9 +125,12 @@ export const MS_NOVA_KEEP = [4, 13, 8, 14, 1, 6, 10, 7, 11, -1];
 // Zündungs-Meilensteine permanent · Supernova-Meilensteine bleiben · Auto-Supernova ·
 // Nebelgarten bleibt („bleiben" = über Coalescence)
 export const MS_GALAXY = [1, 2, 3, 6, 9, 10, 12];
-// Auto-Zündung/-Supernova: kontinuierlicher Anteil des aktuellen Prestige-Gewinns pro Sekunde
-// (pro Tick berechnet); bei 100 % Akkumulation zählt ein Reset-Event (Leitern/Charge intakt)
-export const AUTO_HARVEST_RATE = 0.01;
+// Auto-Trickle: kontinuierlicher Anteil des aktuellen Prestige-Gewinns pro Sekunde
+// (pro Tick berechnet); bei 100 % Akkumulation zählt ein Reset-Event (Leitern/Charge intakt).
+// Zündung: ln(20)/19 ≈ 15,8 %/s = kontinuierliches Äquivalent EINER vollen Zündung pro
+// Sekunde am ×20-Clamp — Auto ist damit exakt so stark wie optimaler manueller Spam.
+export const AUTO_IGNITE_RATE = Math.log(PLASMA_CLAMP_MULT + 1) / PLASMA_CLAMP_MULT;
+export const AUTO_NOVA_RATE = 0.01;
 // Kollaps-Meilensteine: Perks · Spezial-MS Supernova · Spezial-MS Staub · Keystones bleiben
 export const MS_COLLAPSE = [1, 2, 3, 5];
 // ── Spezial-Meilensteine ─────────────────────────────────────────────────────
