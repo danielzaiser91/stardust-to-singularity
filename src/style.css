@@ -176,12 +176,12 @@ button:disabled { opacity: 0.38; cursor: default; }
   border: none; border-radius: 0; background: rgba(70, 90, 150, 0.25); padding: 0;
 }
 .hex { color: var(--cyan); font-size: 1rem; font-weight: 700; }
-.hex:not(:disabled):hover { background: rgba(120, 150, 220, 0.55); box-shadow: 0 0 14px rgba(100, 216, 255, 0.4); }
-.hex:disabled { opacity: 0.35; cursor: default; }
+.hex:not(.dim):hover { background: rgba(120, 150, 220, 0.55); box-shadow: 0 0 14px rgba(100, 216, 255, 0.4); }
+.hex.dim { opacity: 0.35; cursor: default; }
 .hex.hex-1 { background: radial-gradient(#ff8ab5, #b03060); box-shadow: 0 0 16px #ff64a8aa; opacity: 1; }
 .hex.hex-2 { background: radial-gradient(#8ad4ff, #2060a8); box-shadow: 0 0 16px #64c3ffaa; opacity: 1; }
 .hex.hex-3 { background: radial-gradient(#3d2b66, #17102e); box-shadow: 0 0 16px #5b2a86aa; opacity: 1; }
-.hex.hex-1:disabled, .hex.hex-2:disabled, .hex.hex-3:disabled { opacity: 0.8; }
+.hex.hex-1.dim, .hex.hex-2.dim, .hex.hex-3.dim { opacity: 0.8; }
 
 .flash-error { animation: flash-err 0.6s ease; }
 @keyframes flash-err {

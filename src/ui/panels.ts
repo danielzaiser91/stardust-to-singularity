@@ -404,6 +404,7 @@ export class NovaPanel implements Panel {
   private brushBtns: HTMLButtonElement[] = [];
   private hexBtns: HTMLButtonElement[] = [];
   private cellCost = el('div', 'sub center');
+  private gardenTotal = el('div', 'sub center');
   private remCounts = el('div', 'sub center');
   private chRows: { row: HTMLElement; enter: HTMLButtonElement; status: HTMLElement }[] = [];
   private autoRow: HTMLElement;
@@ -432,6 +433,7 @@ export class NovaPanel implements Panel {
       const [q, r] = F.HEX_COORDS[i];
       const b = btn('hex', '', () => {
         const s = this.st();
+        if (s.nova.cells[i] === this.brush) return;  // gleicher Typ: nichts zu tun, kein Fehler-Blitz
         if (A.placeNebula(s, i, this.brush)) {
           emit('nebula-placed');
         } else {
@@ -444,6 +446,23 @@ export class NovaPanel implements Panel {
       });
       b.style.left = `${50 + (q + r / 2) * 16.5}%`;
       b.style.top = `${50 + r * 17}%`;
+      attachTip(b, () => {
+        const s = this.st();
+        const m = M(s);
+        const type = s.nova.cells[i];
+        if (type === 0) return { title: t('nova.hexEmpty'), body: t('nova.hexEmptyTip') };
+        const bonus = fmtMult(C.NEBULA_DARK_BONUS * m.nebulaNodeMult);
+        if (type === 3) {
+          const boosted = F.HEX_NEIGHBORS[i].filter(n => s.nova.cells[n] === 1 || s.nova.cells[n] === 2).length;
+          return { title: t('nova.cell3'), body: `${t('nova.cell3d')}\n${t('nova.hexDarkTip', { n: boosted, b: bonus })}` };
+        }
+        const darks = F.HEX_NEIGHBORS[i].filter(n => s.nova.cells[n] === 3).length;
+        const v = fmtMult(F.nebulaCellMult(s, i, m.nebulaNodeMult));
+        return {
+          title: t(`nova.cell${type}`),
+          body: `${t(type === 1 ? 'nova.hexEmTip' : 'nova.hexReTip', { v })}\n${t('nova.hexDarks', { n: darks, b: bonus })}`,
+        };
+      }, { marker: false });
       this.hexBtns.push(b);
       grid.append(b);
     }
@@ -454,7 +473,8 @@ export class NovaPanel implements Panel {
     attachTip(respecBtn, () => ({ title: t('nova.respec'), body: t('nova.respecTip') }));
     const tokenRow = el('div', 'row auto-row');
     tokenRow.append(this.cellCost, respecBtn);
-    this.root.append(grid, tokenRow, this.remCounts);
+    attachTip(this.gardenTotal, () => ({ title: t('nova.nebula'), body: t('nova.gardenTotalTip', { b: fmtMult(C.NEBULA_DARK_BONUS * M(this.st()).nebulaNodeMult) }) }));
+    this.root.append(grid, tokenRow, this.gardenTotal, this.remCounts);
 
     this.root.append(el('h3', '', t('nova.challenges')), el('div', 'sub', t('nova.chHow')));
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
@@ -563,10 +583,14 @@ export class NovaPanel implements Panel {
       setClass(b, 'hex-2', type === 2);
       setClass(b, 'hex-3', type === 3);
       // leer: braucht freien/kaufbaren Token · belegt: Ersetzen ist gratis (nur gleicher Typ sinnlos)
+      // .dim statt disabled: disabled Buttons feuern keine Hover-Events → keine Tooltips
       const usable = type === 0 ? (freeToken || canBuyToken) : type !== this.brush;
       setText(b, type === 0 && usable ? '+' : '');
-      setDisabled(b, !usable);
+      setClass(b, 'dim', !usable);
     }
+    setText(this.gardenTotal, t('nova.gardenTotal', {
+      d: fmt(m.nebulaDustMult, sci), p: fmt(m.nebulaPlasmaMult, sci),
+    }));
     setText(this.remCounts,
       `${t('nova.rem0')}: ${s.nova.remnants[0]} · ${t('nova.rem1')}: ${s.nova.remnants[1]} · ${t('nova.rem2')}: ${s.nova.remnants[2]}`);
 

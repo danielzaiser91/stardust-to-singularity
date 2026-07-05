@@ -68,6 +68,8 @@ export interface Mults {
   pulsarPeriod: number;
   offlineMult: number;
   nebulaDustMult: Decimal;    // aus Emission-Zellen
+  nebulaPlasmaMult: Decimal;  // aus Reflexions-Zellen
+  nebulaNodeMult: number;     // Konstellations-Verstärkung der Zell-Multiplikatoren
   autoNovaUnlocked: boolean;
 }
 
@@ -244,6 +246,8 @@ export function computeMults(s: GameState): Mults {
     pulsarBurst, pulsarPeriod,
     offlineMult: nOffline * gt.offline,
     nebulaDustMult,
+    nebulaPlasmaMult,
+    nebulaNodeMult: nNebula,
     autoNovaUnlocked: autoNova,
   };
 }
