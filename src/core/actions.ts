@@ -148,6 +148,13 @@ function resetStarLayer(s: GameState): void {
     }
     s.star.upgrades = s.star.upgrades.map((u, i) => (keep.has(i) ? u : false));
   }
+  // Roguelite: Zündungs-Meilensteine & Klassen-Picks gelten pro Supernova-Run.
+  // Galaxie-Meilenstein 4 (6 Coalescences) macht sie permanent. VOR resetDustLayer
+  // nullen, damit auch die Kompressions-Persistenz (ignMs ≥ 25) mitfällt.
+  if (s.stats.coalescences < C.MS_GALAXY[3]) {
+    s.stats.ignMs = 0;
+    s.stats.classPicks = [0, 0, 0];
+  }
   resetDustLayer(s);
 }
 
@@ -203,6 +210,13 @@ export function buyNebulaToken(s: GameState): boolean {
   return true;
 }
 
+/** Einzelnen Nebel entfernen — der Token bleibt und ist wieder frei */
+export function removeNebula(s: GameState, cell: number): boolean {
+  if (cell < 0 || cell >= C.NEBULA_CELLS || s.nova.cells[cell] === 0) return false;
+  s.nova.cells[cell] = 0;
+  return true;
+}
+
 /** Alle Nebel entfernen — Tokens bleiben erhalten (freies Umplatzieren) */
 export function respecNebula(s: GameState): boolean {
   if (!s.nova.cells.some(c => c !== 0)) return false;
@@ -238,9 +252,8 @@ function resetNovaLayer(s: GameState): void {
   }
   // M3: Challenge-Abschlüsse bleiben
   if (coal < C.MS_GALAXY[2]) s.nova.completed = s.nova.completed.map(() => false);
-  // M4/M5: Meilenstein-Leitern der Dust-/Star-Ebene bleiben (classPicks teilt das
-  // ignMs-Schicksal — Invariante: Summe(classPicks) == ignMs)
-  if (coal < C.MS_GALAXY[3]) { s.stats.ignMs = 0; s.stats.classPicks = [0, 0, 0]; }
+  // M5: Supernova-Meilensteine bleiben. (Zündungs-Meilensteine resetten bereits
+  // pro Supernova in resetStarLayer — gleiche M4-Bedingung, keine Doppelung nötig.)
   if (coal < C.MS_GALAXY[4]) {
     s.stats.novaMs = 0;
     s.nova.autoIgnite.on = false;  // Meilenstein weg → Schalter aus, bis neu freigespielt

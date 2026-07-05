@@ -35,9 +35,10 @@ NaN-Overflows, 47.000 Zündungen/Tag). Vier Mechanismen halten die Progression i
 
 ## Meilenstein-Persistenz (Roguelite-Prinzip)
 
-Die Meilenstein-Leitern der Dust-/Star-Ebene (Max-Buttons, Sternklassen, Auto-Zündung,
-Upgrade-Überleben) laufen auf **Pro-Galaxie-Zählern** (`stats.ignMs`, `stats.novaMs`) — eine
-Coalescence setzt sie zurück, bis die Galaxie-Meilensteine (`MS_GALAXY`) sie dauerhaft machen:
+Die Meilenstein-Leitern der Dust-/Star-Ebene laufen auf Run-Zählern: `stats.ignMs`
+(Zündungs-Meilensteine, resettet bei **jeder Supernova** mitsamt Klassen-Picks und damit auch
+der Kompressions-Persistenz) und `stats.novaMs` (Supernova-Meilensteine, resettet bei der
+Coalescence). Die Galaxie-Meilensteine (`MS_GALAXY`) machen sie dauerhaft:
 Typ-Wahl (1) · Reflexionsnebel boosten auch Fe (2) · Challenges bleiben (3) ·
 Zündungs-Meilensteine (6) · Supernova-Meilensteine (9) · Nebelgarten (12). Wichtig: eigene Zähler, NICHT `nova.count`/`galaxy.count` wiederverwenden —
 die treiben die Anforderungs-Leitern (Mechanismus 2) und dürfen niemals persistieren.

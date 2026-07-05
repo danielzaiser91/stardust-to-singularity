@@ -88,9 +88,28 @@ describe('tick & actions', () => {
     s.star.upgrades[4] = true;   // Auto-Gen 1–4
     s.star.upgrades[13] = true;  // Auto-Kompression
     s.stats.novaMs = 5;          // wird durch die Supernova 6: ≥4 hält Upgrade 4, <8 hält 13 NICHT
+    s.stats.ignMs = 40;
+    s.stats.classPicks = [0, 40, 0];
+    s.dust.compression = 500;
     expect(doSupernova(s, 0)).toBe(true);
     expect(s.star.upgrades[4]).toBe(true);
     expect(s.star.upgrades[13]).toBe(false);
+    // Supernova resettet die komplette Dust-Ebene inkl. Zündungs-Meilensteinen
+    expect(s.stats.ignMs).toBe(0);
+    expect(s.stats.classPicks).toEqual([0, 0, 0]);
+    expect(s.dust.compression).toBe(0);
+  });
+
+  it('galaxy milestone 4 makes ignition milestones survive supernovae', () => {
+    const s = initialState(1);
+    s.star.unlocked = true;
+    s.star.elements[5] = D(1e6);
+    s.stats.coalescences = 6;    // MS_GALAXY[3]
+    s.stats.ignMs = 40;
+    s.stats.classPicks = [0, 40, 0];
+    expect(doSupernova(s, 0)).toBe(true);
+    expect(s.stats.ignMs).toBe(40);
+    expect(s.stats.classPicks).toEqual([0, 40, 0]);
   });
 
   it('solar sail upgrade grants passive dust equal to 4 clicks/s', () => {
@@ -141,6 +160,11 @@ describe('tick & actions', () => {
     expect(s.nova.cellsBought).toBe(2);
     s.nova.cellsBought = C.NEBULA_CELLS;
     expect(actionsAll.buyNebulaToken(s)).toBe(false); // Cap erreicht
+    // Radierer: entfernt einzelne Nebel, Token bleibt frei nutzbar
+    expect(actionsAll.removeNebula(s, 5)).toBe(true);
+    expect(s.nova.cells[5]).toBe(0);
+    expect(actionsAll.removeNebula(s, 5)).toBe(false); // leer → nichts zu entfernen
+    expect(placeNebula(s, 7, 1)).toBe(true);           // freier Token wird wiederverwendet
   });
 
   it('dark nebulae double neighboring cell multipliers (×2 each, as described)', () => {

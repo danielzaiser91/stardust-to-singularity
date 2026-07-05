@@ -429,6 +429,7 @@ export class NovaPanel implements Panel {
   private brush: NebulaCell = 1;
   private brushBtns: HTMLButtonElement[] = [];
   private hexBtns: HTMLButtonElement[] = [];
+  private eraseBtn!: HTMLButtonElement;
   private tokenCost = el('div', 'sub token-cost');
   private tokenCostVal = el('span', 'token-cost-val', '');
   private gardenTotal = el('div', 'sub center');
@@ -465,8 +466,9 @@ export class NovaPanel implements Panel {
       const [q, r] = F.HEX_COORDS[i];
       const place = () => {
         const s = this.st();
-        if (s.nova.cells[i] === this.brush) return;  // gleicher Typ: nichts zu tun, kein Fehler-Blitz
-        if (A.placeNebula(s, i, this.brush)) {
+        if (s.nova.cells[i] === this.brush) return;  // gleicher Typ / Radierer auf leer: nichts zu tun
+        const ok = this.brush === 0 ? A.removeNebula(s, i) : A.placeNebula(s, i, this.brush);
+        if (ok) {
           emit('nebula-placed');
         } else {
           // nie still scheitern: Kosten-Betrag schüttelt sich rot (zu teuer / kein Token)
@@ -513,13 +515,16 @@ export class NovaPanel implements Panel {
       this.hexBtns.push(b);
       grid.append(b);
     }
+    // Radierer: exklusiv wählbar mit den Nebel-Pinseln (brush 0 = entfernen)
+    this.eraseBtn = btn('seg-btn icon-btn', '⌫', () => { this.brush = 0; this.syncBrush(); });
+    attachTip(this.eraseBtn, () => ({ title: t('nova.erase'), body: t('nova.eraseTip') }));
     const respecBtn = btn('buy icon-btn', '↺', () => {
       const s = this.st();
       if (A.respecNebula(s)) this.update(s, M(s));
     });
     attachTip(respecBtn, () => ({ title: t('nova.respec'), body: t('nova.respecTip') }));
     const ctl = el('div', 'garden-ctl');
-    ctl.append(respecBtn);
+    ctl.append(this.eraseBtn, respecBtn);
     attachTip(this.gardenTotal, () => ({ title: t('nova.nebula'), body: t('nova.gardenTotalTip', { b: fmtMult(C.NEBULA_DARK_BONUS) }) }));
     this.root.append(ctl, grid, this.gardenTotal);
 
@@ -602,6 +607,7 @@ export class NovaPanel implements Panel {
 
   private syncBrush(): void {
     this.brushBtns.forEach((b, i) => setClass(b, 'active', this.brush === ([1, 2, 3] as NebulaCell[])[i]));
+    setClass(this.eraseBtn, 'active', this.brush === 0);
   }
 
   update(s: GameState, m: F.Mults): void {
@@ -621,8 +627,10 @@ export class NovaPanel implements Panel {
       setClass(b, 'hex-2', type === 2);
       setClass(b, 'hex-3', type === 3);
       // leer: braucht freien/kaufbaren Token · belegt: Ersetzen ist gratis (nur gleicher Typ sinnlos)
+      // Radierer (brush 0): nur belegte Zellen sind Ziele
       // .dim statt disabled: disabled Buttons feuern keine Hover-Events → keine Tooltips
-      const usable = type === 0 ? (freeToken || canBuyToken) : type !== this.brush;
+      const usable = this.brush === 0 ? type !== 0
+        : type === 0 ? (freeToken || canBuyToken) : type !== this.brush;
       setText(b, type === 0 && usable ? '+' : '');
       setClass(b, 'dim', !usable);
     }
