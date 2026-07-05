@@ -236,6 +236,7 @@ export const en: Record<string, string> = {
   'pulsar.title': '⚡ Pulsar burst',
   'pulsar.active': 'Burst ACTIVE: all production ×{v} — {t}s remaining.',
   'pulsar.idle': 'Next burst in {t}s — then all production ×{v} for {d}s. Powered by your pulsar remnants.',
+  'pulsar.perma': 'PERMANENTLY active: all production ×{v} — burst duration covers the whole cycle (special milestone).',
 
   // — Meilensteine —
   'ms.title': 'Milestones',
@@ -263,7 +264,7 @@ export const en: Record<string, string> = {
   'sms.tip': 'Every {n} remnants of ONE type raise its effect by a tier — no limit.',
   'sms.tier': 'Tier {t} ({c}/{n})',
   'sms.rem0e': 'Fusion base ×{v} each',
-  'sms.rem1e': 'Burst +{v} per extra pulsar',
+  'sms.rem1e': 'Burst +{v} per extra pulsar · {d}s duration',
   'sms.rem2e': '+{v}% shards each',
   'sms.dustDesc': 'Every {s} purchases of a generator tier (current run): output ×{m}, stacking.',
   'sms.dustNone': 'No tier active yet — buy 100× of the same generator tier',

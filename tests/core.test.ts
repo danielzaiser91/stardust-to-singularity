@@ -234,6 +234,19 @@ describe('tick & actions', () => {
     expect(ratio).toBeCloseTo(Math.pow(C.SPECIAL_GEN_MULT, 2), 1);
   });
 
+  it('pulsar special tiers extend burst duration; permanent at 50 pulsars', () => {
+    const s = initialState(1);
+    s.nova.unlocked = true;
+    s.stats.collapses = 2;
+    s.nova.remnants = [0, 50, 0];        // Stufe 5 → Dauer 60 s = voller Zyklus
+    s.nova.pulsarPhase = 45;             // tief im Zyklus, weit nach der Basis-Dauer
+    expect(F.remnantParams(s).pulsarDur).toBe(60);
+    expect(computeMults(s).pulsarBurst).toBeGreaterThan(1);   // permanent aktiv
+    s.nova.remnants = [0, 10, 0];        // Stufe 1 → 20 s Dauer
+    expect(F.remnantParams(s).pulsarDur).toBe(20);
+    expect(computeMults(s).pulsarBurst).toBe(1);              // Phase 45 > 20 → inaktiv
+  });
+
   it('coalescence resets challenges & lower milestones until galaxy milestones keep them', () => {
     const mk = (coalescences: number) => {
       const s = initialState(1);

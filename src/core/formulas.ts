@@ -147,8 +147,8 @@ export function computeMults(s: GameState): Mults {
   // — Dilation & Pulsar —
   const dilation = s.sing.dilation.active ? C.DILATION_MULT : 1;
   const pulsarPeriod = C.REMNANT_PULSAR_PERIOD * nPulsarPeriod;
-  const pulsarActive = s.nova.remnants[1] > 0 && s.nova.pulsarPhase < C.REMNANT_PULSAR_DURATION;
   const rp = remnantParams(s);
+  const pulsarActive = s.nova.remnants[1] > 0 && s.nova.pulsarPhase < rp.pulsarDur;
   const pulsarBurst = pulsarActive ? C.REMNANT_PULSAR_MULT + rp.pulsarPer * (s.nova.remnants[1] - 1) : 1;
 
   // — Elemente (He C O Si boosts) —
@@ -332,10 +332,12 @@ export function remnantTier(s: GameState, type: 0 | 1 | 2): number {
   return Math.floor(s.nova.remnants[type] / C.SPECIAL_REMNANT_STEP);
 }
 /** Effektive Remnant-Parameter inkl. Spezial-Meilensteinen — eine Quelle für Formeln & UI */
-export function remnantParams(s: GameState): { neutronBase: number; pulsarPer: number; bhPer: number } {
+export function remnantParams(s: GameState): { neutronBase: number; pulsarPer: number; pulsarDur: number; bhPer: number } {
   return {
     neutronBase: C.REMNANT_NEUTRON_FUSION + C.SPECIAL_NEUTRON_BONUS * remnantTier(s, 0),
     pulsarPer: C.REMNANT_PULSAR_PER + C.SPECIAL_PULSAR_BONUS * remnantTier(s, 1),
+    // Dauer wächst mit: Stufe 5 (50 Pulsare) erreicht den 60-s-Zyklus → permanent aktiv
+    pulsarDur: C.REMNANT_PULSAR_DURATION + C.SPECIAL_PULSAR_DUR * remnantTier(s, 1),
     bhPer: C.REMNANT_BH_SHARDS + C.SPECIAL_BH_BONUS * remnantTier(s, 2),
   };
 }

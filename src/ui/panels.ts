@@ -367,7 +367,7 @@ export class StarPanel implements Panel {
           ? `\n${t('sms.tier', { t: tier, c: n, n: (tier + 1) * C.SPECIAL_REMNANT_STEP })}` : '';
         return {
           title: t(`nova.rem${r}`),
-          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v, p: C.REMNANT_PULSAR_PERIOD, d: C.REMNANT_PULSAR_DURATION })}${sms}`,
+          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v, p: C.REMNANT_PULSAR_PERIOD, d: rp.pulsarDur })}${sms}`,
         };
       });
       this.remBtns.push(b);
@@ -466,7 +466,7 @@ export class StarPanel implements Panel {
       const rp = F.remnantParams(s);
       const eff = [
         t('sms.rem0e', { v: fmtMult(rp.neutronBase) }),
-        t('sms.rem1e', { v: fmtMult(rp.pulsarPer) }),
+        t('sms.rem1e', { v: fmtMult(rp.pulsarPer), d: rp.pulsarDur }),
         t('sms.rem2e', { v: fmtMult(rp.bhPer * 100) }),
       ];
       for (let rt = 0; rt < 3; rt++) {

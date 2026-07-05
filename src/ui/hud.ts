@@ -8,7 +8,7 @@ import type { OfflineSummary } from '../core/offline';
 import { on } from '../events';
 import { ACHIEVEMENT_META } from '../core/achievements';
 import { hideTip, attachTip } from './tooltip';
-import { REMNANT_PULSAR_MULT, REMNANT_PULSAR_DURATION, STAR_CLASSES } from '../core/constants';
+import { REMNANT_PULSAR_MULT, STAR_CLASSES } from '../core/constants';
 import { fmtMult } from './format';
 
 export interface Panel { root: HTMLElement; update(s: GameState, m: Mults): void; }
@@ -66,14 +66,18 @@ export class Hud {
     this.pulsarPill.append(this.pulsarVal);
     attachTip(this.pulsarPill, () => {
       const s = this.stateRef();
-      const burst = REMNANT_PULSAR_MULT + remnantParams(s).pulsarPer * Math.max(0, s.nova.remnants[1] - 1);
+      const rp = remnantParams(s);
+      const burst = REMNANT_PULSAR_MULT + rp.pulsarPer * Math.max(0, s.nova.remnants[1] - 1);
       const phase = s.nova.pulsarPhase;
-      const active = phase < REMNANT_PULSAR_DURATION;
+      if (rp.pulsarDur >= this.lastPulsarPeriod) {
+        return { title: t('pulsar.title'), body: t('pulsar.perma', { v: burst }) };
+      }
+      const active = phase < rp.pulsarDur;
       return {
         title: t('pulsar.title'),
         body: active
-          ? t('pulsar.active', { v: burst, t: Math.ceil(REMNANT_PULSAR_DURATION - phase) })
-          : t('pulsar.idle', { t: Math.ceil(this.lastPulsarPeriod - phase), v: burst, d: REMNANT_PULSAR_DURATION }),
+          ? t('pulsar.active', { v: burst, t: Math.ceil(rp.pulsarDur - phase) })
+          : t('pulsar.idle', { t: Math.ceil(this.lastPulsarPeriod - phase), v: burst, d: rp.pulsarDur }),
       };
     });
     top.append(this.pulsarPill);
@@ -144,12 +148,16 @@ export class Hud {
     setVisible(this.pulsarPill, pulsars > 0);
     if (pulsars > 0) {
       this.lastPulsarPeriod = m.pulsarPeriod;
+      const rp = remnantParams(s);
       const phase = s.nova.pulsarPhase;
-      const active = phase < REMNANT_PULSAR_DURATION;
+      const perma = rp.pulsarDur >= m.pulsarPeriod;
+      const active = perma || phase < rp.pulsarDur;
       setClass(this.pulsarPill, 'burst', active);
-      setText(this.pulsarVal, active
-        ? `×${REMNANT_PULSAR_MULT + remnantParams(s).pulsarPer * (pulsars - 1)} · ${Math.ceil(REMNANT_PULSAR_DURATION - phase)}s`
-        : `${Math.ceil(m.pulsarPeriod - phase)}s`);
+      setText(this.pulsarVal, perma
+        ? `×${REMNANT_PULSAR_MULT + rp.pulsarPer * (pulsars - 1)} · ∞`
+        : active
+          ? `×${REMNANT_PULSAR_MULT + rp.pulsarPer * (pulsars - 1)} · ${Math.ceil(rp.pulsarDur - phase)}s`
+          : `${Math.ceil(m.pulsarPeriod - phase)}s`);
     }
 
     for (const tab of this.tabs) {

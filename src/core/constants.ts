@@ -136,6 +136,7 @@ export const MS_COLLAPSE = [1, 2, 3, 5];
 export const SPECIAL_REMNANT_STEP = 10;
 export const SPECIAL_NEUTRON_BONUS = 0.1;    // +0,1 Fusions-Basis je Stufe (1,5 → 1,6 → …)
 export const SPECIAL_PULSAR_BONUS = 1;       // +1 Burst-Beitrag je weiterem Pulsar, je Stufe
+export const SPECIAL_PULSAR_DUR = 10;        // +10 s Burst-Dauer je Stufe → ab Stufe 5 (50 Pulsare) permanent
 export const SPECIAL_BH_BONUS = 0.15;        // +15 % Scherben je Schwarzem Loch, je Stufe
 export const SPECIAL_GEN_STEP = 100;
 export const SPECIAL_GEN_MULT = 3;

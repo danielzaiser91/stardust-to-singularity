@@ -236,6 +236,7 @@ export const de: Record<string, string> = {
   'pulsar.title': '⚡ Pulsar-Burst',
   'pulsar.active': 'Burst AKTIV: Gesamtproduktion ×{v} — noch {t}s.',
   'pulsar.idle': 'Nächster Burst in {t}s — dann Gesamtproduktion ×{v} für {d}s. Gespeist von deinen Pulsar-Überresten.',
+  'pulsar.perma': 'PERMANENT aktiv: Gesamtproduktion ×{v} — die Burst-Dauer deckt den ganzen Zyklus (Spezial-Meilenstein).',
 
   // — Meilensteine —
   'ms.title': 'Meilensteine',
@@ -263,7 +264,7 @@ export const de: Record<string, string> = {
   'sms.tip': 'Je {n} Remnants EINES Typs steigt dessen Effekt eine Stufe — ohne Limit.',
   'sms.tier': 'Stufe {t} ({c}/{n})',
   'sms.rem0e': 'Fusions-Basis ×{v} je Stück',
-  'sms.rem1e': 'Burst +{v} je weiterem Pulsar',
+  'sms.rem1e': 'Burst +{v} je weiterem Pulsar · {d} s Dauer',
   'sms.rem2e': '+{v} % Scherben je Stück',
   'sms.dustDesc': 'Je {s} Käufe einer Generator-Stufe (im aktuellen Run): Output ×{m}, stapelt sich.',
   'sms.dustNone': 'Noch keine Stufe aktiv — kaufe 100× dieselbe Generator-Stufe',
