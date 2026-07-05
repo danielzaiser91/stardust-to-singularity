@@ -638,7 +638,10 @@ export class GalaxyPanel implements Panel {
 /** Meilenstein-Liste einer Ebene: ○/✓ je Schwelle, grau bis erreicht */
 function milestoneSection(labels: string[], thresholds: number[], unitKey: string, count: (s: GameState) => number) {
   const root = el('div', 'ms-box');
-  root.append(el('h3', '', t('ms.title')));
+  const head = el('h3', '', t('ms.title'));
+  const countEl = el('span', 'ms-count', '');
+  head.append(countEl);
+  root.append(head);
   const rows = thresholds.map((at, i) => {
     const row = el('div', 'ms-row');
     const icon = el('span', 'ms-icon', '○');
@@ -650,6 +653,7 @@ function milestoneSection(labels: string[], thresholds: number[], unitKey: strin
     root,
     update(s: GameState): void {
       const c = count(s);
+      setText(countEl, ` · ${c}× ${t(unitKey)}`);
       for (const r of rows) {
         setClass(r.row, 'done', c >= r.at);
         setText(r.icon, c >= r.at ? '✓' : '○');

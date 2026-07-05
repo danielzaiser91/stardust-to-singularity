@@ -190,6 +190,7 @@ button:disabled { opacity: 0.38; cursor: default; }
 
 /* ── Meilensteine ── */
 .ms-box { margin-top: 12px; }
+.ms-count { color: var(--gold); font-variant-numeric: tabular-nums; }
 .ms-row {
   display: flex; gap: 7px; align-items: baseline;
   font-size: 0.78rem; color: var(--text-dim); padding: 3px 4px;
