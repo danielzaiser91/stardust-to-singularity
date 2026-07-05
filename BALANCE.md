@@ -16,10 +16,13 @@ NaN-Overflows, 47.000 Zündungen/Tag). Vier Mechanismen halten die Progression i
    Wachstum = Reset-Kadenz × Clamp-Faktor. Der Faktor MUSS zur Schleifenfrequenz passen:
    ×4 auf dem Innenloop verhungert die Fe-Pipeline, kein Clamp auf dem Innenloop divergiert.
 
-2. **Lokale Anforderungs-Leitern**: Jede Supernova ×2,5 Fe, jede Galaxie ×6 Scherben — aber
-   die Zähler (`nova.count`, `galaxy.count`) resetten mit dem Eltern-Layer. Frische Galaxie =
-   frische Leiter. Lebenslange Zähler erzeugen permanente Walls (empirisch: Fe-Anforderung
-   e3548 nach 8908 Novae) und brechen NG+.
+2. **Lokale, gecappte Anforderungs-Leitern**: Jede Supernova ×1,8 Fe, jede Galaxie ×3 Scherben —
+   die Zähler (`nova.count`, `galaxy.count`) resetten mit dem Eltern-Layer, und die Leitern
+   steigen nur bis zu einem Cap (`NOVA_LADDER_CAP` 60 / `GALAXY_LADDER_CAP` 25), danach bleibt
+   die Anforderung konstant und die weiter wachsende Engine überholt sie wieder. Ohne Cap
+   sättigt die Scherben-Ausbeute tief im Run und jede Ebene darüber verhungert (empirisch:
+   Singularität Tag 16 statt Tag 11); lebenslange Zähler erzeugen permanente Walls
+   (Fe-Anforderung e3548 nach 8908 Novae) und brechen NG+.
 
 3. **Quadratische Kollaps-Leiter** (`collapsesU`, Exponent n(n+1)/2): Die oberste Ebene braucht
    eine Leiter, die der beschleunigende DM-Motor nicht einholen kann — geometrisch reicht nicht
@@ -52,14 +55,16 @@ Kollaps war das Spiel *langsamer* als davor, weil die Passiveffekte am Run-Total
 
 ## Gemessene Timeline (aktives Optimalspiel, Sim-Bot, Seed 42)
 
-| Meilenstein | gemessen |
+| Meilenstein | gemessen (Sim v17, Seed 42) |
 |---|---|
 | Erste Ignition | ~28 min (idle: ~37 min) |
 | Erste Supernova | ~4 h (idle: ~7 h) |
-| Erste Galaxie | ~Tag 1 |
-| Erste Singularität | ~Tag 5–7 |
-| Endgame (Neues Universum) | ~Tag 12–20 |
+| Alle 8 Challenges | ~6 h |
+| Erste Galaxie | ~8 h |
+| Erste Singularität | ~Tag 11 |
+| Endgame (Neues Universum) | > Tag 20 — Langzeitziel |
 
-Ein menschlicher Spieler ohne Optimal-Strategie liegt darüber — das Spiel trägt damit
-komfortabel 2+ Wochen. Feinkalibrierung der Singularitäts-Phase steht in todo.md.
+Alle 5 Ebenen sind damit binnen ~1,5 Wochen erlebbar; der NG+-Abschluss ist bewusst
+Langzeit-Territorium. Ein menschlicher Spieler ohne Optimal-Strategie liegt über diesen
+Werten. Straffung der Singularitäts-Phase: siehe todo.md.
 Prüfen mit: `npx tsx src/sim/run.ts --until endgame --profile active --maxDays 30`

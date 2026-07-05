@@ -303,7 +303,7 @@ export function canIgnite(s: GameState): boolean { return s.dust.total.gte(ignit
 /** Eskalierende Fe-Anforderung — zählt nur Novae SEIT der letzten Coalescence:
  *  frische Galaxie = frische Leiter (verhindert permanente Walls, hält NG+ sauber) */
 export function novaReq(s: GameState): Decimal {
-  return D(C.SUPERNOVA_REQ).mul(Decimal.pow(C.NOVA_REQ_GROWTH, s.nova.count));
+  return D(C.SUPERNOVA_REQ).mul(Decimal.pow(C.NOVA_REQ_GROWTH, Math.min(s.nova.count, C.NOVA_LADDER_CAP)));
 }
 /** Wachstum pro Reset hart gedeckelt — Pacing bleibt Kadenz-getrieben */
 function clampGain(raw: Decimal, total: Decimal, mult: number = C.GAIN_CLAMP_MULT): Decimal {
@@ -321,9 +321,9 @@ export function shardGain(s: GameState, m: Mults): Decimal {
 }
 export function canSupernova(s: GameState): boolean { return s.star.elements[5].gte(novaReq(s)); }
 
-/** Eskalierende Anforderung — zählt nur Coalescences seit dem letzten Collapse */
+/** Eskalierende Anforderung — zählt nur Coalescences seit dem letzten Collapse, gecappt */
 export function coalesceReq(s: GameState): Decimal {
-  return D(C.COALESCE_REQ).mul(Decimal.pow(C.COALESCE_REQ_GROWTH, s.galaxy.count));
+  return D(C.COALESCE_REQ).mul(Decimal.pow(C.COALESCE_REQ_GROWTH, Math.min(s.galaxy.count, C.GALAXY_LADDER_CAP)));
 }
 export function dmGain(s: GameState, m: Mults): Decimal {
   const req = coalesceReq(s);

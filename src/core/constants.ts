@@ -45,6 +45,8 @@ export const PLASMA_UPGRADE_COSTS = [2, 4, 8, 15, 30, 60, 120, 300, 800, 2000, 6
 // ── Ebene 2: Supernova ───────────────────────────────────────────────────────
 export const SUPERNOVA_REQ = 1e4;            // Fe (Basis)
 export const NOVA_REQ_GROWTH = 1.8;          // Fe-Anforderung ×1,8 je Supernova (seit letzter Galaxie)
+export const NOVA_LADDER_CAP = 60;           // Leiter steigt bis Stufe 60, dann konstant (Engine überholt wieder)
+export const GALAXY_LADDER_CAP = 25;         // analog für die Galaxie-Leiter
 export const SHARD_EXP = 0.45;               // shards = (Fe/aktuelleReq)^exp
 export const GAIN_SOFTCAP = 1e3;             // ab diesem Verhältnis greift der Softcap-Tail
 export const GAIN_TAIL_EXP = 0.2;            // Exponent jenseits des Softcaps (alle Prestige-Gains)
