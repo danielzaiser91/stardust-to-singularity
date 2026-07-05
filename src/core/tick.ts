@@ -1,8 +1,8 @@
 import { Decimal } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
-import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, isGainCapped, autoIgniteUnlocked, type Mults } from './formulas';
-import { doSupernova, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax } from './actions';
+import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, autoIgniteUnlocked, type Mults } from './formulas';
+import { supernovaReset, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
 import { checkLore } from './lore';
@@ -102,24 +102,43 @@ export function tick(s: GameState, dt: number): Mults {
       buyReactorsMax(s, r, 0.3);
     }
   }
-  if (s.nova.autoIgnite.on && autoIgniteUnlocked(s) && s.nova.challenge === -1 && s.stats.runTime >= 1) {
-    // Kontinuierliche Zündung am goldenen Punkt: Am Cap hängt der Gewinn NUR am Plasma,
-    // nicht an der Staubmenge — die Wolke muss also nicht kollabieren. Max. 1×/s,
-    // ohne Dust-Reset → kein Flackern von Reihen/Planeten/Balken bei schnellen Zyklen.
+  // Auto-Zündung: kontinuierlicher Trickle — 1 %/s des aktuellen Zündungs-Gewinns,
+  // pro Tick berechnet, OHNE Dust-Reset (kein Flackern). Bei 100 % Akkumulation zählt
+  // ein Zündungs-Event (Meilenstein-Zähler), die Auszahlung lief bereits kontinuierlich.
+  if (s.nova.autoIgnite.on && autoIgniteUnlocked(s) && s.nova.challenge === -1) {
     const gain = plasmaGain(s, m);
-    if (isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT)) {
-      s.star.plasma = s.star.plasma.add(gain);
-      s.star.totalPlasma = s.star.totalPlasma.add(gain);
+    if (gain.gt(0)) {
+      const frac = C.AUTO_HARVEST_RATE * gdt;
+      const pay = gain.mul(frac);
+      s.star.plasma = s.star.plasma.add(pay);
+      s.star.totalPlasma = s.star.totalPlasma.add(pay);
       if (s.star.plasma.gt(s.stats.bestPlasma)) s.stats.bestPlasma = s.star.plasma;
-      s.stats.ignitions++;
-      s.stats.ignMs++;
-      s.stats.classPicks[s.star.cls]++;  // Harvest zündet mit der aktuellen Klasse
-      s.stats.runTime = 0;
+      s.nova.autoIgnite.acc += frac;
+      if (s.nova.autoIgnite.acc >= 1) {
+        s.nova.autoIgnite.acc -= 1;
+        s.stats.ignitions++;
+        s.stats.ignMs++;
+        s.stats.classPicks[s.star.cls]++;  // Trickle zündet mit der aktuellen Klasse
+      }
     }
   }
+  // Auto-Supernova: gleicher Trickle auf Scherben. Das Reset-Event bei 100 % hält alle
+  // Pacing-Mechanismen intakt (Fe-Leiter, Aufladezeit → Gewinn kollabiert und lädt neu).
   if (s.galaxy.autoNova.on && m.autoNovaUnlocked && s.nova.challenge === -1) {
     const gain = shardGain(s, m);
-    if (gain.gte(s.galaxy.autoNova.at)) doSupernova(s, lastRemnantChoice(s));
+    if (gain.gt(0)) {
+      const frac = C.AUTO_HARVEST_RATE * gdt;
+      const pay = gain.mul(frac);
+      s.nova.unlocked = true;
+      s.nova.shards = s.nova.shards.add(pay);
+      s.nova.totalShards = s.nova.totalShards.add(pay);
+      s.stats.lifetimeShards = s.stats.lifetimeShards.add(pay);
+      s.galaxy.autoNova.acc += frac;
+      if (s.galaxy.autoNova.acc >= 1) {
+        s.galaxy.autoNova.acc = 0;
+        supernovaReset(s, lastRemnantChoice(s));
+      }
+    }
   }
 
   // — Achievements & Lore (1×/Sekunde; an Spielzeit gekoppelt → deterministisch) —

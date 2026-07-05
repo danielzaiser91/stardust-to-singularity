@@ -45,6 +45,15 @@ die treiben die Anforderungs-Leitern (Mechanismus 2) und dürfen niemals persist
 Sim-validiert: erste Singularität weiterhin ~4,5 d (aktiv, Seed 42), die Re-Earn-Schleife
 pro Galaxie kostet den Bot nur Minuten.
 
+## Auto-Trickle (Auto-Zündung & Auto-Supernova)
+
+Automation zahlt **kontinuierlich `AUTO_HARVEST_RATE` (1 %/s) des aktuellen Prestige-Gewinns**
+pro Tick aus; bei 100 % Akkumulation zählt ein echtes Reset-Event (Meilenstein-Zähler bzw.
+volle Supernova mit Remnant, Fe-Leiter und Charge-Neustart). Dadurch bleiben alle vier
+Pacing-Mechanismen intakt — insbesondere kollabiert der Scherben-Trickle nach jedem Event
+über die Aufladezeit, statt mit 3 %/s am Clamp zu compounden. Manuelles Spiel bleibt
+strikt stärker (aktiv: Singularität ~2,5 d · idle: erste Galaxie ~20 h, Seed 42).
+
 ## Kaskade ohne Whiplash
 
 Jede Prestige-Währung boostet die Ebenen darunter — aber auf Basis von **Lifetime-Summen**

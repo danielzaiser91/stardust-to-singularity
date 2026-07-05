@@ -76,7 +76,8 @@ export interface GameState {
     pulsarPhase: number;          // Sekunden im Pulsar-Zyklus
     challenge: number;            // -1 = keine aktiv
     completed: boolean[];         // 8
-    autoIgnite: { on: boolean; at: Decimal };  // at = Mindest-Plasma-Gain
+    /** acc = akkumulierter Gewinn-Anteil des Auto-Trickles (1.0 = ein volles Event) */
+    autoIgnite: { on: boolean; at: Decimal; acc: number };
   };
   galaxy: {
     unlocked: boolean;
@@ -85,7 +86,7 @@ export interface GameState {
     nodes: boolean[];             // 45 Konstellations-Nodes
     gtype: GalaxyType;
     count: number;                // Coalescences seit letztem Collapse (Basis der Shard-Leiter)
-    autoNova: { on: boolean; at: Decimal };
+    autoNova: { on: boolean; at: Decimal; acc: number };
   };
   sing: {
     unlocked: boolean;
@@ -154,7 +155,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       pulsarPhase: 0,
       challenge: -1,
       completed: Array.from({ length: C.CHALLENGE_COUNT }, () => false),
-      autoIgnite: { on: false, at: D(1) },
+      autoIgnite: { on: false, at: D(1), acc: 0 },
     },
     galaxy: {
       unlocked: false,
@@ -162,7 +163,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       nodes: Array.from({ length: C.CONSTELLATION_NODES }, () => false),
       gtype: 0,
       count: 0,
-      autoNova: { on: false, at: D(1) },
+      autoNova: { on: false, at: D(1), acc: 0 },
     },
     sing: {
       unlocked: false,

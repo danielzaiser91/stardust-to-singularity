@@ -136,9 +136,10 @@ export class DustPanel implements Panel {
       const s = this.st();
       const m = M(s);
       const capped = F.isGainCapped(F.plasmaGain(s, m), s.star.totalPlasma, C.PLASMA_CLAMP_MULT);
+      const max = t('cap.max', { v: fmt(F.gainCapBound(s.star.totalPlasma, C.PLASMA_CLAMP_MULT), s.settings.sciNotation) });
       return capped
-        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.PLASMA_CLAMP_MULT + 1 }) }
-        : { title: t('cap.title'), body: t('cap.hint', { v: C.PLASMA_CLAMP_MULT + 1 }) };
+        ? { title: '⚠ ' + t('cap.title'), body: `${t('cap.body', { v: C.PLASMA_CLAMP_MULT + 1 })}\n${max}` }
+        : { title: t('cap.title'), body: `${t('cap.hint', { v: C.PLASMA_CLAMP_MULT + 1 })}\n${max}` };
     });
     this.classSeg = el('div', 'seg');
     for (let c = 0; c < 3; c++) {
@@ -326,9 +327,10 @@ export class StarPanel implements Panel {
     attachTip(this.novaLabel, () => {
       const s = this.st();
       const capped = F.isGainCapped(F.shardGain(s, M(s)), s.nova.totalShards);
+      const max = t('cap.max', { v: fmt(F.gainCapBound(s.nova.totalShards), s.settings.sciNotation) });
       return capped
-        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 }) }
-        : { title: t('cap.title'), body: t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 }) };
+        ? { title: '⚠ ' + t('cap.title'), body: `${t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` }
+        : { title: t('cap.title'), body: `${t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` };
     });
     this.remSeg = el('div', 'seg');
     for (let r = 0; r < 3; r++) {
@@ -559,9 +561,10 @@ export class NovaPanel implements Panel {
     attachTip(this.coalLabel, () => {
       const s = this.st();
       const capped = F.isGainCapped(F.dmGain(s, M(s)), s.galaxy.totalDM);
+      const max = t('cap.max', { v: fmt(F.gainCapBound(s.galaxy.totalDM), s.settings.sciNotation) });
       return capped
-        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 }) }
-        : { title: t('cap.title'), body: t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 }) };
+        ? { title: '⚠ ' + t('cap.title'), body: `${t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` }
+        : { title: t('cap.title'), body: `${t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` };
     });
     const gtSeg = el('div', 'seg');
     for (let g = 0; g < 3; g++) {
@@ -598,7 +601,7 @@ export class NovaPanel implements Panel {
     this.root.append(coalesceBox);
 
     this.ms = milestoneSection(
-      [t('ms.gal0'), t('ms.gal1'), t('ms.gal2'), t('ms.gal3'), t('ms.gal4'), t('ms.gal5')],
+      [t('ms.gal0'), t('ms.gal1'), t('ms.gal2'), t('ms.gal3'), t('ms.gal4'), t('ms.gal5'), t('ms.gal6')],
       C.MS_GALAXY, 'ms.u.gal', s => s.stats.coalescences);
     this.root.append(this.ms.root);
     this.syncBrush();
@@ -713,6 +716,10 @@ export class GalaxyPanel implements Panel {
     this.autoChk.addEventListener('change', () => { this.st().galaxy.autoNova.on = this.autoChk.checked; });
     const label = el('label', '', t('galaxy.autoNova'));
     label.prepend(this.autoChk);
+    attachTip(label, () => ({
+      title: t('galaxy.autoNova'),
+      body: t('galaxy.autoNovaTip', { r: C.AUTO_HARVEST_RATE * 100 }),
+    }));
     this.autoRow.append(label);
     this.root.append(this.autoRow, this.autoLockNote);
 
@@ -722,9 +729,10 @@ export class GalaxyPanel implements Panel {
     attachTip(this.colLabel, () => {
       const s = this.st();
       const capped = F.isGainCapped(F.entropyGain(s, M(s)), s.sing.totalEntropy);
+      const max = t('cap.max', { v: fmt(F.gainCapBound(s.sing.totalEntropy), s.settings.sciNotation) });
       return capped
-        ? { title: '⚠ ' + t('cap.title'), body: t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 }) }
-        : { title: t('cap.title'), body: t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 }) };
+        ? { title: '⚠ ' + t('cap.title'), body: `${t('cap.body', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` }
+        : { title: t('cap.title'), body: `${t('cap.hint', { v: C.GAIN_CLAMP_MULT + 1 })}\n${max}` };
     });
     this.colBtn = btn('reset-btn sing', t('sing.go'), () => {
       const s = this.st();

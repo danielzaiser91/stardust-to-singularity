@@ -122,22 +122,42 @@ describe('tick & actions', () => {
     expect(s.dust.amount.sub(before).toNumber()).toBeGreaterThanOrEqual(40);
   });
 
-  it('auto-ignition at cap harvests plasma WITHOUT resetting the dust layer', () => {
+  it('auto-ignition trickles 1%/s of the gain per tick, event at 100%', () => {
     const s = initialState(1);
     s.star.unlocked = true;
     s.nova.unlocked = true;
     s.nova.autoIgnite.on = true;
     s.stats.novaMs = 2;          // Auto-Zündung freigeschaltet (Meilenstein dieser Galaxie)
-    s.dust.total = D('1e120');   // Gain sicher am Cap
+    s.dust.total = D('1e120');
     s.dust.gens[0].bought = 33;
     s.dust.gens[0].amount = D(33);
-    s.stats.runTime = 5;
     const ignBefore = s.stats.ignitions;
     tick(s, 1);
-    expect(s.stats.ignitions).toBeGreaterThan(ignBefore);   // Gewinn kassiert
-    expect(s.stats.classPicks[s.star.cls]).toBeGreaterThan(0);  // Harvest zählt als Klassen-Pick
+    expect(s.star.plasma.gt(0)).toBe(true);                 // Trickle zahlt sofort anteilig
+    expect(s.stats.ignitions).toBe(ignBefore);              // aber noch kein Zündungs-Event
     expect(s.dust.gens[0].bought).toBe(33);                 // KEIN Reset → kein Flackern
-    expect(s.star.plasma.gt(0)).toBe(true);
+    for (let i = 0; i < 100; i++) tick(s, 1);
+    expect(s.stats.ignitions).toBe(ignBefore + 1);          // Event bei 100 % Akkumulation
+    expect(s.stats.classPicks[s.star.cls]).toBe(1);
+  });
+
+  it('auto-supernova (10th coalescence) trickles shards, real supernova at 100%', () => {
+    const s = initialState(1);
+    s.star.unlocked = true;
+    s.nova.unlocked = true;
+    s.galaxy.unlocked = true;
+    s.stats.coalescences = 10;   // Meilenstein-Freischaltung (ohne Konstellations-Node)
+    s.galaxy.autoNova.on = true;
+    s.star.elements[5] = D(1e12);
+    s.stats.novaTime = C.NOVA_MIN_TIME;   // voll aufgeladen
+    const before = s.stats.supernovae;
+    tick(s, 1);
+    expect(s.nova.shards.gt(0)).toBe(true);            // Trickle zahlt sofort anteilig
+    expect(s.stats.supernovae).toBe(before);           // noch kein Reset-Event
+    for (let i = 0; i < 100; i++) tick(s, 1);
+    expect(s.stats.supernovae).toBe(before + 1);       // echte Supernova bei 100 %
+    expect(s.star.elements[5].eq(0)).toBe(true);       // Star-Layer resettet, Leiter/Charge laufen
+    expect(s.nova.count).toBe(1);
   });
 
   it('nebula tokens: replace is free, respec keeps tokens, cap at 19', () => {

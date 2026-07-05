@@ -122,9 +122,12 @@ export const MS_NOVA = [1, 2, 4, 8, 12, 16, 20, 25, 30, 35, 40, 50];
 // Reihenfolge: erst die vier Automationen, dann die wichtigsten Boosts.
 export const MS_NOVA_KEEP = [4, 13, 8, 14, 1, 6, 10, 7, 11, -1];
 // Galaxie-Meilensteine: Typ-Wahl · Reflexionsnebel boosten auch Eisen · Challenges bleiben ·
-// Zündungs-Meilensteine bleiben · Supernova-Meilensteine bleiben · Nebelgarten bleibt
-// (alles „bleiben" = über Coalescence)
-export const MS_GALAXY = [1, 2, 3, 6, 9, 12];
+// Zündungs-Meilensteine permanent · Supernova-Meilensteine bleiben · Auto-Supernova ·
+// Nebelgarten bleibt („bleiben" = über Coalescence)
+export const MS_GALAXY = [1, 2, 3, 6, 9, 10, 12];
+// Auto-Zündung/-Supernova: kontinuierlicher Anteil des aktuellen Prestige-Gewinns pro Sekunde
+// (pro Tick berechnet); bei 100 % Akkumulation zählt ein Reset-Event (Leitern/Charge intakt)
+export const AUTO_HARVEST_RATE = 0.01;
 export const MS_COLLAPSE = [1, 5];           // Perks · Keystones bleiben
 
 // ── Querschnitt ──────────────────────────────────────────────────────────────

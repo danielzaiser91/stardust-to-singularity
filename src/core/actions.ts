@@ -158,6 +158,18 @@ function resetStarLayer(s: GameState): void {
   resetDustLayer(s);
 }
 
+/** Supernova-Buchhaltung OHNE Auszahlung: Remnant, Leitern, Charge-Reset, Star-Layer-Reset.
+ *  Vom Auto-Trickle genutzt, wenn 100 % Gewinn akkumuliert sind (Auszahlung lief bereits). */
+export function supernovaReset(s: GameState, remnant: 0 | 1 | 2): void {
+  s.nova.remnants[remnant]++;
+  s.nova.count++;
+  s.stats.supernovae++;
+  s.stats.novaMs++;
+  s.stats.novaTime = 0;
+  s.stats.runTime = 0;
+  resetStarLayer(s);
+}
+
 export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
   if (!canSupernova(s)) return false;
   const m = computeMults(s);
@@ -166,13 +178,7 @@ export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
   s.nova.shards = s.nova.shards.add(gain);
   s.nova.totalShards = s.nova.totalShards.add(gain);
   s.stats.lifetimeShards = s.stats.lifetimeShards.add(gain);
-  s.nova.remnants[remnant]++;
-  s.nova.count++;
-  s.stats.supernovae++;
-  s.stats.novaMs++;
-  s.stats.novaTime = 0;
-  s.stats.runTime = 0;
-  resetStarLayer(s);
+  supernovaReset(s, remnant);
   return true;
 }
 
@@ -245,8 +251,8 @@ function resetNovaLayer(s: GameState): void {
   s.nova.totalShards = ZERO;
   // Galaxie-Meilensteine bestimmen, was die Coalescence überlebt:
   const coal = s.stats.coalescences;
-  // M6 (oder Sternen-Gedächtnis L3): Nebelgarten bleibt
-  if (coal < C.MS_GALAXY[5] && (s.sing.perks[8] ?? 0) < 3) {
+  // M7 (oder Sternen-Gedächtnis L3): Nebelgarten bleibt
+  if (coal < C.MS_GALAXY[6] && (s.sing.perks[8] ?? 0) < 3) {
     s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
     s.nova.cellsBought = 0;
   }
@@ -303,7 +309,7 @@ function resetGalaxyLayer(s: GameState): void {
     keepKeystones && (i === 14 || i === 29 || i === 44) ? owned : false);
   s.galaxy.count = 0;
   s.stats.gtypePicks = [0, 0, 0];  // Invariante: Summe == galaxy.count
-  s.galaxy.autoNova = { on: false, at: D(1) };
+  s.galaxy.autoNova = { on: false, at: D(1), acc: 0 };
   resetNovaLayer(s);
 }
 

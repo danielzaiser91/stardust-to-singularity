@@ -23,7 +23,7 @@ export type NodeEffect =
   | { t: 'dust'; v: number } | { t: 'genCost'; v: number } | { t: 'allGens'; v: number }
   | { t: 'plasmaGain'; v: number } | { t: 'shardGain'; v: number } | { t: 'dustExp'; v: number }
   | { t: 'speed'; v: number } | { t: 'offline'; v: number } | { t: 'fusion'; v: number }
-  | { t: 'autoNova' } | { t: 'cometDur'; v: number } | { t: 'pulsarPeriod'; v: number }
+  | { t: 'cometDur'; v: number } | { t: 'pulsarPeriod'; v: number }
   | { t: 'click'; v: number } | { t: 'cometChance'; v: number } | { t: 'cometBoost'; v: number }
   | { t: 'nebula'; v: number } | { t: 'all'; v: number };
 
@@ -35,7 +35,7 @@ export const NODE_EFFECTS: NodeEffect[] = [
   { t: 'shardGain', v: 4 }, { t: 'genCost', v: 64 }, { t: 'dustExp', v: 0.03 },
   // Time (15–29)
   { t: 'speed', v: 1.1 }, { t: 'offline', v: 1.25 }, { t: 'fusion', v: 2 }, { t: 'speed', v: 1.15 },
-  { t: 'autoNova' }, { t: 'cometDur', v: 2 }, { t: 'speed', v: 1.15 }, { t: 'fusion', v: 3 },
+  { t: 'speed', v: 1.25 }, { t: 'cometDur', v: 2 }, { t: 'speed', v: 1.15 }, { t: 'fusion', v: 3 },
   { t: 'offline', v: 1.5 }, { t: 'speed', v: 1.2 }, { t: 'pulsarPeriod', v: 0.8 }, { t: 'fusion', v: 4 },
   { t: 'speed', v: 1.2 }, { t: 'offline', v: 2 }, { t: 'speed', v: 1.5 },
   // Light (30–44)
@@ -100,7 +100,7 @@ export function computeMults(s: GameState): Mults {
 
   // — Node-Effekte einsammeln —
   let nSpeed = 1, nOffline = 1, nFusion = 1, nCometDur = 1, nPulsarPeriod = 1, nCometBoost = 0,
-    nCometChance = 1, nNebula = 1, nDustExp = 0, autoNova = false;
+    nCometChance = 1, nNebula = 1, nDustExp = 0;
   let nDust = ONE, nGenCost = ONE, nAllGens = ONE, nPlasma = ONE, nShard = ONE, nClick = ONE, nAll = ONE;
   if (s.galaxy.unlocked || s.stats.coalescences > 0) {
     for (let i = 0; i < C.CONSTELLATION_NODES; i++) {
@@ -116,7 +116,6 @@ export function computeMults(s: GameState): Mults {
         case 'speed': nSpeed *= e.v; break;
         case 'offline': nOffline *= e.v; break;
         case 'fusion': nFusion *= e.v; break;
-        case 'autoNova': autoNova = true; break;
         case 'cometDur': nCometDur *= e.v; break;
         case 'pulsarPeriod': nPulsarPeriod *= e.v; break;
         case 'click': nClick = nClick.mul(e.v); break;
@@ -252,7 +251,7 @@ export function computeMults(s: GameState): Mults {
     nebulaPlasmaMult,
     feNebulaMult: s.stats.coalescences >= C.MS_GALAXY[1] ? nebulaPlasmaMult : ONE,
     nebulaNodeMult: nNebula,
-    autoNovaUnlocked: autoNova,
+    autoNovaUnlocked: s.stats.coalescences >= C.MS_GALAXY[5],  // 10. Coalescence
   };
 }
 
@@ -319,6 +318,11 @@ export function novaReq(s: GameState): Decimal {
 /** Wachstum pro Reset hart gedeckelt — Pacing bleibt Kadenz-getrieben */
 function clampGain(raw: Decimal, total: Decimal, mult: number = C.GAIN_CLAMP_MULT): Decimal {
   return Decimal.min(raw, total.mul(mult).add(C.GAIN_CLAMP_FLOOR)).floor();
+}
+
+/** Aktueller Clamp-Deckel eines Layers — fürs UI („mehr als das geht gerade nicht") */
+export function gainCapBound(total: Decimal, mult: number = C.GAIN_CLAMP_MULT): Decimal {
+  return total.mul(mult).add(C.GAIN_CLAMP_FLOOR).floor();
 }
 
 /** Ist der angezeigte Gain am Clamp-Deckel? (→ UI: „jetzt resetten, mehr geht nicht") */

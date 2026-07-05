@@ -135,9 +135,9 @@ export function botStep(s: GameState, profile: Profile): void {
       m = computeMults(s);
     }
   }
-  if (m.autoNovaUnlocked) {
-    s.galaxy.autoNova.on = true;
-    s.galaxy.autoNova.at = s.nova.shards.mul(0.15).max(1);
+  // Trickle-Autos sind Idle-Komfort (1 %/s) — aktives Optimalspiel zündet/novat manuell weiter
+  if (profile === 'idle') {
+    s.galaxy.autoNova.on = m.autoNovaUnlocked;
     s.nova.autoIgnite.on = autoIgniteUnlocked(s);
   }
 
