@@ -81,7 +81,7 @@ export const de: Record<string, string> = {
   'ch.7': 'Singulärer Fokus', 'ch.7d': 'Nur Attraktoren existieren', 'ch.7r': 'Attraktoren ×8',
   'nova.autoIgnite': 'Auto-Zündung',
   'nova.autoIgniteTip': 'Zündet automatisch am goldenen Punkt: sobald der Plasma-Gewinn seinen ×{v}-Deckel erreicht und in diesem Run kein weiterer Zuwachs möglich ist.',
-  'nova.autoIgniteLock': 'Schließe eine beliebige Challenge ab',
+  'nova.autoIgniteLock': 'Ab der 2. Supernova',
 
   // — Galaxy —
   'galaxy.name': 'Galaxie', 'galaxy.dm': 'Dunkle Materie',
@@ -203,6 +203,20 @@ export const de: Record<string, string> = {
   'pulsar.title': '⚡ Pulsar-Burst',
   'pulsar.active': 'Burst AKTIV: Gesamtproduktion ×{v} — noch {t}s.',
   'pulsar.idle': 'Nächster Burst in {t}s — dann Gesamtproduktion ×{v} für {d}s. Gespeist von deinen Pulsar-Überresten.',
+
+  // — Meilensteine —
+  'ms.title': 'Meilensteine',
+  'ms.u.ign': 'Zündungen', 'ms.u.nova': 'Supernovae', 'ms.u.gal': 'Coalescences', 'ms.u.col': 'Kollapse',
+  'ms.ign0': 'Max-Buttons für Generatoren & Kompression',
+  'ms.ign1': 'Sternklassen-Wahl bei der Zündung',
+  'ms.ign2': 'Kompression bleibt bei Zündung vollständig erhalten',
+  'ms.nova0': 'Max-Buttons für Fusionsreaktoren',
+  'ms.nova1': 'Auto-Zündung',
+  'ms.nova2': 'Plasma-Upgrades 1–6 überleben Supernovae',
+  'ms.gal0': 'Galaxientyp-Wahl',
+  'ms.gal1': 'Die Hälfte deiner Remnants überlebt die Coalescence',
+  'ms.col0': 'Singularitäts-Perks',
+  'ms.col1': 'Keystone-Konstellationen überleben den Kollaps',
 
   // — Gain-Cap —
   'cap.title': 'Maximalgewinn',

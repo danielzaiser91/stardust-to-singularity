@@ -381,5 +381,5 @@ export function feedMass(s: GameState): Decimal {
     .add(log10p1(s.galaxy.dm).mul(1000));
 }
 export function autoIgniteUnlocked(s: GameState): boolean {
-  return s.nova.completed.some(Boolean);
+  return s.stats.supernovae >= C.MS_NOVA[1];   // Meilenstein: ab der 2. Supernova
 }

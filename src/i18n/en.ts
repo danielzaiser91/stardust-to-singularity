@@ -81,7 +81,7 @@ export const en: Record<string, string> = {
   'ch.7': 'Singular Focus', 'ch.7d': 'Only Attractors exist', 'ch.7r': 'Attractors ×8',
   'nova.autoIgnite': 'Auto-Ignition',
   'nova.autoIgniteTip': 'When active, ignites automatically at the golden point: the moment the plasma gain hits its ×{v} cap and no further increase is possible in this run.',
-  'nova.autoIgniteLock': 'Complete any challenge to unlock',
+  'nova.autoIgniteLock': 'Unlocks at your 2nd supernova',
 
   // — Galaxy —
   'galaxy.name': 'Galaxy', 'galaxy.dm': 'Dark Matter',
@@ -203,6 +203,20 @@ export const en: Record<string, string> = {
   'pulsar.title': '⚡ Pulsar burst',
   'pulsar.active': 'Burst ACTIVE: all production ×{v} — {t}s remaining.',
   'pulsar.idle': 'Next burst in {t}s — then all production ×{v} for {d}s. Powered by your pulsar remnants.',
+
+  // — Meilensteine —
+  'ms.title': 'Milestones',
+  'ms.u.ign': 'ignitions', 'ms.u.nova': 'supernovae', 'ms.u.gal': 'coalescences', 'ms.u.col': 'collapses',
+  'ms.ign0': 'Max buttons for generators & compression',
+  'ms.ign1': 'Star class choice at ignition',
+  'ms.ign2': 'Compression fully survives ignition',
+  'ms.nova0': 'Max buttons for fusion reactors',
+  'ms.nova1': 'Auto-Ignition',
+  'ms.nova2': 'Plasma upgrades 1–6 survive supernovae',
+  'ms.gal0': 'Galaxy type choice',
+  'ms.gal1': 'Half your remnants survive coalescence',
+  'ms.col0': 'Singularity perks',
+  'ms.col1': 'Keystone constellations survive collapse',
 
   // — Gain-Cap —
   'cap.title': 'Gain cap',

@@ -64,8 +64,11 @@ function resetDustLayer(s: GameState): void {
   s.dust.amount = D(10);
   s.dust.total = D(10);
   for (const g of s.dust.gens) { g.amount = ZERO; g.bought = 0; }
-  if (!s.star.upgrades[9]) s.dust.compression = 0;
-  else s.dust.compression = Math.min(s.dust.compression, 10);  // Upgrade 10: behalte bis zu 10
+  // Meilenstein 25 Zündungen: Kompression bleibt vollständig; sonst Upgrade 10: bis zu 10
+  if (s.stats.ignitions < C.MS_IGNITION[2]) {
+    if (!s.star.upgrades[9]) s.dust.compression = 0;
+    else s.dust.compression = Math.min(s.dust.compression, 10);
+  }
   s.dust.comet = { active: false, ttl: 0, boost: 0 };
   if (s.star.upgrades[0]) { s.dust.amount = D(1000); s.dust.total = D(1000); }  // Head Start
 }
@@ -127,10 +130,14 @@ function resetStarLayer(s: GameState): void {
   s.star.plasma = ZERO;
   s.star.totalPlasma = ZERO;
   s.star.elements = s.star.elements.map(() => ZERO);
-  // Sternen-Gedächtnis (Singularitäts-Perk 9): L1 schützt Upgrades, L2 auch Reaktoren
+  // Sternen-Gedächtnis (Singularitäts-Perk 9): L1 schützt alle Upgrades, L2 auch Reaktoren.
+  // Meilenstein 10 Supernovae: Upgrades 1–6 überleben auch ohne Perk.
   const memory = s.sing.perks[8] ?? 0;
   if (memory < 2) s.star.reactors = s.star.reactors.map(() => 0);
-  if (memory < 1) s.star.upgrades = s.star.upgrades.map(() => false);
+  if (memory < 1) {
+    const keepFirstSix = s.stats.supernovae >= C.MS_NOVA[2];
+    s.star.upgrades = s.star.upgrades.map((u, i) => (keepFirstSix && i < 6 ? u : false));
+  }
   resetDustLayer(s);
 }
 
@@ -186,7 +193,10 @@ function resetNovaLayer(s: GameState): void {
     s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
     s.nova.cellsBought = 0;
   }
-  s.nova.remnants = [0, 0, 0];
+  // Meilenstein 8 Coalescences: die Hälfte der Remnants überlebt
+  s.nova.remnants = s.stats.coalescences >= C.MS_GALAXY[1]
+    ? [Math.floor(s.nova.remnants[0] / 2), Math.floor(s.nova.remnants[1] / 2), Math.floor(s.nova.remnants[2] / 2)]
+    : [0, 0, 0];
   s.nova.count = 0;
   s.nova.pulsarPhase = 0;
   // completed-Challenges bleiben permanent
@@ -225,7 +235,10 @@ export function buyNode(s: GameState, i: number): boolean {
 function resetGalaxyLayer(s: GameState): void {
   s.galaxy.dm = ZERO;
   s.galaxy.totalDM = ZERO;
-  s.galaxy.nodes = s.galaxy.nodes.map(() => false);
+  // Meilenstein 5 Kollapse: Keystone-Nodes (Astenden) überleben
+  const keepKeystones = s.stats.collapses >= C.MS_COLLAPSE[1];
+  s.galaxy.nodes = s.galaxy.nodes.map((owned, i) =>
+    keepKeystones && (i === 14 || i === 29 || i === 44) ? owned : false);
   s.galaxy.count = 0;
   s.galaxy.autoNova = { on: false, at: D(1) };
   resetNovaLayer(s);

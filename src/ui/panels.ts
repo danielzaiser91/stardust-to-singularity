@@ -157,7 +157,11 @@ export class DustPanel implements Panel {
     });
     this.igniteBox.append(this.classSeg, this.igniteBtn);
     this.root.append(this.igniteBox);
+
+    this.ms = milestoneSection('ms.ign', C.MS_IGNITION, 'ms.u.ign', s => s.stats.ignitions);
+    this.root.append(this.ms.root);
   }
+  private ms!: ReturnType<typeof milestoneSection>;
 
   update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
@@ -207,9 +211,10 @@ export class DustPanel implements Panel {
       }
       setClass(this.igniteLabel, 'capped',
         F.canIgnite(s) && F.isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT));
-      setVisible(this.classSeg, s.stats.ignitions > 0);
+      setVisible(this.classSeg, s.stats.ignitions >= C.MS_IGNITION[1]);
       this.classBtns.forEach((b, c) => setClass(b, 'active', s.ui.nextClass === c));
     }
+    this.ms.update(s);
   }
 }
 
@@ -302,7 +307,11 @@ export class StarPanel implements Panel {
     });
     this.novaBox.append(this.remSeg, this.novaBtn);
     this.root.append(this.novaBox);
+
+    this.ms = milestoneSection('ms.nova', C.MS_NOVA, 'ms.u.nova', s => s.stats.supernovae);
+    this.root.append(this.ms.root);
   }
+  private ms!: ReturnType<typeof milestoneSection>;
 
   update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
@@ -349,6 +358,7 @@ export class StarPanel implements Panel {
     }
     setClass(this.novaLabel, 'capped', F.canSupernova(s) && F.isGainCapped(gain, s.nova.totalShards));
     this.remBtns.forEach((b, r) => setClass(b, 'active', s.ui.nextRemnant === r));
+    this.ms.update(s);
   }
 }
 
@@ -438,8 +448,12 @@ export class NovaPanel implements Panel {
     }));
     this.autoRow.append(label);
     this.root.append(this.autoRow, this.autoLock);
+
+    this.ms = milestoneSection('ms.gal', C.MS_GALAXY, 'ms.u.gal', s => s.stats.coalescences);
+    this.root.append(this.ms.root);
     this.syncBrush();
   }
+  private ms!: ReturnType<typeof milestoneSection>;
 
   private syncBrush(): void {
     this.brushBtns.forEach((b, i) => setClass(b, 'active', this.brush === ([1, 2, 3] as NebulaCell[])[i]));
@@ -482,6 +496,7 @@ export class NovaPanel implements Panel {
     setVisible(this.autoLock, !autoOk);
     setText(this.autoLock, t('nova.autoIgniteLock'));
     if (this.autoChk.checked !== s.nova.autoIgnite.on) this.autoChk.checked = s.nova.autoIgnite.on;
+    this.ms.update(s);
   }
 }
 
@@ -562,7 +577,11 @@ export class GalaxyPanel implements Panel {
     label.prepend(this.autoChk);
     this.autoRow.append(label);
     this.root.append(this.autoRow, this.autoLockNote);
+
+    this.ms = milestoneSection('ms.col', C.MS_COLLAPSE, 'ms.u.col', s => s.stats.collapses);
+    this.root.append(this.ms.root);
   }
+  private ms!: ReturnType<typeof milestoneSection>;
 
   update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
@@ -592,7 +611,31 @@ export class GalaxyPanel implements Panel {
     setVisible(this.autoLockNote, !unlocked);
     setText(this.autoLockNote, t('galaxy.autoNovaLock'));
     if (this.autoChk.checked !== s.galaxy.autoNova.on) this.autoChk.checked = s.galaxy.autoNova.on;
+    this.ms.update(s);
   }
+}
+
+/** Meilenstein-Liste einer Ebene: ○/✓ je Schwelle, grau bis erreicht */
+function milestoneSection(prefix: string, thresholds: number[], unitKey: string, count: (s: GameState) => number) {
+  const root = el('div', 'ms-box');
+  root.append(el('h3', '', t('ms.title')));
+  const rows = thresholds.map((at, i) => {
+    const row = el('div', 'ms-row');
+    const icon = el('span', 'ms-icon', '○');
+    row.append(icon, el('span', '', `${at}× ${t(unitKey)} — ${t(`${prefix}${i}`)}`));
+    root.append(row);
+    return { row, icon, at };
+  });
+  return {
+    root,
+    update(s: GameState): void {
+      const c = count(s);
+      for (const r of rows) {
+        setClass(r.row, 'done', c >= r.at);
+        setText(r.icon, c >= r.at ? '✓' : '○');
+      }
+    },
+  };
 }
 
 function nodeLabel(i: number): string {
