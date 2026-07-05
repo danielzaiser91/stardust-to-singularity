@@ -1,0 +1,159 @@
+import { Decimal, D, ZERO } from './decimal';
+import * as C from './constants';
+
+export type StarClass = 0 | 1 | 2;        // rot, gelb, blau
+export type GalaxyType = 0 | 1 | 2;       // spiral, elliptisch, irregulär
+export type NebulaCell = 0 | 1 | 2 | 3;   // leer, emission, reflection, dark
+export type Lang = 'en' | 'de';
+
+export interface GeneratorState { amount: Decimal; bought: number; }
+
+export interface GameState {
+  version: number;
+  savedAt: number;      // epoch ms
+  startedAt: number;
+  rngState: number;
+  lang: Lang;
+  settings: {
+    sfx: number;        // 0..1
+    music: number;      // 0..1
+    quality: 0 | 1 | 2 | 3;  // auto, low, medium, high
+    sciNotation: boolean;
+    confirmResets: boolean;
+  };
+  stats: {
+    played: number;     // Sekunden gesamt
+    clicks: number;
+    comets: number;
+    ignitions: number;
+    supernovae: number;
+    coalescences: number;
+    collapses: number;
+    runTime: number;    // seit letzter Ignition
+    novaTime: number;   // seit letzter Supernova
+    galaxyTime: number;
+    singTime: number;
+    totalDustEver: Decimal;
+    bestPlasma: Decimal;
+  };
+  dust: {
+    amount: Decimal;
+    total: Decimal;               // dieses Ignition-Runs (Basis für Plasma-Gain)
+    gens: GeneratorState[];       // 8 Stufen
+    compression: number;
+    comet: { active: boolean; ttl: number; boost: number };  // boost = Restsekunden
+  };
+  star: {
+    unlocked: boolean;
+    plasma: Decimal;
+    totalPlasma: Decimal;         // dieses Supernova-Runs
+    cls: StarClass;
+    elements: Decimal[];          // H He C O Si Fe
+    reactors: number[];           // 5 Fusionsstufen
+    upgrades: boolean[];          // 12
+  };
+  nova: {
+    unlocked: boolean;
+    shards: Decimal;
+    totalShards: Decimal;         // dieses Galaxy-Runs
+    cells: NebulaCell[];          // 19 Hex-Zellen
+    cellsBought: number;
+    remnants: [number, number, number];  // neutron, pulsar, blackhole
+    pulsarPhase: number;          // Sekunden im Pulsar-Zyklus
+    challenge: number;            // -1 = keine aktiv
+    completed: boolean[];         // 8
+    autoIgnite: { on: boolean; at: Decimal };  // at = Mindest-Plasma-Gain
+  };
+  galaxy: {
+    unlocked: boolean;
+    dm: Decimal;
+    totalDM: Decimal;
+    nodes: boolean[];             // 45 Konstellations-Nodes
+    gtype: GalaxyType;
+    autoNova: { on: boolean; at: Decimal };
+  };
+  sing: {
+    unlocked: boolean;
+    entropy: Decimal;
+    totalEntropy: Decimal;
+    perks: number[];              // 8 Perk-Level
+    fed: Decimal;                 // Gesamtmasse im Schwarzen Loch
+    dilation: { active: boolean; left: number; cd: number };
+    universes: number;            // NG+ Zähler
+    endgame: boolean;
+  };
+  achievements: boolean[];
+  loreSeen: boolean[];
+  /** transiente Ereignis-Queues — UI konsumiert, Sim ignoriert; save-sicher */
+  pending: { lore: number[]; ach: number[] };
+  ui: {
+    scene: number;
+    helpSeen: boolean;
+    nextClass: StarClass;      // Auswahl für nächste Ignition
+    nextRemnant: 0 | 1 | 2;    // Auswahl für nächste Supernova
+    nextGtype: GalaxyType;     // Auswahl für nächste Coalescence
+  };
+}
+
+export function initialState(seed = Date.now() >>> 0): GameState {
+  return {
+    version: C.SAVE_VERSION,
+    savedAt: 0,
+    startedAt: 0,
+    rngState: seed,
+    lang: 'en',
+    settings: { sfx: 0.7, music: 0.5, quality: 0, sciNotation: false, confirmResets: true },
+    stats: {
+      played: 0, clicks: 0, comets: 0,
+      ignitions: 0, supernovae: 0, coalescences: 0, collapses: 0,
+      runTime: 0, novaTime: 0, galaxyTime: 0, singTime: 0,
+      totalDustEver: ZERO, bestPlasma: ZERO,
+    },
+    dust: {
+      amount: D(10),
+      total: D(10),
+      gens: Array.from({ length: C.GEN_COUNT }, () => ({ amount: ZERO, bought: 0 })),
+      compression: 0,
+      comet: { active: false, ttl: 0, boost: 0 },
+    },
+    star: {
+      unlocked: false,
+      plasma: ZERO, totalPlasma: ZERO,
+      cls: 1,
+      elements: Array.from({ length: C.ELEMENT_COUNT }, () => ZERO),
+      reactors: Array.from({ length: C.FUSION_STEPS }, () => 0),
+      upgrades: Array.from({ length: C.PLASMA_UPGRADE_COSTS.length }, () => false),
+    },
+    nova: {
+      unlocked: false,
+      shards: ZERO, totalShards: ZERO,
+      cells: Array.from({ length: C.NEBULA_CELLS }, () => 0 as NebulaCell),
+      cellsBought: 0,
+      remnants: [0, 0, 0],
+      pulsarPhase: 0,
+      challenge: -1,
+      completed: Array.from({ length: C.CHALLENGE_COUNT }, () => false),
+      autoIgnite: { on: false, at: D(1) },
+    },
+    galaxy: {
+      unlocked: false,
+      dm: ZERO, totalDM: ZERO,
+      nodes: Array.from({ length: C.CONSTELLATION_NODES }, () => false),
+      gtype: 0,
+      autoNova: { on: false, at: D(1) },
+    },
+    sing: {
+      unlocked: false,
+      entropy: ZERO, totalEntropy: ZERO,
+      perks: Array.from({ length: C.PERK_COUNT }, () => 0),
+      fed: ZERO,
+      dilation: { active: false, left: 0, cd: 0 },
+      universes: 0,
+      endgame: false,
+    },
+    achievements: Array.from({ length: 60 }, () => false),
+    loreSeen: Array.from({ length: 32 }, () => false),
+    pending: { lore: [], ach: [] },
+    ui: { scene: 0, helpSeen: false, nextClass: 1, nextRemnant: 0, nextGtype: 0 },
+  };
+}

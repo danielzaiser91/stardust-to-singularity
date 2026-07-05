@@ -1,0 +1,13 @@
+{
+  "name": "Stardust to Singularity",
+  "short_name": "Stardust",
+  "description": "A 3D incremental game — from a mote of dust to the singularity.",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050510",
+  "theme_color": "#050510",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

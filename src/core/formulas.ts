@@ -1,0 +1,337 @@
+import { Decimal, D, ZERO, ONE, affordGeometric, costGeometric } from './decimal';
+import * as C from './constants';
+import type { GameState } from './state';
+
+// ── Hex-Grid (19 Zellen, Radius 2, axiale Koordinaten) ──────────────────────
+export const HEX_COORDS: [number, number][] = (() => {
+  const out: [number, number][] = [];
+  for (let q = -2; q <= 2; q++)
+    for (let r = -2; r <= 2; r++)
+      if (Math.abs(q + r) <= 2) out.push([q, r]);
+  return out;
+})();
+export const HEX_NEIGHBORS: number[][] = HEX_COORDS.map(([q, r]) =>
+  HEX_COORDS.reduce<number[]>((acc, [q2, r2], j) => {
+    const dq = q2 - q, dr = r2 - r;
+    if ([[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, 1]].some(([a, b]) => a === dq && b === dr)) acc.push(j);
+    return acc;
+  }, []));
+
+// ── Konstellations-Skilltree: 3 Äste à 15 Nodes ──────────────────────────────
+// Effekt-Typen: Werte werden in computeMults angewandt. branch 0=Gravity 1=Time 2=Light
+export type NodeEffect =
+  | { t: 'dust'; v: number } | { t: 'genCost'; v: number } | { t: 'allGens'; v: number }
+  | { t: 'plasmaGain'; v: number } | { t: 'shardGain'; v: number } | { t: 'dustExp'; v: number }
+  | { t: 'speed'; v: number } | { t: 'offline'; v: number } | { t: 'fusion'; v: number }
+  | { t: 'autoNova' } | { t: 'cometDur'; v: number } | { t: 'pulsarPeriod'; v: number }
+  | { t: 'click'; v: number } | { t: 'cometChance'; v: number } | { t: 'cometBoost'; v: number }
+  | { t: 'nebula'; v: number } | { t: 'all'; v: number };
+
+export const NODE_EFFECTS: NodeEffect[] = [
+  // Gravity (0–14)
+  { t: 'dust', v: 4 }, { t: 'genCost', v: 4 }, { t: 'dust', v: 8 }, { t: 'allGens', v: 2 },
+  { t: 'plasmaGain', v: 2 }, { t: 'dust', v: 16 }, { t: 'genCost', v: 8 }, { t: 'shardGain', v: 2 },
+  { t: 'dust', v: 64 }, { t: 'allGens', v: 3 }, { t: 'plasmaGain', v: 4 }, { t: 'dust', v: 256 },
+  { t: 'shardGain', v: 4 }, { t: 'genCost', v: 64 }, { t: 'dustExp', v: 0.03 },
+  // Time (15–29)
+  { t: 'speed', v: 1.1 }, { t: 'offline', v: 1.25 }, { t: 'fusion', v: 2 }, { t: 'speed', v: 1.15 },
+  { t: 'autoNova' }, { t: 'cometDur', v: 2 }, { t: 'speed', v: 1.15 }, { t: 'fusion', v: 3 },
+  { t: 'offline', v: 1.5 }, { t: 'speed', v: 1.2 }, { t: 'pulsarPeriod', v: 0.8 }, { t: 'fusion', v: 4 },
+  { t: 'speed', v: 1.2 }, { t: 'offline', v: 2 }, { t: 'speed', v: 1.5 },
+  // Light (30–44)
+  { t: 'click', v: 4 }, { t: 'cometChance', v: 1.5 }, { t: 'all', v: 1.1 }, { t: 'click', v: 8 },
+  { t: 'cometBoost', v: 1 }, { t: 'nebula', v: 1.25 }, { t: 'click', v: 16 }, { t: 'cometChance', v: 2 },
+  { t: 'nebula', v: 1.25 }, { t: 'click', v: 64 }, { t: 'all', v: 1.15 }, { t: 'cometBoost', v: 2 },
+  { t: 'click', v: 256 }, { t: 'nebula', v: 1.5 }, { t: 'all', v: 1.25 },
+];
+
+/** Gecachte Multiplikatoren — einmal pro Tick berechnet, überall gelesen (auch UI). */
+export interface Mults {
+  speed: number;              // globaler Zeitfaktor (Perks, Time-Ast, Dilation, NICHT auf Realzeit-Timer)
+  dustMult: Decimal;          // × auf Dust-Output (Stufe 1 → Dust)
+  allGenMult: Decimal;        // × auf jede Generator-Stufe
+  genCostDiv: Decimal;        // Kostenteiler
+  genCostExp: number;         // Kosten-Exponent (Challenge 4)
+  compressionEffect: number;  // pro Compression-Stufe
+  clickMult: Decimal;
+  cometChance: number;
+  cometBoostMult: number;
+  cometDur: number;
+  hRate: Decimal;
+  fusionMult: number;
+  plasmaGainMult: Decimal;
+  plasmaGainExp: number;
+  shardGainMult: Decimal;
+  dmGainMult: Decimal;
+  entropyGainMult: Decimal;
+  pulsarBurst: number;        // aktueller Burst-Faktor (1 wenn inaktiv)
+  pulsarPeriod: number;
+  offlineMult: number;
+  nebulaDustMult: Decimal;    // aus Emission-Zellen
+  autoNovaUnlocked: boolean;
+}
+
+const log10p1 = (d: Decimal) => Decimal.max(d, 0).add(1).log10();
+
+/** Effektive Stärke jeder Nebula-Zelle inkl. Dark-Nachbar-Verdopplung und Light-Ast. */
+export function nebulaCellPower(s: GameState, i: number, nebulaNodeMult: number): number {
+  const t = s.nova.cells[i];
+  if (t === 0 || t === 3) return 0;
+  let p = 1;
+  for (const n of HEX_NEIGHBORS[i]) if (s.nova.cells[n] === 3) p *= C.NEBULA_DARK_MULT;
+  return p * nebulaNodeMult;
+}
+
+export function computeMults(s: GameState): Mults {
+  const ch = s.nova.challenge;
+  const done = s.nova.completed;
+  const nodes = s.galaxy.nodes;
+  const gt = C.GALAXY_TYPES[s.galaxy.gtype];
+  const perks = s.sing.perks;
+
+  // — Node-Effekte einsammeln —
+  let nSpeed = 1, nOffline = 1, nFusion = 1, nCometDur = 1, nPulsarPeriod = 1, nCometBoost = 0,
+    nCometChance = 1, nNebula = 1, nDustExp = 0, autoNova = false;
+  let nDust = ONE, nGenCost = ONE, nAllGens = ONE, nPlasma = ONE, nShard = ONE, nClick = ONE, nAll = ONE;
+  if (s.galaxy.unlocked || s.stats.coalescences > 0) {
+    for (let i = 0; i < C.CONSTELLATION_NODES; i++) {
+      if (!nodes[i]) continue;
+      const e = NODE_EFFECTS[i];
+      switch (e.t) {
+        case 'dust': nDust = nDust.mul(e.v); break;
+        case 'genCost': nGenCost = nGenCost.mul(e.v); break;
+        case 'allGens': nAllGens = nAllGens.mul(e.v); break;
+        case 'plasmaGain': nPlasma = nPlasma.mul(e.v); break;
+        case 'shardGain': nShard = nShard.mul(e.v); break;
+        case 'dustExp': nDustExp += e.v; break;
+        case 'speed': nSpeed *= e.v; break;
+        case 'offline': nOffline *= e.v; break;
+        case 'fusion': nFusion *= e.v; break;
+        case 'autoNova': autoNova = true; break;
+        case 'cometDur': nCometDur *= e.v; break;
+        case 'pulsarPeriod': nPulsarPeriod *= e.v; break;
+        case 'click': nClick = nClick.mul(e.v); break;
+        case 'cometChance': nCometChance *= e.v; break;
+        case 'cometBoost': nCometBoost += e.v; break;
+        case 'nebula': nNebula *= e.v; break;
+        case 'all': nAll = nAll.mul(e.v); break;
+      }
+    }
+  }
+
+  // — Achievements —
+  const achCount = s.achievements.reduce((a, b) => a + (b ? 1 : 0), 0);
+  const achMult = D(C.ACH_MULT).pow(achCount);
+
+  // — Singularity: Perks, Akkretion, NG+ —
+  const accretion = s.sing.fed.gt(0) ? log10p1(s.sing.fed).add(1).pow(C.FEED_ACCRETION_EXP) : ONE;
+  const perkDust = D(10).pow(perks[0]);                     // Event Horizon
+  const prestigeMult = D(2).pow(perks[4]);                  // Ergosphere
+  const perkSpeed = 1 + 0.25 * perks[2];                    // Frame Drag
+  const perkFusion = 1 + 0.5 * perks[3];                    // Spaghettification
+  const perkClick = D(10).pow(perks[5]);                    // Photon Sphere
+  const perkDM = D(1 + perks[6]);                           // Deep Gravity
+  const perkHawking = perks[1];                             // (in tick verwendet)
+  void perkHawking;
+  const ngMult = D(10).pow(s.sing.universes);
+  const ngPrestige = D(2).pow(s.sing.universes);
+
+  // — Dilation & Pulsar —
+  const dilation = s.sing.dilation.active ? C.DILATION_MULT : 1;
+  const pulsarPeriod = C.REMNANT_PULSAR_PERIOD * nPulsarPeriod;
+  const pulsarActive = s.nova.remnants[1] > 0 && s.nova.pulsarPhase < C.REMNANT_PULSAR_DURATION;
+  const pulsarBurst = pulsarActive ? C.REMNANT_PULSAR_MULT + 2 * (s.nova.remnants[1] - 1) : 1;
+
+  // — Elemente (He C O Si boosts) —
+  const el = s.star.elements;
+  const elBoost = (i: number) => log10p1(el[i]).add(1).pow(C.ELEMENT_BOOST_EXP[i]);
+  const heBoost = elBoost(1), cBoost = elBoost(2), oBoost = elBoost(3), siBoost = elBoost(4);
+
+  // — Plasma-Effekt auf Dust —
+  let plasmaDustExp = C.PLASMA_DUST_EXP + (done[5] ? 0.08 : 0);
+  if (ch === 5) plasmaDustExp *= 0.5;                       // Challenge 6: Dim Star
+  const plasmaDust = s.star.plasma.add(1).pow(plasmaDustExp);
+
+  // — Nebula —
+  const nebulaNodeMult = nNebula;
+  let emissionPower = 0, reflectionPower = 0;
+  for (let i = 0; i < C.NEBULA_CELLS; i++) {
+    const t = s.nova.cells[i];
+    if (t === 1) emissionPower += nebulaCellPower(s, i, nebulaNodeMult);
+    else if (t === 2) reflectionPower += nebulaCellPower(s, i, nebulaNodeMult);
+  }
+  const nebulaDustMult = D(C.NEBULA_EMISSION_MULT).pow(emissionPower);
+  const nebulaPlasmaMult = D(C.NEBULA_REFLECTION_MULT).pow(reflectionPower);
+
+  // — Kometen-Boost —
+  const cometBoostMult = C.COMET_BOOST_MULT + (done[4] ? 2 : 0) + nCometBoost;
+  const cometActive = s.dust.comet.boost > 0 ? cometBoostMult : 1;
+
+  // — Kaskaden-Passiveffekte höherer Ebenen —
+  const shardDust = s.nova.totalShards.add(1).pow(C.SHARD_DUST_EXP);
+  const dmAll = s.galaxy.totalDM.add(1).pow(C.DM_ALL_EXP);
+  const entropyAll = s.sing.totalEntropy.add(1).pow(C.ENTROPY_ALL_EXP);
+
+  // — Global zusammensetzen —
+  const globalMult = achMult.mul(accretion).mul(nAll).mul(ngMult).mul(gt.all).mul(pulsarBurst)
+    .mul(dmAll).mul(entropyAll);
+
+  let dustMult = plasmaDust.mul(heBoost).mul(nebulaDustMult).mul(nDust).mul(perkDust).mul(globalMult)
+    .mul(cometActive).mul(shardDust);
+  if (done[6]) dustMult = dustMult.mul(1.25);               // Challenge-7-Belohnung
+  if (nDustExp + 0.01 * perks[7] > 0) dustMult = dustMult.pow(1 + nDustExp + 0.01 * perks[7]);
+
+  let allGenMult = nAllGens.mul(globalMult);
+  if (done[1]) allGenMult = allGenMult.mul(2);
+
+  const speed = nSpeed * perkSpeed * dilation;
+
+  const compressionEffect = C.COMPRESSION_EFFECT
+    + (done[0] ? 0.10 : 0)
+    + (s.star.upgrades[3] ? 0.05 : 0)
+    + siBoost.sub(1).toNumber() * 0.02;                     // Si verstärkt Compression leicht
+
+  let clickMult = oBoost.mul(nClick).mul(perkClick).mul(cometActive).mul(gt.active);
+  if (s.star.upgrades[7]) clickMult = clickMult.mul(5);
+
+  const hRate = s.star.unlocked
+    ? s.star.totalPlasma.add(1).pow(C.H_RATE_EXP).mul(C.STAR_CLASSES[s.star.cls].speed)
+        .mul(s.star.upgrades[6] ? 3 : 1)
+        .mul(s.nova.totalShards.add(1).pow(C.SHARD_H_EXP))
+        .mul(dmAll).mul(entropyAll)
+    : ZERO;
+
+  let fusionMult = nFusion * perkFusion
+    * Math.pow(C.REMNANT_NEUTRON_FUSION, s.nova.remnants[0])
+    * (done[2] ? 2 : 1)
+    * (s.star.upgrades[10] ? 2 : 1);
+  if (ch === 2) fusionMult *= 0.1;                          // Challenge 3: Slow Burn
+
+  const plasmaGainMult = nebulaPlasmaMult.mul(nPlasma).mul(prestigeMult).mul(ngPrestige)
+    .mul(C.STAR_CLASSES[s.star.cls].plasmaGain).mul(D(1 + s.sing.perks[1]));
+  const plasmaGainExp = C.PLASMA_EXP + (s.star.upgrades[11] ? 0.05 : 0);
+
+  const shardGainMult = nShard.mul(prestigeMult).mul(ngPrestige)
+    .mul(1 + C.REMNANT_BH_SHARDS * s.nova.remnants[2]).mul(D(1 + s.sing.perks[1]));
+
+  const dmGainMult = perkDM.mul(prestigeMult).mul(ngPrestige);
+  const entropyGainMult = prestigeMult.mul(ngPrestige);
+
+  let genCostDiv = cBoost.mul(nGenCost);
+  if (done[3]) genCostDiv = genCostDiv.mul(2);
+  if (s.star.upgrades[2]) {
+    const discovered = s.star.elements.filter(e => e.gt(0)).length;
+    genCostDiv = genCostDiv.mul(Math.pow(1.1, discovered));
+  }
+
+  return {
+    speed,
+    dustMult, allGenMult, genCostDiv,
+    genCostExp: ch === 3 ? C.CH4_COST_EXP : 1,
+    compressionEffect,
+    clickMult,
+    cometChance: C.COMET_CHANCE_PER_SEC * nCometChance,
+    cometBoostMult,
+    cometDur: C.COMET_BOOST_TIME * (s.star.upgrades[5] ? 2 : 1) * nCometDur,
+    hRate,
+    fusionMult,
+    plasmaGainMult, plasmaGainExp,
+    shardGainMult, dmGainMult, entropyGainMult,
+    pulsarBurst, pulsarPeriod,
+    offlineMult: nOffline * gt.offline,
+    nebulaDustMult,
+    autoNovaUnlocked: autoNova,
+  };
+}
+
+// ── Generatoren ──────────────────────────────────────────────────────────────
+export function genCost(s: GameState, m: Mults, tier: number, n = 1): Decimal {
+  const base = D(C.GEN_BASE_COST[tier]).div(m.genCostDiv);
+  let c = costGeometric(n, base, C.GEN_GROWTH[tier], s.dust.gens[tier].bought);
+  if (m.genCostExp !== 1) c = c.pow(m.genCostExp);
+  return c;
+}
+export function genMaxAfford(s: GameState, m: Mults, tier: number): number {
+  const base = D(C.GEN_BASE_COST[tier]).div(m.genCostDiv);
+  let budget = s.dust.amount;
+  if (m.genCostExp !== 1) budget = budget.root(m.genCostExp);
+  return affordGeometric(budget, base, C.GEN_GROWTH[tier], s.dust.gens[tier].bought);
+}
+/** Produktion-Multiplikator einer Stufe (ohne dt), inkl. Basisrate der Stufe */
+export function tierMult(s: GameState, m: Mults, tier: number): Decimal {
+  let mult = D(C.GEN_MULT_PER_10).pow(Math.floor(s.dust.gens[tier].bought / 10))
+    .mul(Math.pow(m.compressionEffect, s.dust.compression))
+    .mul(m.allGenMult)
+    .mul(C.GEN_RATE[tier]);
+  if (tier === 0 && s.nova.completed[7]) mult = mult.mul(8);  // Challenge-8-Belohnung
+  return mult;
+}
+/** Dust/s (für UI, Klick und Sim) */
+export function dustPerSecond(s: GameState, m: Mults): Decimal {
+  return s.dust.gens[0].amount.mul(tierMult(s, m, 0)).mul(m.dustMult);
+}
+export function compressionCost(s: GameState): Decimal {
+  return D(C.COMPRESSION_BASE).mul(Decimal.pow(C.COMPRESSION_GROWTH, s.dust.compression));
+}
+export function clickAmount(s: GameState, m: Mults): Decimal {
+  return D(C.CLICK_BASE).add(dustPerSecond(s, m).mul(C.CLICK_FRACTION)).mul(m.clickMult);
+}
+/** höchste in diesem Challenge-Modus erlaubte Generator-Stufe (exklusiv) */
+export function maxTier(s: GameState): number {
+  if (s.nova.challenge === 7) return 1;   // Singular Focus
+  if (s.nova.challenge === 1) return 4;   // Sparse Matter
+  return C.GEN_COUNT;
+}
+
+// ── Prestige-Gains ───────────────────────────────────────────────────────────
+export function plasmaGain(s: GameState, m: Mults): Decimal {
+  if (s.dust.total.lt(C.IGNITION_REQ)) return ZERO;
+  return s.dust.total.div(C.IGNITION_REQ).pow(m.plasmaGainExp).mul(m.plasmaGainMult).floor();
+}
+export function canIgnite(s: GameState): boolean { return s.dust.total.gte(C.IGNITION_REQ); }
+
+export function shardGain(s: GameState, m: Mults): Decimal {
+  const fe = s.star.elements[5];
+  if (fe.lt(C.SUPERNOVA_REQ)) return ZERO;
+  return fe.div(C.SUPERNOVA_REQ).pow(C.SHARD_EXP).mul(m.shardGainMult).floor();
+}
+export function canSupernova(s: GameState): boolean { return s.star.elements[5].gte(C.SUPERNOVA_REQ); }
+
+export function dmGain(s: GameState, m: Mults): Decimal {
+  if (s.nova.totalShards.lt(C.COALESCE_REQ)) return ZERO;
+  return s.nova.totalShards.div(C.COALESCE_REQ).pow(C.DM_EXP).mul(m.dmGainMult).floor();
+}
+export function canCoalesce(s: GameState): boolean { return s.nova.totalShards.gte(C.COALESCE_REQ); }
+
+export function entropyGain(s: GameState, m: Mults): Decimal {
+  if (s.galaxy.totalDM.lt(C.COLLAPSE_REQ)) return ZERO;
+  return s.galaxy.totalDM.div(C.COLLAPSE_REQ).pow(C.ENTROPY_EXP).mul(m.entropyGainMult).floor();
+}
+export function canCollapse(s: GameState): boolean { return s.galaxy.totalDM.gte(C.COLLAPSE_REQ); }
+
+// ── Kosten weiterer Systeme ──────────────────────────────────────────────────
+export function reactorCost(s: GameState, step: number): Decimal {
+  return D(C.REACTOR_BASE_COST[step]).mul(Decimal.pow(C.REACTOR_COST_GROWTH, s.star.reactors[step]));
+}
+export function nebulaCellCost(s: GameState): Decimal {
+  return D(C.NEBULA_COST_BASE).mul(Decimal.pow(C.NEBULA_COST_GROWTH, s.nova.cellsBought));
+}
+export function nodeCost(i: number): Decimal { return D(C.NODE_COST(i)); }
+/** Node i kaufbar? — Kette innerhalb des Astes */
+export function nodeAvailable(s: GameState, i: number): boolean {
+  if (s.galaxy.nodes[i]) return false;
+  return i % 15 === 0 || s.galaxy.nodes[i - 1];
+}
+export function perkCost(s: GameState, i: number): Decimal {
+  return D(C.PERK_BASE_COST[i]).mul(Decimal.pow(C.PERK_COST_GROWTH[i], s.sing.perks[i]));
+}
+/** Masse-Beitrag beim Füttern des Schwarzen Lochs */
+export function feedMass(s: GameState): Decimal {
+  return log10p1(s.dust.amount)
+    .add(log10p1(s.star.plasma).mul(10))
+    .add(log10p1(s.nova.shards).mul(100))
+    .add(log10p1(s.galaxy.dm).mul(1000));
+}
+export function autoIgniteUnlocked(s: GameState): boolean {
+  return s.nova.completed.some(Boolean);
+}

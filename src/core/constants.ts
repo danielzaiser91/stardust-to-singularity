@@ -1,0 +1,95 @@
+/**
+ * ★ BALANCE-SHEET ★
+ * Sämtliche Spielbalance-Zahlen leben hier. Die Sim (src/sim) und die Balance-Tests
+ * (tests/balance.test.ts) validieren jede Änderung. Kein Magic Number außerhalb dieser Datei.
+ */
+
+export const SAVE_VERSION = 1;
+
+// ── Ebene 0: Dust ────────────────────────────────────────────────────────────
+export const GEN_COUNT = 8;
+export const GEN_BASE_COST = [10, 1e3, 1e6, 1e10, 1e14, 1e18, 1e22, 1e26];
+export const GEN_GROWTH = [2.0, 2.3, 2.6, 3.0, 3.5, 4.0, 4.5, 5.0];
+export const GEN_RATE = [1, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.1];  // Output je Einheit/s
+export const GEN_MULT_PER_10 = 2;            // jede volle 10er-Packung verdoppelt Output der Stufe
+export const COMPRESSION_BASE = 500;
+export const COMPRESSION_GROWTH = 14;
+export const COMPRESSION_EFFECT = 1.25;      // × auf alle Generator-Produktion, pro Stufe
+export const CLICK_BASE = 1;
+export const CLICK_FRACTION = 0.02;          // Klick gibt zusätzlich 2 % der Dust/s
+export const COMET_CHANCE_PER_SEC = 1 / 150;
+export const COMET_TTL = 12;                 // Sekunden sichtbar/anklickbar
+export const COMET_BOOST_MULT = 3;
+export const COMET_BOOST_TIME = 30;
+
+// ── Ebene 1: Star (Ignition) ─────────────────────────────────────────────────
+export const IGNITION_REQ = 1e30;            // Dust (total dieses Runs)
+export const PLASMA_EXP = 0.5;               // gain = (total/REQ)^exp
+export const PLASMA_DUST_EXP = 1.1;          // Dust-Mult = (1+plasma)^exp
+export const ELEMENT_COUNT = 6;              // H He C O Si Fe
+export const FUSION_STEPS = 5;               // H→He→C→O→Si→Fe
+export const H_RATE_EXP = 0.75;              // H/s = (1+totalPlasma)^exp * Klassen-/Boost-Mults
+export const FUSION_RATIO = 10;              // 10 Input → 1 Output
+export const REACTOR_RATE = [1, 0.6, 0.35, 0.2, 0.12];   // Basis-Durchsatz je Level
+export const REACTOR_BASE_COST = [1, 4, 16, 64, 256];    // Plasma
+export const REACTOR_COST_GROWTH = 2.5;
+// Element-Boosts: mult = (1 + log10(1+stock))^EXP  (Fe boostet nichts — Gift)
+export const ELEMENT_BOOST_EXP = [0, 2.0, 1.5, 1.4, 1.2, 0]; // H,He,C,O,Si,Fe
+export const STAR_CLASSES = [
+  { speed: 0.6, plasmaGain: 2.0 },  // Roter Zwerg
+  { speed: 1.0, plasmaGain: 1.0 },  // Gelber Stern
+  { speed: 1.8, plasmaGain: 0.5 },  // Blauer Riese
+];
+export const PLASMA_UPGRADE_COSTS = [2, 4, 8, 15, 30, 60, 120, 300, 800, 2000, 6000, 15000];
+
+// ── Ebene 2: Supernova ───────────────────────────────────────────────────────
+export const SUPERNOVA_REQ = 1e4;            // Fe
+export const SHARD_EXP = 0.55;               // shards = (Fe/REQ)^exp
+// ★ Kaskaden-Passiveffekte: jede Prestige-Währung boostet die Ebenen darunter
+export const SHARD_DUST_EXP = 1.2;           // Dust ×(1+totalShards)^exp
+export const SHARD_H_EXP = 0.6;              // H-Rate ×(1+totalShards)^exp
+export const DM_ALL_EXP = 0.8;               // Gesamtproduktion ×(1+totalDM)^exp
+export const ENTROPY_ALL_EXP = 0.5;          // Gesamtproduktion ×(1+totalEntropy)^exp
+export const NEBULA_CELLS = 19;              // Hex-Grid Radius 2
+export const NEBULA_COST_BASE = 1;           // Shards
+export const NEBULA_COST_GROWTH = 2;
+export const NEBULA_EMISSION_MULT = 3;       // × Dust-Produktion je Zelle
+export const NEBULA_REFLECTION_MULT = 2;     // × Plasma-Gain je Zelle
+export const NEBULA_DARK_MULT = 2;           // × auf Effekt jeder Nachbarzelle
+export const REMNANT_NEUTRON_FUSION = 1.5;   // × Fusion je Neutronenstern
+export const REMNANT_PULSAR_PERIOD = 60;
+export const REMNANT_PULSAR_DURATION = 10;
+export const REMNANT_PULSAR_MULT = 5;        // Basis-Burst; +2 je weiterem Pulsar
+export const REMNANT_BH_SHARDS = 0.5;        // +50 % Shard-Gain je kleinem BH
+export const CHALLENGE_COUNT = 8;
+export const CH7_DECAY = 0.01;               // 1 %/s Dust-Zerfall in Challenge 7
+export const CH4_COST_EXP = 1.2;
+
+// ── Ebene 3: Galaxy ──────────────────────────────────────────────────────────
+export const COALESCE_REQ = 1e5;             // total Nova Shards
+export const DM_EXP = 0.45;                  // dm = (totalShards/REQ)^exp
+export const CONSTELLATION_NODES = 45;       // 3 Äste à 15
+export const NODE_COST = (i: number) => Math.max(1, Math.floor(Math.pow(1.55, i % 15) * (1 + Math.floor(i / 15))));
+export const GALAXY_TYPES = [
+  { all: 1.25, offline: 1, active: 1 },      // Spiral: +25 % alles
+  { all: 1, offline: 2, active: 1 },         // Elliptisch: Offline/Autobuyer ×2
+  { all: 1, offline: 1, active: 3 },         // Irregulär: Klick/Komet ×3
+];
+
+// ── Ebene 4: Singularity ─────────────────────────────────────────────────────
+export const COLLAPSE_REQ = 1e4;             // total Dark Matter
+export const ENTROPY_EXP = 0.3;
+export const PERK_COUNT = 8;
+export const PERK_BASE_COST = [1, 3, 10, 25, 100, 500, 2500, 10000];
+export const PERK_COST_GROWTH = [3, 4, 5, 6, 8, 10, 12, 15];
+export const FEED_ACCRETION_EXP = 2;         // global mult = (1+log10(1+fed))^exp
+export const DILATION_MULT = 4;
+export const DILATION_TIME = 300;
+export const DILATION_CD = 3600;
+export const ENDGAME_ENTROPY = 1e9;
+
+// ── Querschnitt ──────────────────────────────────────────────────────────────
+export const ACH_MULT = 1.02;                // globale Produktion je Achievement
+export const OFFLINE_MAX_SECONDS = 24 * 3600;
+export const OFFLINE_CHUNKS = 2000;
+export const AUTOSAVE_INTERVAL = 30;

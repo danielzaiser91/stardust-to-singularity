@@ -1,0 +1,247 @@
+import { D, ZERO, Decimal } from './decimal';
+import * as C from './constants';
+import type { GameState, StarClass, GalaxyType, NebulaCell } from './state';
+import {
+  computeMults, genCost, genMaxAfford, compressionCost, clickAmount, maxTier,
+  plasmaGain, canIgnite, shardGain, canSupernova, dmGain, canCoalesce,
+  entropyGain, canCollapse, reactorCost, nebulaCellCost, nodeCost, nodeAvailable,
+  perkCost, feedMass, type Mults,
+} from './formulas';
+
+/** Alle Spieler-Aktionen. Geben true zurück, wenn etwas passiert ist. */
+
+export function buyGenerator(s: GameState, m: Mults, tier: number, n: number): boolean {
+  if (tier >= maxTier(s) || n < 1) return false;
+  const cost = genCost(s, m, tier, n);
+  if (s.dust.amount.lt(cost)) return false;
+  s.dust.amount = s.dust.amount.sub(cost);
+  const g = s.dust.gens[tier];
+  g.amount = g.amount.add(n);
+  g.bought += n;
+  return true;
+}
+export function buyGeneratorMax(s: GameState, m: Mults, tier: number): boolean {
+  return buyGenerator(s, m, tier, genMaxAfford(s, m, tier));
+}
+export function buyCompression(s: GameState): boolean {
+  if (s.nova.challenge === 0) return false;  // Challenge 1: Cold Void
+  const cost = compressionCost(s);
+  if (s.dust.amount.lt(cost)) return false;
+  s.dust.amount = s.dust.amount.sub(cost);
+  s.dust.compression++;
+  return true;
+}
+export function click(s: GameState, m: Mults): Decimal {
+  const gain = clickAmount(s, m);
+  s.dust.amount = s.dust.amount.add(gain);
+  s.dust.total = s.dust.total.add(gain);
+  s.stats.totalDustEver = s.stats.totalDustEver.add(gain);
+  s.stats.clicks++;
+  return gain;
+}
+export function clickComet(s: GameState, m: Mults): boolean {
+  if (!s.dust.comet.active) return false;
+  s.dust.comet.active = false;
+  s.dust.comet.boost = m.cometDur;
+  s.stats.comets++;
+  return true;
+}
+
+// ── Ebene 1: Ignition ────────────────────────────────────────────────────────
+function resetDustLayer(s: GameState): void {
+  s.dust.amount = D(10);
+  s.dust.total = D(10);
+  for (const g of s.dust.gens) { g.amount = ZERO; g.bought = 0; }
+  if (!s.star.upgrades[9]) s.dust.compression = 0;
+  else s.dust.compression = Math.min(s.dust.compression, 10);  // Upgrade 10: behalte bis zu 10
+  s.dust.comet = { active: false, ttl: 0, boost: 0 };
+  if (s.star.upgrades[0]) { s.dust.amount = D(1000); s.dust.total = D(1000); }  // Head Start
+}
+
+export function doIgnite(s: GameState, cls: StarClass): boolean {
+  if (!canIgnite(s)) return false;
+  const m = computeMults(s);
+  const gain = plasmaGain(s, m);
+  // Challenge im Lauf? → abgeschlossen
+  if (s.nova.challenge >= 0) {
+    s.nova.completed[s.nova.challenge] = true;
+    s.nova.challenge = -1;
+  }
+  s.star.unlocked = true;
+  s.star.plasma = s.star.plasma.add(gain);
+  s.star.totalPlasma = s.star.totalPlasma.add(gain);
+  if (s.star.plasma.gt(s.stats.bestPlasma)) s.stats.bestPlasma = s.star.plasma;
+  s.star.cls = cls;
+  s.stats.ignitions++;
+  s.stats.runTime = 0;
+  resetDustLayer(s);
+  return true;
+}
+
+export function buyPlasmaUpgrade(s: GameState, i: number): boolean {
+  if (i < 0 || i >= C.PLASMA_UPGRADE_COSTS.length || s.star.upgrades[i]) return false;
+  const cost = D(C.PLASMA_UPGRADE_COSTS[i]);
+  if (s.star.plasma.lt(cost)) return false;
+  s.star.plasma = s.star.plasma.sub(cost);
+  s.star.upgrades[i] = true;
+  return true;
+}
+export function buyReactor(s: GameState, step: number): boolean {
+  if (step < 0 || step >= C.FUSION_STEPS) return false;
+  if (step > 0 && s.star.reactors[step - 1] === 0) return false;  // Kette der Reihe nach
+  const cost = reactorCost(s, step);
+  if (s.star.plasma.lt(cost)) return false;
+  s.star.plasma = s.star.plasma.sub(cost);
+  s.star.reactors[step]++;
+  return true;
+}
+
+// ── Ebene 2: Supernova ───────────────────────────────────────────────────────
+function resetStarLayer(s: GameState): void {
+  s.star.plasma = ZERO;
+  s.star.totalPlasma = ZERO;
+  s.star.elements = s.star.elements.map(() => ZERO);
+  s.star.reactors = s.star.reactors.map(() => 0);
+  s.star.upgrades = s.star.upgrades.map(() => false);
+  resetDustLayer(s);
+}
+
+export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
+  if (!canSupernova(s)) return false;
+  const m = computeMults(s);
+  const gain = shardGain(s, m);
+  s.nova.unlocked = true;
+  s.nova.shards = s.nova.shards.add(gain);
+  s.nova.totalShards = s.nova.totalShards.add(gain);
+  s.nova.remnants[remnant]++;
+  s.stats.supernovae++;
+  s.stats.novaTime = 0;
+  s.stats.runTime = 0;
+  resetStarLayer(s);
+  return true;
+}
+
+export function placeNebula(s: GameState, cell: number, type: NebulaCell): boolean {
+  if (cell < 0 || cell >= C.NEBULA_CELLS || type === 0) return false;
+  if (s.nova.cells[cell] === type) return false;
+  const cost = nebulaCellCost(s);
+  if (s.nova.shards.lt(cost)) return false;
+  s.nova.shards = s.nova.shards.sub(cost);
+  s.nova.cells[cell] = type;
+  s.nova.cellsBought++;
+  return true;
+}
+
+export function enterChallenge(s: GameState, i: number): boolean {
+  if (!s.nova.unlocked || i < 0 || i >= C.CHALLENGE_COUNT) return false;
+  if (s.nova.challenge !== -1) return false;
+  s.nova.challenge = i;
+  resetDustLayer(s);  // nur Dust-Ebene frisch — Plasma/Upgrades bleiben (Challenge = Ignition unter Restriktion)
+  return true;
+}
+export function exitChallenge(s: GameState): boolean {
+  if (s.nova.challenge === -1) return false;
+  s.nova.challenge = -1;
+  resetDustLayer(s);
+  return true;
+}
+
+// ── Ebene 3: Coalescence ─────────────────────────────────────────────────────
+function resetNovaLayer(s: GameState): void {
+  s.nova.shards = ZERO;
+  s.nova.totalShards = ZERO;
+  s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
+  s.nova.cellsBought = 0;
+  s.nova.remnants = [0, 0, 0];
+  s.nova.pulsarPhase = 0;
+  // completed-Challenges bleiben permanent
+  resetStarLayer(s);
+}
+
+export function doCoalesce(s: GameState, gtype: GalaxyType): boolean {
+  if (!canCoalesce(s)) return false;
+  if (s.nova.challenge !== -1) return false;
+  const m = computeMults(s);
+  const gain = dmGain(s, m);
+  s.galaxy.unlocked = true;
+  s.galaxy.dm = s.galaxy.dm.add(gain);
+  s.galaxy.totalDM = s.galaxy.totalDM.add(gain);
+  s.galaxy.gtype = gtype;
+  s.stats.coalescences++;
+  s.stats.galaxyTime = 0;
+  s.stats.novaTime = 0;
+  s.stats.runTime = 0;
+  resetNovaLayer(s);
+  return true;
+}
+
+export function buyNode(s: GameState, i: number): boolean {
+  if (!s.galaxy.unlocked || !nodeAvailable(s, i)) return false;
+  const cost = nodeCost(i);
+  if (s.galaxy.dm.lt(cost)) return false;
+  s.galaxy.dm = s.galaxy.dm.sub(cost);
+  s.galaxy.nodes[i] = true;
+  return true;
+}
+
+// ── Ebene 4: Collapse ────────────────────────────────────────────────────────
+function resetGalaxyLayer(s: GameState): void {
+  s.galaxy.dm = ZERO;
+  s.galaxy.totalDM = ZERO;
+  s.galaxy.nodes = s.galaxy.nodes.map(() => false);
+  s.galaxy.autoNova = { on: false, at: D(1) };
+  resetNovaLayer(s);
+}
+
+export function doCollapse(s: GameState): boolean {
+  if (!canCollapse(s) || s.nova.challenge !== -1) return false;
+  const m = computeMults(s);
+  const gain = entropyGain(s, m);
+  s.sing.unlocked = true;
+  s.sing.entropy = s.sing.entropy.add(gain);
+  s.sing.totalEntropy = s.sing.totalEntropy.add(gain);
+  s.stats.collapses++;
+  s.stats.singTime = 0;
+  s.stats.galaxyTime = 0;
+  resetGalaxyLayer(s);
+  return true;
+}
+
+export function buyPerk(s: GameState, i: number): boolean {
+  if (!s.sing.unlocked || i < 0 || i >= C.PERK_COUNT) return false;
+  const cost = perkCost(s, i);
+  if (s.sing.entropy.lt(cost)) return false;
+  s.sing.entropy = s.sing.entropy.sub(cost);
+  s.sing.perks[i]++;
+  return true;
+}
+
+export function feedBlackHole(s: GameState): boolean {
+  if (!s.sing.unlocked) return false;
+  const mass = feedMass(s);
+  if (mass.lte(0)) return false;
+  s.sing.fed = s.sing.fed.add(mass);
+  s.dust.amount = ZERO;
+  s.star.plasma = ZERO;
+  s.nova.shards = ZERO;
+  s.galaxy.dm = ZERO;
+  return true;
+}
+
+export function activateDilation(s: GameState): boolean {
+  if (!s.sing.unlocked || s.sing.dilation.active || s.sing.dilation.cd > 0) return false;
+  s.sing.dilation.active = true;
+  s.sing.dilation.left = C.DILATION_TIME;
+  return true;
+}
+
+export function newUniverse(s: GameState): boolean {
+  if (s.sing.totalEntropy.lt(C.ENDGAME_ENTROPY)) return false;
+  s.sing.universes++;
+  s.sing.endgame = true;
+  s.sing.entropy = ZERO;
+  s.sing.fed = ZERO;
+  s.sing.dilation = { active: false, left: 0, cd: 0 };
+  resetGalaxyLayer(s);
+  return true;
+}
