@@ -49,6 +49,7 @@ export const de: Record<string, string> = {
   'up.9': 'Erinnerung an Druck', 'up.9d': 'Behalte bis zu 10 Kompressionsstufen bei Zündung',
   'up.10': 'Katalysator', 'up.10d': 'Fusions-Durchsatz ×2',
   'up.11': 'Tiefe Zündung', 'up.11d': 'Plasma-Gewinn-Exponent +0,05',
+  'up.12': 'Sonnensegel', 'up.12d': 'Zieht passiv Staub in Höhe von 4 Klicks pro Sekunde an',
 
   // — Supernova —
   'nova.name': 'Supernova', 'nova.shards': 'Nova-Scherben',

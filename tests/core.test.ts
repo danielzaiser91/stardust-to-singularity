@@ -79,6 +79,16 @@ describe('tick & actions', () => {
     expect(s.star.reactors[0]).toBeGreaterThan(0);
   });
 
+  it('solar sail upgrade grants passive dust equal to 4 clicks/s', () => {
+    const s = initialState(1);
+    s.star.unlocked = true;
+    s.star.upgrades[12] = true;
+    const before = s.dust.amount;
+    tick(s, 10);
+    // ohne Generatoren: nur das Sonnensegel produziert (Klick-Basis 1 × 4/s × 10 s = 40)
+    expect(s.dust.amount.sub(before).toNumber()).toBeGreaterThanOrEqual(40);
+  });
+
   it('ignition resets dust layer and grants plasma', () => {
     const s = initialState(1);
     s.dust.total = D(C.IGNITION_REQ).mul(100);

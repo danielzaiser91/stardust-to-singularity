@@ -49,6 +49,7 @@ export const en: Record<string, string> = {
   'up.9': 'Memory of Pressure', 'up.9d': 'Keep up to 10 Compression levels on Ignition',
   'up.10': 'Catalyst', 'up.10d': 'Fusion throughput ×2',
   'up.11': 'Deep Ignition', 'up.11d': 'Plasma gain exponent +0.05',
+  'up.12': 'Solar Sail', 'up.12d': 'Passively attract dust equal to 4 clicks per second',
 
   // — Supernova —
   'nova.name': 'Supernova', 'nova.shards': 'Nova Shards',

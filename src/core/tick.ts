@@ -1,7 +1,7 @@
 import { Decimal } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
-import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, type Mults } from './formulas';
+import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, type Mults } from './formulas';
 import { doIgnite, doSupernova, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
@@ -68,6 +68,14 @@ export function tick(s: GameState, dt: number): Mults {
     s.dust.amount = s.dust.amount.add(gained);
     s.dust.total = s.dust.total.add(gained);
     s.stats.totalDustEver = s.stats.totalDustEver.add(gained);
+  }
+
+  // — Sonnensegel (Upgrade 13): passiver Staub in Klick-Kraft-Höhe —
+  if (s.star.upgrades[12]) {
+    const passive = clickAmount(s, m).mul(C.SOLAR_SAIL_CLICKS * gdt);
+    s.dust.amount = s.dust.amount.add(passive);
+    s.dust.total = s.dust.total.add(passive);
+    s.stats.totalDustEver = s.stats.totalDustEver.add(passive);
   }
 
   // — Challenge 7: Entropy Leak (Dust zerfällt) —
