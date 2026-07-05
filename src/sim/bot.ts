@@ -43,8 +43,8 @@ export function botStep(s: GameState, profile: Profile): void {
   // — Collapse: lohnender Gain ODER lange genug gewartet —
   if (s.galaxy.unlocked || s.sing.unlocked) {
     const eg = entropyGain(s, m);
-    const worth = eg.gte(s.sing.totalEntropy.mul(0.25).max(1))
-      || (eg.gte(1) && s.stats.singTime > 6 * 3600);
+    // aufs Clamp-Optimum warten (×4): ohne Softcap immer in endlicher Zeit erreichbar
+    const worth = eg.gte(s.sing.totalEntropy.mul(3).max(1));
     if (worth) {
       A.doCollapse(s);
       m = computeMults(s);
@@ -66,10 +66,11 @@ export function botStep(s: GameState, profile: Profile): void {
     }
   }
 
-  // — Coalescence: lohnender Gain ODER lange genug gewartet —
+  // — Coalescence: möglichst nah ans Clamp-Optimum (×4), Sicherheits-Fallback nach 12 h —
   if (s.nova.unlocked) {
     const dg = dmGain(s, m);
-    if (dg.gte(s.galaxy.totalDM.mul(0.2).max(1)) || (dg.gte(1) && s.stats.galaxyTime > 2 * 3600)) {
+    if (dg.gte(s.galaxy.totalDM.mul(3).max(1))
+      || (s.stats.galaxyTime > 24 * 3600 && dg.gte(s.galaxy.totalDM.mul(0.5).max(1)))) {
       // Galaxientyp: aktiv → irregulär, idle → elliptisch, sonst spiral
       A.doCoalesce(s, profile === 'active' ? 2 : 1);
       m = computeMults(s);

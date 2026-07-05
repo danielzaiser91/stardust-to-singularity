@@ -44,12 +44,15 @@ export const PLASMA_UPGRADE_COSTS = [2, 4, 8, 15, 30, 60, 120, 300, 800, 2000, 6
 
 // ── Ebene 2: Supernova ───────────────────────────────────────────────────────
 export const SUPERNOVA_REQ = 1e4;            // Fe (Basis)
-export const NOVA_REQ_GROWTH = 2.5;          // Fe-Anforderung ×2,5 je bisheriger Supernova
+export const NOVA_REQ_GROWTH = 1.8;          // Fe-Anforderung ×1,8 je Supernova (seit letzter Galaxie)
 export const SHARD_EXP = 0.45;               // shards = (Fe/aktuelleReq)^exp
 export const GAIN_SOFTCAP = 1e3;             // ab diesem Verhältnis greift der Softcap-Tail
 export const GAIN_TAIL_EXP = 0.2;            // Exponent jenseits des Softcaps (alle Prestige-Gains)
-// Härtester Schutz gegen Layer-Leapfrogging: pro Reset max. Vervierfachung der Gesamtsumme.
-export const GAIN_CLAMP_MULT = 3;            // gain ≤ total×3 + GAIN_CLAMP_FLOOR
+// Härtester Schutz gegen Layer-Leapfrogging: Wachstum pro Reset gedeckelt.
+// Faktor je Schleifenfrequenz: Plasma ist der 30-s-Innenloop und darf schneller
+// compounden (×20), die äußeren Ebenen (10 min / 40 min / 2 h) bleiben bei ×4.
+export const GAIN_CLAMP_MULT = 3;            // Shards/DM/Entropie: gain ≤ total×3 + floor
+export const PLASMA_CLAMP_MULT = 19;         // Plasma: gain ≤ total×19 + floor
 export const GAIN_CLAMP_FLOOR = 10;
 // Aufladezeiten: voller Prestige-Gain erst nach dieser Zeit seit dem letzten Reset der Ebene
 export const NOVA_MIN_TIME = 600;            // 10 min
@@ -80,7 +83,7 @@ export const CH4_COST_EXP = 1.2;
 
 // ── Ebene 3: Galaxy ──────────────────────────────────────────────────────────
 export const COALESCE_REQ = 2500;            // total Nova Shards (Basis)
-export const COALESCE_REQ_GROWTH = 6;        // Anforderung ×6 je bisheriger Coalescence
+export const COALESCE_REQ_GROWTH = 4;        // Anforderung ×4 je Coalescence (im Takt des ×4-Clamps)
 export const DM_EXP = 0.55;                  // dm = (totalShards/aktuelleReq)^exp
 export const CONSTELLATION_NODES = 45;       // 3 Äste à 15
 export const NODE_COST = (i: number) => Math.max(1, Math.floor(Math.pow(1.55, i % 15) * (1 + Math.floor(i / 15))));
@@ -92,8 +95,8 @@ export const GALAXY_TYPES = [
 
 // ── Ebene 4: Singularity ─────────────────────────────────────────────────────
 export const COLLAPSE_REQ = 300;             // total Dark Matter (Basis)
-export const COLLAPSE_REQ_GROWTH = 12;       // Anforderung ×12 je bisherigem Collapse
-export const ENTROPY_EXP = 0.45;
+export const COLLAPSE_REQ_GROWTH = 8;        // Anforderung ×8 je bisherigem Collapse
+export const ENTROPY_EXP = 0.6;
 export const PERK_COUNT = 8;
 export const PERK_BASE_COST = [1, 3, 10, 25, 100, 500, 2500, 10000];
 export const PERK_COST_GROWTH = [3, 4, 5, 6, 8, 10, 12, 15];

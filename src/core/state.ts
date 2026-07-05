@@ -62,6 +62,7 @@ export interface GameState {
     cells: NebulaCell[];          // 19 Hex-Zellen
     cellsBought: number;
     remnants: [number, number, number];  // neutron, pulsar, blackhole
+    count: number;                // Supernovae seit letzter Coalescence (Basis der Fe-Leiter)
     pulsarPhase: number;          // Sekunden im Pulsar-Zyklus
     challenge: number;            // -1 = keine aktiv
     completed: boolean[];         // 8
@@ -73,6 +74,7 @@ export interface GameState {
     totalDM: Decimal;
     nodes: boolean[];             // 45 Konstellations-Nodes
     gtype: GalaxyType;
+    count: number;                // Coalescences seit letztem Collapse (Basis der Shard-Leiter)
     autoNova: { on: boolean; at: Decimal };
   };
   sing: {
@@ -83,6 +85,7 @@ export interface GameState {
     fed: Decimal;                 // Gesamtmasse im Schwarzen Loch
     dilation: { active: boolean; left: number; cd: number };
     universes: number;            // NG+ Zähler
+    collapsesU: number;           // Kollapse in DIESEM Universum (Basis der quadratischen Leiter)
     endgame: boolean;
   };
   achievements: boolean[];
@@ -134,6 +137,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       cells: Array.from({ length: C.NEBULA_CELLS }, () => 0 as NebulaCell),
       cellsBought: 0,
       remnants: [0, 0, 0],
+      count: 0,
       pulsarPhase: 0,
       challenge: -1,
       completed: Array.from({ length: C.CHALLENGE_COUNT }, () => false),
@@ -144,6 +148,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       dm: ZERO, totalDM: ZERO,
       nodes: Array.from({ length: C.CONSTELLATION_NODES }, () => false),
       gtype: 0,
+      count: 0,
       autoNova: { on: false, at: D(1) },
     },
     sing: {
@@ -153,6 +158,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       fed: ZERO,
       dilation: { active: false, left: 0, cd: 0 },
       universes: 0,
+      collapsesU: 0,
       endgame: false,
     },
     achievements: Array.from({ length: 60 }, () => false),

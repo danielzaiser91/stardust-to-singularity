@@ -9,23 +9,26 @@ Incremental-Engines mit Buy-Max-Autobuyern wachsen **super-exponentiell** — je
 explodiert (das haben unsere Simulationen wiederholt bewiesen: Singularität nach 5 Stunden,
 NaN-Overflows, 47.000 Zündungen/Tag). Vier Mechanismen halten die Progression in Form:
 
-1. **Softcaps auf Prestige-Gains** (`GAIN_SOFTCAP`, `GAIN_TAIL_EXP`):
-   `gain = ratio^exp` gilt nur bis ratio 1e3, darüber nur noch `^0.2`.
-   Verhindert, dass ein einzelner Overkill-Run eine Ebene trivialisiert.
-   Der wichtigste Einzelfall: **Plasma** — ohne diesen Cap divergiert die Schleife
-   Plasma → Staubproduktion → Plasma binnen Minuten (empirisch: e4 → e131 in 20 Runs).
+1. **Frequenzskalierte Gain-Clamps** (`GAIN_CLAMP_MULT`, `PLASMA_CLAMP_MULT`): Kein Reset kann
+   die Gesamtsumme seiner Prestige-Währung um mehr als einen festen Faktor heben — ×20 für den
+   30-Sekunden-Innenloop (Plasma), ×4 für die äußeren Ebenen (Shards/DM/Entropie). Damit ist
+   Layer-Leapfrogging *mathematisch unmöglich*, egal wie sehr die Engine darunter explodiert.
+   Wachstum = Reset-Kadenz × Clamp-Faktor. Der Faktor MUSS zur Schleifenfrequenz passen:
+   ×4 auf dem Innenloop verhungert die Fe-Pipeline, kein Clamp auf dem Innenloop divergiert.
 
-2. **Gain-Clamp** (`GAIN_CLAMP_MULT`): Kein Reset kann die Gesamtsumme einer Prestige-Währung
-   mehr als vervierfachen (`gain ≤ total×3 + 10`). Damit ist Layer-Leapfrogging *mathematisch
-   unmöglich*, egal wie sehr die Engine darunter explodiert. Wachstum = Reset-Kadenz.
+2. **Lokale Anforderungs-Leitern**: Jede Supernova ×2,5 Fe, jede Galaxie ×6 Scherben — aber
+   die Zähler (`nova.count`, `galaxy.count`) resetten mit dem Eltern-Layer. Frische Galaxie =
+   frische Leiter. Lebenslange Zähler erzeugen permanente Walls (empirisch: Fe-Anforderung
+   e3548 nach 8908 Novae) und brechen NG+.
 
-3. **Aufladezeiten** (`*_MIN_TIME`): Voller Gain erst 10 min (Supernova) / 40 min (Galaxie) /
-   2 h (Kollaps) nach dem letzten Reset der Ebene. Setzt der Kadenz einen Boden;
-   thematisch: der Kern muss sich anreichern.
+3. **Quadratische Kollaps-Leiter** (`collapsesU`, Exponent n(n+1)/2): Die oberste Ebene braucht
+   eine Leiter, die der beschleunigende DM-Motor nicht einholen kann — geometrisch reicht nicht
+   (empirisch: 4 Kollapse/Tag bei ×8). Der Zähler resettet bei NG+ („New Universe").
 
-4. **Eskalierende Anforderungen** (`*_REQ_GROWTH`): Jede Supernova ×2,5 Fe, jede Galaxie ×6
-   Scherben, jeder Kollaps ×12 DM. Die Engine wächst schneller als die Anforderung —
-   aber die Gains sind geclampt, also bleibt die Kadenz der Taktgeber.
+4. **Aufladezeiten + Softcap** (`*_MIN_TIME`, `GAIN_SOFTCAP`): Voller Gain erst 10 min /
+   40 min / 2 h nach dem letzten Reset der Ebene (Kadenz-Boden; thematisch: der Kern muss
+   sich anreichern). Der Plasma-Softcap (Tail ^0,2 ab ratio 1e3) glättet zusätzlich
+   Overkill-Spitzen im Frühspiel.
 
 ## Kaskade ohne Whiplash
 

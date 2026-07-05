@@ -292,18 +292,22 @@ export function igniteReq(s: GameState): Decimal {
 }
 export function plasmaGain(s: GameState, m: Mults): Decimal {
   if (s.dust.total.lt(igniteReq(s))) return ZERO;
-  return softpow(s.dust.total.div(C.IGNITION_REQ), m.plasmaGainExp, C.GAIN_SOFTCAP, C.GAIN_TAIL_EXP)
-    .mul(m.plasmaGainMult).floor();
+  const raw = softpow(s.dust.total.div(C.IGNITION_REQ), m.plasmaGainExp, C.GAIN_SOFTCAP, C.GAIN_TAIL_EXP)
+    .mul(m.plasmaGainMult);
+  // Clamp auch hier (sonst divergiert die Zündschleife bei Layer-2-Dust), aber mit
+  // Innenloop-Faktor ×20 — sonst verhungert die Fe-Pipeline darüber
+  return clampGain(raw, s.star.totalPlasma, C.PLASMA_CLAMP_MULT);
 }
 export function canIgnite(s: GameState): boolean { return s.dust.total.gte(igniteReq(s)); }
 
-/** Eskalierende Fe-Anforderung: jede Supernova verteuert die nächste (Pacing-Taktgeber) */
+/** Eskalierende Fe-Anforderung — zählt nur Novae SEIT der letzten Coalescence:
+ *  frische Galaxie = frische Leiter (verhindert permanente Walls, hält NG+ sauber) */
 export function novaReq(s: GameState): Decimal {
-  return D(C.SUPERNOVA_REQ).mul(Decimal.pow(C.NOVA_REQ_GROWTH, s.stats.supernovae));
+  return D(C.SUPERNOVA_REQ).mul(Decimal.pow(C.NOVA_REQ_GROWTH, s.nova.count));
 }
-/** Kein Reset darf die Gesamtsumme mehr als vervierfachen — Wachstum bleibt Kadenz-getrieben */
-function clampGain(raw: Decimal, total: Decimal): Decimal {
-  return Decimal.min(raw, total.mul(C.GAIN_CLAMP_MULT).add(C.GAIN_CLAMP_FLOOR)).floor();
+/** Wachstum pro Reset hart gedeckelt — Pacing bleibt Kadenz-getrieben */
+function clampGain(raw: Decimal, total: Decimal, mult: number = C.GAIN_CLAMP_MULT): Decimal {
+  return Decimal.min(raw, total.mul(mult).add(C.GAIN_CLAMP_FLOOR)).floor();
 }
 
 export function shardGain(s: GameState, m: Mults): Decimal {
@@ -311,35 +315,36 @@ export function shardGain(s: GameState, m: Mults): Decimal {
   const req = novaReq(s);
   if (fe.lt(req)) return ZERO;
   const charge = Math.min(1, s.stats.novaTime / C.NOVA_MIN_TIME);
-  const raw = softpow(fe.div(req), C.SHARD_EXP, C.GAIN_SOFTCAP, C.GAIN_TAIL_EXP)
-    .mul(m.shardGainMult).mul(charge);
+  // kein Softcap nötig: der ×4-Clamp begrenzt hart, Overkill soll sich lohnen
+  const raw = fe.div(req).pow(C.SHARD_EXP).mul(m.shardGainMult).mul(charge);
   return clampGain(raw, s.nova.totalShards);
 }
 export function canSupernova(s: GameState): boolean { return s.star.elements[5].gte(novaReq(s)); }
 
-/** Eskalierende Anforderung: jede Coalescence verteuert die nächste */
+/** Eskalierende Anforderung — zählt nur Coalescences seit dem letzten Collapse */
 export function coalesceReq(s: GameState): Decimal {
-  return D(C.COALESCE_REQ).mul(Decimal.pow(C.COALESCE_REQ_GROWTH, s.stats.coalescences));
+  return D(C.COALESCE_REQ).mul(Decimal.pow(C.COALESCE_REQ_GROWTH, s.galaxy.count));
 }
 export function dmGain(s: GameState, m: Mults): Decimal {
   const req = coalesceReq(s);
   if (s.nova.totalShards.lt(req)) return ZERO;
   const charge = Math.min(1, s.stats.galaxyTime / C.GALAXY_MIN_TIME);
-  const raw = softpow(s.nova.totalShards.div(req), C.DM_EXP, C.GAIN_SOFTCAP, C.GAIN_TAIL_EXP)
-    .mul(m.dmGainMult).mul(charge);
+  const raw = s.nova.totalShards.div(req).pow(C.DM_EXP).mul(m.dmGainMult).mul(charge);
   return clampGain(raw, s.galaxy.totalDM);
 }
 export function canCoalesce(s: GameState): boolean { return s.nova.totalShards.gte(coalesceReq(s)); }
 
+/** Quadratische Leiter: Exponent n(n+1)/2 — jeder Kollaps verachtfacht den Multiplikator selbst.
+ *  Nötig, weil der DM-Motor jede geometrische Leiter überholt (empirisch: 4 Kollapse/Tag). */
 export function collapseReq(s: GameState): Decimal {
-  return D(C.COLLAPSE_REQ).mul(Decimal.pow(C.COLLAPSE_REQ_GROWTH, s.stats.collapses));
+  const n = s.sing.collapsesU;
+  return D(C.COLLAPSE_REQ).mul(Decimal.pow(C.COLLAPSE_REQ_GROWTH, (n * (n + 1)) / 2));
 }
 export function entropyGain(s: GameState, m: Mults): Decimal {
   const req = collapseReq(s);
   if (s.galaxy.totalDM.lt(req)) return ZERO;
   const charge = Math.min(1, s.stats.singTime / C.COLLAPSE_MIN_TIME);
-  const raw = softpow(s.galaxy.totalDM.div(req), C.ENTROPY_EXP, C.GAIN_SOFTCAP, C.GAIN_TAIL_EXP)
-    .mul(m.entropyGainMult).mul(charge);
+  const raw = s.galaxy.totalDM.div(req).pow(C.ENTROPY_EXP).mul(m.entropyGainMult).mul(charge);
   return clampGain(raw, s.sing.totalEntropy);
 }
 export function canCollapse(s: GameState): boolean { return s.galaxy.totalDM.gte(collapseReq(s)); }

@@ -141,6 +141,7 @@ export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
   s.nova.totalShards = s.nova.totalShards.add(gain);
   s.stats.lifetimeShards = s.stats.lifetimeShards.add(gain);
   s.nova.remnants[remnant]++;
+  s.nova.count++;
   s.stats.supernovae++;
   s.stats.novaTime = 0;
   s.stats.runTime = 0;
@@ -181,6 +182,7 @@ function resetNovaLayer(s: GameState): void {
   s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
   s.nova.cellsBought = 0;
   s.nova.remnants = [0, 0, 0];
+  s.nova.count = 0;
   s.nova.pulsarPhase = 0;
   // completed-Challenges bleiben permanent
   resetStarLayer(s);
@@ -196,6 +198,7 @@ export function doCoalesce(s: GameState, gtype: GalaxyType): boolean {
   s.galaxy.totalDM = s.galaxy.totalDM.add(gain);
   s.stats.lifetimeDM = s.stats.lifetimeDM.add(gain);
   s.galaxy.gtype = gtype;
+  s.galaxy.count++;
   s.stats.coalescences++;
   s.stats.galaxyTime = 0;
   s.stats.novaTime = 0;
@@ -218,6 +221,7 @@ function resetGalaxyLayer(s: GameState): void {
   s.galaxy.dm = ZERO;
   s.galaxy.totalDM = ZERO;
   s.galaxy.nodes = s.galaxy.nodes.map(() => false);
+  s.galaxy.count = 0;
   s.galaxy.autoNova = { on: false, at: D(1) };
   resetNovaLayer(s);
 }
@@ -230,6 +234,7 @@ export function doCollapse(s: GameState): boolean {
   s.sing.entropy = s.sing.entropy.add(gain);
   s.sing.totalEntropy = s.sing.totalEntropy.add(gain);
   s.stats.collapses++;
+  s.sing.collapsesU++;
   s.stats.singTime = 0;
   s.stats.galaxyTime = 0;
   resetGalaxyLayer(s);
@@ -270,6 +275,7 @@ export function newUniverse(s: GameState): boolean {
   s.sing.endgame = true;
   s.sing.entropy = ZERO;
   s.sing.fed = ZERO;
+  s.sing.collapsesU = 0;  // NG+ startet die Kollaps-Leiter frisch
   s.sing.dilation = { active: false, left: 0, cd: 0 };
   resetGalaxyLayer(s);
   return true;
