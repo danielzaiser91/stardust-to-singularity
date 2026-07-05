@@ -284,11 +284,16 @@ export function maxTier(s: GameState): number {
 }
 
 // ── Prestige-Gains ───────────────────────────────────────────────────────────
+/** Zündschwelle: in Challenges eskaliert das Ziel je Challenge-Index */
+export function igniteReq(s: GameState): Decimal {
+  const ch = s.nova.challenge;
+  return ch >= 0 ? D(C.IGNITION_REQ).mul(C.CH_GOAL_MULT[ch]) : D(C.IGNITION_REQ);
+}
 export function plasmaGain(s: GameState, m: Mults): Decimal {
-  if (s.dust.total.lt(C.IGNITION_REQ)) return ZERO;
+  if (s.dust.total.lt(igniteReq(s))) return ZERO;
   return s.dust.total.div(C.IGNITION_REQ).pow(m.plasmaGainExp).mul(m.plasmaGainMult).floor();
 }
-export function canIgnite(s: GameState): boolean { return s.dust.total.gte(C.IGNITION_REQ); }
+export function canIgnite(s: GameState): boolean { return s.dust.total.gte(igniteReq(s)); }
 
 export function shardGain(s: GameState, m: Mults): Decimal {
   const fe = s.star.elements[5];

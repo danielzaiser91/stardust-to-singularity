@@ -141,13 +141,15 @@ export class DustPanel implements Panel {
     const show = s.dust.total.gte(1e26) || s.star.unlocked;
     setVisible(this.igniteBox, show);
     if (show) {
-      setBar(this.igniteBar, logFrac(s.dust.total, C.IGNITION_REQ));
+      const req = F.igniteReq(s);
+      setBar(this.igniteBar, s.dust.total.lte(1) ? 0
+        : Math.min(1, s.dust.total.log10().toNumber() / req.log10().toNumber()));
       const gain = F.plasmaGain(s, m);
       if (F.canIgnite(s)) {
         setText(this.igniteLabel, t('star.igniteGain', { v: fmt(gain, s.settings.sciNotation) }));
         setDisabled(this.igniteBtn, false);
       } else {
-        setText(this.igniteLabel, t('star.igniteReq', { v: fmt(D(C.IGNITION_REQ), true) }));
+        setText(this.igniteLabel, t('star.igniteReq', { v: fmt(req, true) }));
         setDisabled(this.igniteBtn, true);
       }
       setVisible(this.classSeg, s.stats.ignitions > 0);
@@ -319,6 +321,7 @@ export class NovaPanel implements Panel {
       const row = el('div', 'row ch-row');
       const info = el('div', 'gen-info');
       info.append(el('div', 'gen-name', t(`ch.${c}`)), el('div', 'sub', t(`ch.${c}d`)),
+        el('div', 'sub', `${t('misc.goal')}: ${fmt(D(C.IGNITION_REQ).mul(C.CH_GOAL_MULT[c]), true)} ${t('dust.name')}`),
         el('div', 'sub reward', `${t('misc.reward')}: ${t(`ch.${c}r`)}`));
       const status = el('div', 'ch-status');
       const enter = btn('buy', t('nova.chEnter'), () => {

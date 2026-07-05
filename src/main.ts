@@ -58,6 +58,10 @@ hud.addTab('journal', new JournalPanel(), s => s.loreSeen.some(Boolean));
 hud.addTab('settings', settingsPanel, () => true);
 hud.selectTab('dust');
 
+settingsPanel.onLangChange = () => {
+  saveGame(state);
+  location.reload();  // alle statisch gebauten Panel-Labels neu aufbauen
+};
 settingsPanel.onImport = imported => {
   replaceSave(imported);
   location.reload();  // sauberster Weg, alle Systeme zu resynchronisieren

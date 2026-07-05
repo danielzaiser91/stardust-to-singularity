@@ -10,6 +10,10 @@ import * as A from '../core/actions';
 
 export type Profile = 'active' | 'idle';
 
+import type { Decimal } from '../core/decimal';
+/** Plasma-Stand beim letzten Challenge-Versuch (Backoff-Heuristik des Bots) */
+const challengeAttempts = new WeakMap<GameState, Decimal[]>();
+
 export interface Milestone { name: string; at: number; }  // at = gespielte Sekunden
 
 /**
@@ -81,11 +85,17 @@ export function botStep(s: GameState, profile: Profile): void {
     }
   }
 
-  // — Challenges: der Reihe nach, sobald genug Plasma da ist (Schwierigkeitsleiter) —
+  // — Challenges: der Reihe nach; nach Fehlversuch erst wieder bei ×100 Plasma (Backoff) —
   if (s.nova.unlocked && s.nova.challenge === -1) {
     const next = s.nova.completed.findIndex(c => !c);
-    if (next >= 0 && s.stats.runTime < 2 && s.star.plasma.gte(25 * Math.pow(4, next))) {
-      A.enterChallenge(s, next);
+    if (next >= 0 && s.stats.runTime < 2 && s.star.plasma.gte(100)) {
+      const attempts = challengeAttempts.get(s) ?? [];
+      const last = attempts[next];
+      if (!last || s.star.plasma.gte(last.mul(100))) {
+        attempts[next] = s.star.plasma;
+        challengeAttempts.set(s, attempts);
+        A.enterChallenge(s, next);
+      }
     }
   }
   // Challenge abbrechen, wenn hoffnungslos (>30 min drin ohne Abschluss)
@@ -179,12 +189,12 @@ export function simulate(s: GameState, profile: Profile, until: string, maxDays:
   const untilDef = MILESTONE_DEFS.find(d => d.name === until);
   if (!untilDef) throw new Error(`unknown milestone: ${until}`);
 
-  let nextLog = 86400;
+  let nextLog = 4320;  // erst fein (0,05 d), ab Tag 1 täglich
   while (s.stats.played < maxSec) {
     tick(s, 1);
     botStep(s, profile);
     if (s.stats.played >= nextLog) {
-      nextLog += 86400;
+      nextLog += s.stats.played < 86400 ? 4320 : 86400;
       // eslint-disable-next-line no-console
       console.log(`  d${(s.stats.played / 86400).toFixed(0)}: ign=${s.stats.ignitions} nova=${s.stats.supernovae}` +
         ` gal=${s.stats.coalescences} col=${s.stats.collapses} shards=${s.nova.totalShards.toExponential(1)}` +
