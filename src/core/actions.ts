@@ -1,4 +1,4 @@
-import { D, ZERO, Decimal } from './decimal';
+import { D, ZERO, Decimal, affordGeometric, costGeometric } from './decimal';
 import * as C from './constants';
 import type { GameState, StarClass, GalaxyType, NebulaCell } from './state';
 import {
@@ -29,6 +29,18 @@ export function buyCompression(s: GameState): boolean {
   if (s.dust.amount.lt(cost)) return false;
   s.dust.amount = s.dust.amount.sub(cost);
   s.dust.compression++;
+  return true;
+}
+/** Bulk-Kauf per geschlossener Formel — O(1) auch bei Layer-2-Dust (Bot & Autobuyer) */
+export function buyCompressionMax(s: GameState): boolean {
+  if (s.nova.challenge === 0) return false;
+  const base = D(C.COMPRESSION_BASE);
+  const n = affordGeometric(s.dust.amount, base, C.COMPRESSION_GROWTH, s.dust.compression);
+  if (n < 1) return false;
+  const cost = costGeometric(n, base, C.COMPRESSION_GROWTH, s.dust.compression);
+  if (s.dust.amount.lt(cost)) return false;
+  s.dust.amount = s.dust.amount.sub(cost);
+  s.dust.compression += n;
   return true;
 }
 export function click(s: GameState, m: Mults): Decimal {

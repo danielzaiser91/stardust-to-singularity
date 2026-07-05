@@ -26,7 +26,10 @@ npm run sim        # headless full-progression balance simulation
 npm run build      # production build → dist/
 ```
 
-Architecture, game design and balancing strategy: see [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) (German).
+Architecture & game design: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) · Pacing model: [BALANCE.md](BALANCE.md) (both German).
+
+The entire game logic is a pure, headless-testable core — the balance bot in `src/sim` plays
+the whole game from dust to endgame, and CI rejects any change that breaks the progression bands.
 
 ## License
 

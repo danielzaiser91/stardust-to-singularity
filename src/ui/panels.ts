@@ -63,7 +63,11 @@ export class DustPanel implements Panel {
       if (A.buyCompression(s)) emit('buy');
     });
     compBuy.append(this.compCost);
-    this.compRow.append(compBuy, this.compEff);
+    const compMax = btn('buy alt', t('btn.max'), () => {
+      const s = this.st();
+      if (A.buyCompressionMax(s)) emit('buy');
+    });
+    this.compRow.append(compBuy, compMax, this.compEff);
     this.root.append(this.compRow);
 
     // Generatoren

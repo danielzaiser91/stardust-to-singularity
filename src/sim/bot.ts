@@ -3,7 +3,7 @@ import type { GameState, NebulaCell } from '../core/state';
 import { tick } from '../core/tick';
 import {
   computeMults, plasmaGain, shardGain, dmGain, entropyGain, canIgnite,
-  genMaxAfford, compressionCost, nodeAvailable, nodeCost, perkCost, reactorCost,
+  genMaxAfford, nodeAvailable, nodeCost, perkCost, reactorCost,
   nebulaCellCost, maxTier, autoIgniteUnlocked, HEX_NEIGHBORS,
 } from '../core/formulas';
 import * as A from '../core/actions';
@@ -152,9 +152,7 @@ export function botStep(s: GameState, profile: Profile): void {
     // Heuristik: kaufe max von oben herab — einfach und robust
     if (n > 0) A.buyGenerator(s, m, t, n);
   }
-  while (s.dust.amount.gte(compressionCost(s)) && s.nova.challenge !== 0) {
-    if (!A.buyCompression(s)) break;
-  }
+  A.buyCompressionMax(s);
 }
 
 function pickRemnant(s: GameState): 0 | 1 | 2 {
