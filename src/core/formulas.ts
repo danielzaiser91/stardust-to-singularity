@@ -78,7 +78,9 @@ const log10p1 = (d: Decimal) => Decimal.max(d, 0).add(1).log10();
 
 /**
  * Effektiver Multiplikator einer Nebula-Zelle: Basis (×3 Emission / ×2 Reflection),
- * jeder dunkle Nachbar addiert +2 darauf. Bewusst NICHT exponentiell stapelbar.
+ * jeder dunkle Nachbar VERDOPPELT ihn (×2, wie im Spieltext versprochen). Sicher,
+ * weil hart durch die Hex-Geometrie gedeckelt (max. 6 Nachbarn ⇒ max. ×64) und
+ * nur der lineare Multiplikator skaliert — nie ein Exponent.
  */
 export function nebulaCellMult(s: GameState, i: number, nebulaNodeMult: number): number {
   const t = s.nova.cells[i];
@@ -86,7 +88,7 @@ export function nebulaCellMult(s: GameState, i: number, nebulaNodeMult: number):
   let darks = 0;
   for (const n of HEX_NEIGHBORS[i]) if (s.nova.cells[n] === 3) darks++;
   const base = t === 1 ? C.NEBULA_EMISSION_MULT : C.NEBULA_REFLECTION_MULT;
-  return 1 + (base - 1 + C.NEBULA_DARK_BONUS * darks) * nebulaNodeMult;
+  return (1 + (base - 1) * nebulaNodeMult) * Math.pow(C.NEBULA_DARK_BONUS, darks);
 }
 
 export function computeMults(s: GameState): Mults {

@@ -463,7 +463,7 @@ export class NovaPanel implements Panel {
         const m = M(s);
         const type = s.nova.cells[i];
         if (type === 0) return { title: t('nova.hexEmpty'), body: t('nova.hexEmptyTip') };
-        const bonus = fmtMult(C.NEBULA_DARK_BONUS * m.nebulaNodeMult);
+        const bonus = fmtMult(C.NEBULA_DARK_BONUS);
         if (type === 3) {
           const boosted = F.HEX_NEIGHBORS[i].filter(n => s.nova.cells[n] === 1 || s.nova.cells[n] === 2).length;
           return { title: t('nova.cell3'), body: `${t('nova.cell3d')}\n${t('nova.hexDarkTip', { n: boosted, b: bonus })}` };
@@ -487,7 +487,7 @@ export class NovaPanel implements Panel {
     attachTip(respecBtn, () => ({ title: t('nova.respec'), body: t('nova.respecTip') }));
     const tokenRow = el('div', 'row auto-row');
     tokenRow.append(this.cellCost, respecBtn);
-    attachTip(this.gardenTotal, () => ({ title: t('nova.nebula'), body: t('nova.gardenTotalTip', { b: fmtMult(C.NEBULA_DARK_BONUS * M(this.st()).nebulaNodeMult) }) }));
+    attachTip(this.gardenTotal, () => ({ title: t('nova.nebula'), body: t('nova.gardenTotalTip', { b: fmtMult(C.NEBULA_DARK_BONUS) }) }));
     this.root.append(grid, tokenRow, this.gardenTotal, this.remCounts);
 
     this.root.append(el('h3', '', t('nova.challenges')), el('div', 'sub', t('nova.chHow')));

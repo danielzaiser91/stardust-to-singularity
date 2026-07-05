@@ -4,6 +4,7 @@ import { initialState } from '../src/core/state';
 import { serialize, deserialize } from '../src/core/save';
 import { tick } from '../src/core/tick';
 import { computeMults, genCost, plasmaGain, HEX_COORDS, HEX_NEIGHBORS, NODE_EFFECTS } from '../src/core/formulas';
+import * as F from '../src/core/formulas';
 import { buyGenerator, click, doIgnite, doSupernova } from '../src/core/actions';
 import * as actionsAll from '../src/core/actions';
 import { simulateOffline } from '../src/core/offline';
@@ -136,6 +137,18 @@ describe('tick & actions', () => {
     expect(s.nova.cellsBought).toBe(1);
     expect(placeNebula(s, 5, 3)).toBe(true);        // freier Token wird genutzt, kein Kauf
     expect(s.nova.cellsBought).toBe(1);
+  });
+
+  it('dark nebulae double neighboring cell multipliers (×2 each, as described)', () => {
+    const s = initialState(1);
+    s.nova.unlocked = true;
+    s.nova.cells[9] = 1;                       // Emission im Zentrum: Basis ×3
+    expect(F.nebulaCellMult(s, 9, 1)).toBe(3);
+    const nb = F.HEX_NEIGHBORS[9];
+    s.nova.cells[nb[0]] = 3;                   // 1 dunkler Nachbar → ×6
+    expect(F.nebulaCellMult(s, 9, 1)).toBe(6);
+    s.nova.cells[nb[1]] = 3;                   // 2 dunkle Nachbarn → ×12 (multiplikativ)
+    expect(F.nebulaCellMult(s, 9, 1)).toBe(12);
   });
 
   it('galaxy milestone 2: reflection nebulae boost iron output', () => {

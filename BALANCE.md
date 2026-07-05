@@ -55,7 +55,8 @@ Kollaps war das Spiel *langsamer* als davor, weil die Passiveffekte am Run-Total
 
 - **Effekte in Exponenten stapeln**: Dunkelnebel verdoppelten ursprünglich den *Exponenten*
   der Nachbarzellen → 3^64 ≈ 1e30 Boost aus einem Hexfeld. Effekte immer multiplikativ
-  und linear stapeln.
+  und linear stapeln. (Heute: Dunkelnebel verdoppeln den *linearen Multiplikator* des
+  Nachbarn — sicher, weil die Hex-Geometrie das auf ×64 je Zelle deckelt.)
 - **`Math.pow` für unbeschränkte Zähler**: `Math.pow(1.25, compression)` überläuft bei
   ~5000 Stufen zu `Infinity` und vergiftet den State mit NaN. Für alles Unbeschränkte
   `Decimal.pow` nutzen.
