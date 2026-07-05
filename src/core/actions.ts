@@ -69,7 +69,7 @@ function resetDustLayer(s: GameState): void {
     if (!s.star.upgrades[9]) s.dust.compression = 0;
     else s.dust.compression = Math.min(s.dust.compression, 10);
   }
-  s.dust.comet = { active: false, ttl: 0, boost: 0 };
+  // Komet bleibt: Realzeit-Event (TTL ≤ 12 s, Boost ≤ 30 s) — ein Reset soll ihn nicht schlucken
   if (s.star.upgrades[0]) { s.dust.amount = D(1000); s.dust.total = D(1000); }  // Head Start
 }
 

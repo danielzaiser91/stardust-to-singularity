@@ -291,7 +291,11 @@ describe('tick & actions', () => {
     s.dust.total = D(C.IGNITION_REQ).mul(100);
     s.dust.amount = D(C.IGNITION_REQ).mul(100);
     s.dust.gens[0].bought = 25;
+    s.dust.comet = { active: true, ttl: 8, boost: 20 };
     expect(doIgnite(s, 1)).toBe(true);
+    // Komet & Boost überleben die Zündung (Realzeit-Event)
+    expect(s.dust.comet.active).toBe(true);
+    expect(s.dust.comet.boost).toBe(20);
     expect(s.star.plasma.gte(1)).toBe(true);
     expect(s.star.unlocked).toBe(true);
     expect(s.dust.gens[0].bought).toBe(0);
