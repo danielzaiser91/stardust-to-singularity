@@ -3,6 +3,7 @@ import type { GameState } from '../../core/state';
 import type { Mults } from '../../core/formulas';
 import type { LayerScene } from '../engine';
 import type { QualityTier } from '../quality';
+import { on } from '../../events';
 
 /**
  * Ebene 0 — Staubwolke: wirbelnde GPU-Partikel (Noise-Flow im Vertex-Shader),
@@ -18,6 +19,7 @@ export class DustScene implements LayerScene {
   private bodies: THREE.Mesh[] = [];
   private comet: THREE.Group;
   private cometT = 0;
+  private pulses = new Float32Array(8);   // Kauf-Puls je Stufe (Planet hüpft statt Screen-Shake)
 
   constructor(tier: QualityTier, engineCometRef: (o: THREE.Object3D) => void) {
     this.buildParticles(tier.dustParticles);
@@ -72,6 +74,8 @@ export class DustScene implements LayerScene {
     this.comet.visible = false;
     this.group.add(this.comet);
     engineCometRef(this.comet);
+
+    on('gen-bought', tier => { this.pulses[tier as number] = 1; });
   }
 
   rebuild(tier: QualityTier): void {
@@ -169,8 +173,13 @@ export class DustScene implements LayerScene {
         const a = time * speed + t * 1.7;
         b.position.set(Math.cos(a) * rad, Math.sin(t * 2.1) * 2.5, Math.sin(a) * rad);
         b.rotation.y += dt * 0.8;
+        // Kauf-Puls: der Planet selbst hüpft kurz auf und leuchtet
+        if (this.pulses[t] > 0) this.pulses[t] = Math.max(0, this.pulses[t] - dt * 3);
+        const pulse = 1 + Math.sin(this.pulses[t] * Math.PI) * 0.55;
         const grow = 1 + Math.min(2, Math.log10(1 + bought) * 0.7);
-        b.scale.setScalar(grow);
+        b.scale.setScalar(grow * pulse);
+        const glow = b.children[0] as THREE.Sprite | undefined;
+        if (glow) (glow.material as THREE.SpriteMaterial).opacity = 0.5 + this.pulses[t] * 0.5;
       }
     }
 

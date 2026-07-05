@@ -107,15 +107,19 @@ export class DustPanel implements Panel {
       const rate = el('div', 'gen-rate sub');
       info.append(name, owned, rate);
       const c1 = el('span', 'cost');
-      const b1 = btn('buy', t('btn.buy1'), () => {
+      const buyGen = (max: boolean) => {
         const s = this.st();
-        if (A.buyGenerator(s, M(s), i, 1)) emit('buy');
-      });
+        const first = s.dust.gens[i].bought === 0;
+        const ok = max ? A.buyGeneratorMax(s, M(s), i) : A.buyGenerator(s, M(s), i, 1);
+        if (ok) {
+          emit('buy');
+          emit('gen-bought', i);          // Planet pulst in der Szene
+          if (first) emit('gen-first', i); // einmaliger Kamera-Puls beim Erstkauf
+        }
+      };
+      const b1 = btn('buy', t('btn.buy1'), () => buyGen(false));
       b1.append(c1);
-      const bm = btn('buy alt', t('btn.max'), () => {
-        const s = this.st();
-        if (A.buyGeneratorMax(s, M(s), i)) emit('buy');
-      });
+      const bm = btn('buy alt', t('btn.max'), () => buyGen(true));
       row.append(info, b1, bm);
       this.genRows.push({ row, owned, rate, b1, bm, c1 });
       this.root.append(row);

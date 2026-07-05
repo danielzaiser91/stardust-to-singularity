@@ -87,7 +87,9 @@ export class Engine {
     window.addEventListener('resize', () => this.resize());
 
     canvas.addEventListener('pointerdown', e => this.pointerDown(e));
-    on('buy', () => { this.fovPulse = 1; });
+    // Kamera-Puls NUR beim allerersten Kauf einer Generator-Stufe — Dauer-Wackeln
+    // bei jedem Kauf verursacht Übelkeit; normale Käufe pulsen den Planeten selbst
+    on('gen-first', () => { this.fovPulse = 1; });
   }
 
   addLayer(id: number, layer: LayerScene): void {

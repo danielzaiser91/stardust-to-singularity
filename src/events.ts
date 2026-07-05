@@ -1,6 +1,7 @@
 /** Mini-Pub/Sub: UI/Core-Aktionen → Render-/Audio-Effekte. Kein State-Transport. */
 export type GameEvent =
   | 'click' | 'buy' | 'comet-caught' | 'comet-spawn'
+  | 'gen-bought' | 'gen-first'   // Generator-Kauf (data = Stufe); -first = allererster Kauf der Stufe
   | 'ignite' | 'supernova' | 'coalesce' | 'collapse' | 'universe'
   | 'achievement' | 'lore' | 'feed' | 'dilate' | 'nebula-placed' | 'node-bought';
 
