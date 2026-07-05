@@ -24,8 +24,8 @@ export const de: Record<string, string> = {
 
   // — Star / Ignition —
   'star.name': 'Stern', 'star.plasma': 'Plasma',
-  'star.ignite': 'ZÜNDEN', 'star.igniteGain': 'Zünden: +{v} Plasma',
-  'star.igniteReq': 'Erreiche {v} Staub (gesamt), um deinen Protostern zu zünden',
+  'star.ignite': 'ZÜNDEN', 'star.igniteGain': '+{v} Plasma',
+  'star.igniteReq': 'Benötigt: {v} Staub',
   'star.igniteConfirm': 'Die Zündung kollabiert deine Staubwolke zu einem Stern. Staub, Generatoren und Kompression werden zurückgesetzt — dafür erhältst du Plasma, das die Staubproduktion dauerhaft verstärkt und die Fusion freischaltet.',
   'star.class': 'Sternklasse', 'star.class0': 'Roter Zwerg', 'star.class1': 'Gelber Stern', 'star.class2': 'Blauer Riese',
   'star.class0d': 'langsames Brennen',
@@ -58,8 +58,8 @@ export const de: Record<string, string> = {
 
   // — Supernova —
   'nova.name': 'Supernova', 'nova.shards': 'Nova-Scherben',
-  'nova.go': 'SUPERNOVA AUSLÖSEN', 'nova.gain': 'Supernova: +{v} Scherben',
-  'nova.req': 'Sammle {v} Eisen im Kern, um eine Supernova auszulösen',
+  'nova.go': 'SUPERNOVA AUSLÖSEN', 'nova.gain': '+{v} Scherben',
+  'nova.req': 'Benötigt: {v} Eisen',
   'nova.confirm': 'Dein Stern stirbt in einem Kataklysmus. Stern, Plasma, Upgrades, Elemente und Staub werden zurückgesetzt — dafür erhältst du Nova-Scherben zum Säen von Nebeln, und dein Überrest bleibt dieser Galaxie für immer erhalten.',
   'nova.remnant': 'Wähle deinen Überrest',
   'nova.rem0': 'Neutronenstern', 'nova.rem0d': 'Fusions-Durchsatz ×1,5 je Stück',
@@ -116,8 +116,8 @@ export const de: Record<string, string> = {
 
   // — Galaxy —
   'galaxy.name': 'Galaxie', 'galaxy.dm': 'Dunkle Materie',
-  'galaxy.go': 'VERSCHMELZEN', 'galaxy.gain': 'Verschmelzen: +{v} Dunkle Materie',
-  'galaxy.req': 'Sammle {v} Nova-Scherben (gesamt), um eine Galaxie zu formen',
+  'galaxy.go': 'VERSCHMELZEN', 'galaxy.gain': '+{v} Dunkle Materie',
+  'galaxy.req': 'Benötigt: {v} Nova-Scherben',
   'galaxy.confirm': 'Deine Nebel, Überreste und Scherben verschmelzen zu einer Galaxie. Alles darunter wird zurückgesetzt — dafür erhältst du Dunkle Materie für Konstellationen. Challenge-Abschlüsse bleiben erhalten.',
   'galaxy.type': 'Galaxientyp',
   'galaxy.t0': 'Spirale', 'galaxy.t1': 'Elliptisch', 'galaxy.t2': 'Irregulär',
@@ -139,8 +139,8 @@ export const de: Record<string, string> = {
 
   // — Singularity —
   'sing.name': 'Singularität', 'sing.entropy': 'Entropie',
-  'sing.go': 'KOLLABIEREN', 'sing.gain': 'Kollaps: +{v} Entropie',
-  'sing.req': 'Sammle {v} Dunkle Materie (gesamt) für den Kollaps zur Singularität',
+  'sing.go': 'KOLLABIEREN', 'sing.gain': '+{v} Entropie',
+  'sing.req': 'Benötigt: {v} Dunkle Materie',
   'sing.confirm': 'Deine Galaxie kollabiert zur Singularität. Konstellationen und alles darunter werden zurückgesetzt — dafür erhältst du Entropie für permanente Singularitäts-Perks.',
   'sing.feed': 'FÜTTERE DIE LEERE',
   'sing.feedDesc': 'Opfere allen aktuellen Staub, Plasma, Scherben und Dunkle Materie. Verschlungene Masse multipliziert dauerhaft die GESAMTE Produktion.',
