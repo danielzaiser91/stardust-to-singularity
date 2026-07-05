@@ -220,17 +220,17 @@ function resetNovaLayer(s: GameState): void {
   s.nova.totalShards = ZERO;
   // Galaxie-Meilensteine bestimmen, was die Coalescence überlebt:
   const coal = s.stats.coalescences;
-  // M5 (oder Sternen-Gedächtnis L3): Nebelgarten bleibt
-  if (coal < C.MS_GALAXY[4] && (s.sing.perks[8] ?? 0) < 3) {
+  // M6 (oder Sternen-Gedächtnis L3): Nebelgarten bleibt
+  if (coal < C.MS_GALAXY[5] && (s.sing.perks[8] ?? 0) < 3) {
     s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
     s.nova.cellsBought = 0;
   }
-  // M2: Challenge-Abschlüsse bleiben
-  if (coal < C.MS_GALAXY[1]) s.nova.completed = s.nova.completed.map(() => false);
-  // M3/M4: Meilenstein-Leitern der Dust-/Star-Ebene bleiben (classPicks teilt das
+  // M3: Challenge-Abschlüsse bleiben
+  if (coal < C.MS_GALAXY[2]) s.nova.completed = s.nova.completed.map(() => false);
+  // M4/M5: Meilenstein-Leitern der Dust-/Star-Ebene bleiben (classPicks teilt das
   // ignMs-Schicksal — Invariante: Summe(classPicks) == ignMs)
-  if (coal < C.MS_GALAXY[2]) { s.stats.ignMs = 0; s.stats.classPicks = [0, 0, 0]; }
-  if (coal < C.MS_GALAXY[3]) {
+  if (coal < C.MS_GALAXY[3]) { s.stats.ignMs = 0; s.stats.classPicks = [0, 0, 0]; }
+  if (coal < C.MS_GALAXY[4]) {
     s.stats.novaMs = 0;
     s.nova.autoIgnite.on = false;  // Meilenstein weg → Schalter aus, bis neu freigespielt
   }

@@ -138,6 +138,22 @@ describe('tick & actions', () => {
     expect(s.nova.cellsBought).toBe(1);
   });
 
+  it('galaxy milestone 2: reflection nebulae boost iron output', () => {
+    const feAfterTick = (coal: number) => {
+      const s = initialState(1);
+      s.star.unlocked = true;
+      s.nova.unlocked = true;
+      s.stats.coalescences = coal;
+      s.nova.cells[0] = 2;           // eine Reflexionszelle ohne dunkle Nachbarn → ×2
+      s.star.reactors[4] = 1;
+      s.star.elements[4] = D(1e6);   // Si-Vorrat für den Fe-Schritt
+      tick(s, 1);
+      return s.star.elements[5];
+    };
+    const ratio = feAfterTick(2).div(feAfterTick(0)).toNumber();
+    expect(ratio).toBeCloseTo(2, 1);
+  });
+
   it('coalescence resets challenges & lower milestones until galaxy milestones keep them', () => {
     const mk = (coalescences: number) => {
       const s = initialState(1);

@@ -426,7 +426,13 @@ export class NovaPanel implements Panel {
     const seg = el('div', 'seg');
     for (const b of [1, 2, 3] as NebulaCell[]) {
       const bb = btn('seg-btn', t(`nova.cell${b}`), () => { this.brush = b; this.syncBrush(); });
-      attachTip(bb, () => ({ title: t(`nova.cell${b}`), body: t(`nova.cell${b}d`) }));
+      attachTip(bb, () => ({
+        title: t(`nova.cell${b}`),
+        body: t(`nova.cell${b}d`) + (b === 2
+          ? `\n${this.st().stats.coalescences >= C.MS_GALAXY[1]
+            ? t('nova.reFeOn') : t('nova.reFeLocked', { n: C.MS_GALAXY[1] })}`
+          : ''),
+      }));
       this.brushBtns.push(bb);
       seg.append(bb);
     }
@@ -464,9 +470,11 @@ export class NovaPanel implements Panel {
         }
         const darks = F.HEX_NEIGHBORS[i].filter(n => s.nova.cells[n] === 3).length;
         const v = fmtMult(F.nebulaCellMult(s, i, m.nebulaNodeMult));
+        const feOn = s.stats.coalescences >= C.MS_GALAXY[1];
         return {
           title: t(`nova.cell${type}`),
-          body: `${t(type === 1 ? 'nova.hexEmTip' : 'nova.hexReTip', { v })}\n${t('nova.hexDarks', { n: darks, b: bonus })}`,
+          body: `${t(type === 1 ? 'nova.hexEmTip' : feOn ? 'nova.hexReTipFe' : 'nova.hexReTip', { v })}\n${t('nova.hexDarks', { n: darks, b: bonus })}`
+            + (type === 2 && !feOn ? `\n${t('nova.reFeLocked', { n: C.MS_GALAXY[1] })}` : ''),
         };
       }, { marker: false });
       this.hexBtns.push(b);
@@ -566,7 +574,7 @@ export class NovaPanel implements Panel {
     this.root.append(coalesceBox);
 
     this.ms = milestoneSection(
-      [t('ms.gal0'), t('ms.gal1'), t('ms.gal2'), t('ms.gal3'), t('ms.gal4')],
+      [t('ms.gal0'), t('ms.gal1'), t('ms.gal2'), t('ms.gal3'), t('ms.gal4'), t('ms.gal5')],
       C.MS_GALAXY, 'ms.u.gal', s => s.stats.coalescences);
     this.root.append(this.ms.root);
     this.syncBrush();
@@ -600,7 +608,7 @@ export class NovaPanel implements Panel {
       setText(b, type === 0 && usable ? '+' : '');
       setClass(b, 'dim', !usable);
     }
-    setText(this.gardenTotal, t('nova.gardenTotal', {
+    setText(this.gardenTotal, t(s.stats.coalescences >= C.MS_GALAXY[1] ? 'nova.gardenTotalFe' : 'nova.gardenTotal', {
       d: fmt(m.nebulaDustMult, sci), p: fmt(m.nebulaPlasmaMult, sci),
     }));
     setText(this.remCounts,

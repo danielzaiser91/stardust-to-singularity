@@ -51,7 +51,10 @@ export function tick(s: GameState, dt: number): Mults {
       const thr = stock.add(1).sqrt().mul(lvl * C.REACTOR_RATE[i] * m.fusionMult * gdt);
       const moved = Decimal.min(stock, thr);
       s.star.elements[i] = stock.sub(moved);
-      s.star.elements[i + 1] = s.star.elements[i + 1].add(moved.div(C.FUSION_RATIO));
+      const out = moved.div(C.FUSION_RATIO);
+      // Galaxie-Meilenstein 2: Reflexionsnebel verstärken den Fe-Output (letzter Schritt)
+      s.star.elements[i + 1] = s.star.elements[i + 1].add(
+        i === C.FUSION_STEPS - 1 ? out.mul(m.feNebulaMult) : out);
     }
   }
 

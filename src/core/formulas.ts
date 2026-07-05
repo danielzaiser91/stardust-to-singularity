@@ -69,6 +69,7 @@ export interface Mults {
   offlineMult: number;
   nebulaDustMult: Decimal;    // aus Emission-Zellen
   nebulaPlasmaMult: Decimal;  // aus Reflexions-Zellen
+  feNebulaMult: Decimal;      // Galaxie-Meilenstein 2: Reflexionsnebel boosten auch Fe-Output
   nebulaNodeMult: number;     // Konstellations-Verstärkung der Zell-Multiplikatoren
   autoNovaUnlocked: boolean;
 }
@@ -247,6 +248,7 @@ export function computeMults(s: GameState): Mults {
     offlineMult: nOffline * gt.offline,
     nebulaDustMult,
     nebulaPlasmaMult,
+    feNebulaMult: s.stats.coalescences >= C.MS_GALAXY[1] ? nebulaPlasmaMult : ONE,
     nebulaNodeMult: nNebula,
     autoNovaUnlocked: autoNova,
   };

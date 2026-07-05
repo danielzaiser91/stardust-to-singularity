@@ -121,9 +121,10 @@ export const MS_NOVA = [1, 2, 4, 8, 12, 16, 20, 25, 30, 35, 40, 50];
 // Ab MS_NOVA[2]: welches Plasma-Upgrade bei diesem Meilenstein permanent wird (-1 = alle übrigen).
 // Reihenfolge: erst die vier Automationen, dann die wichtigsten Boosts.
 export const MS_NOVA_KEEP = [4, 13, 8, 14, 1, 6, 10, 7, 11, -1];
-// Galaxie-Meilensteine: Typ-Wahl · Challenges bleiben · Zündungs-Meilensteine bleiben ·
-// Supernova-Meilensteine bleiben · Nebelgarten bleibt (alles „bleiben" = über Coalescence)
-export const MS_GALAXY = [1, 3, 6, 9, 12];
+// Galaxie-Meilensteine: Typ-Wahl · Reflexionsnebel boosten auch Eisen · Challenges bleiben ·
+// Zündungs-Meilensteine bleiben · Supernova-Meilensteine bleiben · Nebelgarten bleibt
+// (alles „bleiben" = über Coalescence)
+export const MS_GALAXY = [1, 2, 3, 6, 9, 12];
 export const MS_COLLAPSE = [1, 5];           // Perks · Keystones bleiben
 
 // ── Querschnitt ──────────────────────────────────────────────────────────────
