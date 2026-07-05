@@ -1,7 +1,7 @@
 import { Decimal } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
-import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, type Mults } from './formulas';
+import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, isGainCapped, type Mults } from './formulas';
 import { doIgnite, doSupernova, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
@@ -104,8 +104,9 @@ export function tick(s: GameState, dt: number): Mults {
     }
   }
   if (s.nova.autoIgnite.on && s.nova.challenge === -1) {
+    // zündet am „goldenen Punkt": Gain am Clamp-Deckel → mehr geht in diesem Run nicht
     const gain = plasmaGain(s, m);
-    if (gain.gte(s.nova.autoIgnite.at)) doIgnite(s, s.star.cls);
+    if (isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT)) doIgnite(s, s.star.cls);
   }
   if (s.galaxy.autoNova.on && m.autoNovaUnlocked && s.nova.challenge === -1) {
     const gain = shardGain(s, m);

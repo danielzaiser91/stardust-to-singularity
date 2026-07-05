@@ -134,8 +134,6 @@ export function botStep(s: GameState, profile: Profile): void {
       A.doIgnite(s, cls as 0 | 1 | 2);
       m = computeMults(s);
     }
-  } else {
-    s.nova.autoIgnite.at = s.star.plasma.mul(0.3).max(1);
   }
   if (m.autoNovaUnlocked) {
     s.galaxy.autoNova.on = true;

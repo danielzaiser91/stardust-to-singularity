@@ -417,20 +417,18 @@ export class NovaPanel implements Panel {
       this.root.append(row);
     }
 
-    // Auto-Ignite
+    // Auto-Ignite: kein Schwellwert-Feld — zündet immer am goldenen Cap-Punkt
     this.autoRow = el('div', 'row auto-row');
     this.autoChk = el('input') as HTMLInputElement;
     this.autoChk.type = 'checkbox';
     this.autoChk.addEventListener('change', () => { this.st().nova.autoIgnite.on = this.autoChk.checked; });
     const label = el('label', '', t('nova.autoIgnite'));
     label.prepend(this.autoChk);
-    const atInput = el('input') as HTMLInputElement;
-    atInput.type = 'text';
-    atInput.value = '1';
-    atInput.addEventListener('change', () => {
-      try { this.st().nova.autoIgnite.at = D(atInput.value); } catch { atInput.value = '1'; }
-    });
-    this.autoRow.append(label, el('span', 'sub', t('nova.autoIgniteAt')), atInput);
+    attachTip(label, () => ({
+      title: t('nova.autoIgnite'),
+      body: t('nova.autoIgniteTip', { v: C.PLASMA_CLAMP_MULT + 1 }),
+    }));
+    this.autoRow.append(label);
     this.root.append(this.autoRow, this.autoLock);
     this.syncBrush();
   }

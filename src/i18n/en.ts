@@ -79,7 +79,8 @@ export const en: Record<string, string> = {
   'ch.5': 'Dim Star', 'ch.5d': 'Plasma boosts dust at half exponent', 'ch.5r': 'Plasma exponent +0.08',
   'ch.6': 'Entropy Leak', 'ch.6d': 'Dust decays 1% per second', 'ch.6r': 'Dust production +25%',
   'ch.7': 'Singular Focus', 'ch.7d': 'Only Attractors exist', 'ch.7r': 'Attractors ×8',
-  'nova.autoIgnite': 'Auto-Ignition', 'nova.autoIgniteAt': 'when gain ≥',
+  'nova.autoIgnite': 'Auto-Ignition',
+  'nova.autoIgniteTip': 'When active, ignites automatically at the golden point: the moment the plasma gain hits its ×{v} cap and no further increase is possible in this run.',
   'nova.autoIgniteLock': 'Complete any challenge to unlock',
 
   // — Galaxy —

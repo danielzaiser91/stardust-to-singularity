@@ -79,7 +79,8 @@ export const de: Record<string, string> = {
   'ch.5': 'Trüber Stern', 'ch.5d': 'Plasma wirkt nur mit halbem Exponenten', 'ch.5r': 'Plasma-Exponent +0,08',
   'ch.6': 'Entropie-Leck', 'ch.6d': 'Staub zerfällt 1 %/s', 'ch.6r': 'Staubproduktion +25 %',
   'ch.7': 'Singulärer Fokus', 'ch.7d': 'Nur Attraktoren existieren', 'ch.7r': 'Attraktoren ×8',
-  'nova.autoIgnite': 'Auto-Zündung', 'nova.autoIgniteAt': 'wenn Gewinn ≥',
+  'nova.autoIgnite': 'Auto-Zündung',
+  'nova.autoIgniteTip': 'Zündet automatisch am goldenen Punkt: sobald der Plasma-Gewinn seinen ×{v}-Deckel erreicht und in diesem Run kein weiterer Zuwachs möglich ist.',
   'nova.autoIgniteLock': 'Schließe eine beliebige Challenge ab',
 
   // — Galaxy —
