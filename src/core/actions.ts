@@ -230,7 +230,10 @@ function resetNovaLayer(s: GameState): void {
   // M3/M4: Meilenstein-Leitern der Dust-/Star-Ebene bleiben (classPicks teilt das
   // ignMs-Schicksal — Invariante: Summe(classPicks) == ignMs)
   if (coal < C.MS_GALAXY[2]) { s.stats.ignMs = 0; s.stats.classPicks = [0, 0, 0]; }
-  if (coal < C.MS_GALAXY[3]) s.stats.novaMs = 0;
+  if (coal < C.MS_GALAXY[3]) {
+    s.stats.novaMs = 0;
+    s.nova.autoIgnite.on = false;  // Meilenstein weg → Schalter aus, bis neu freigespielt
+  }
   s.nova.remnants = [0, 0, 0];
   s.nova.count = 0;
   s.nova.pulsarPhase = 0;

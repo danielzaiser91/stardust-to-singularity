@@ -147,6 +147,7 @@ describe('tick & actions', () => {
       s.stats.ignMs = 30;
       s.stats.novaMs = 20;
       s.stats.classPicks = [5, 20, 5];
+      s.nova.autoIgnite.on = true;
       s.nova.completed = s.nova.completed.map(() => true);
       s.nova.cells[0] = 1;
       s.nova.cellsBought = 3;
@@ -158,13 +159,22 @@ describe('tick & actions', () => {
     expect(s1.stats.ignMs).toBe(0);
     expect(s1.stats.novaMs).toBe(0);
     expect(s1.stats.classPicks).toEqual([0, 0, 0]);
+    expect(s1.nova.autoIgnite.on).toBe(false);   // Meilenstein weg → Auto-Zündung aus
     expect(s1.nova.cellsBought).toBe(0);
+    // Sicherheitsnetz: selbst mit on=true darf der Tick ohne Meilenstein nicht ernten
+    s1.nova.autoIgnite.on = true;
+    s1.dust.total = D('1e120');
+    s1.stats.runTime = 5;
+    const ign = s1.stats.ignitions;
+    tick(s1, 1);
+    expect(s1.stats.ignitions).toBe(ign);
     const s2 = mk(11);  // 12. Coalescence: M2–M5 erreicht → alles bleibt
     expect(actionsAll.doCoalesce(s2, 0)).toBe(true);
     expect(s2.nova.completed.every(c => c)).toBe(true);
     expect(s2.stats.ignMs).toBe(30);
     expect(s2.stats.novaMs).toBe(20);
     expect(s2.stats.classPicks).toEqual([5, 20, 5]);
+    expect(s2.nova.autoIgnite.on).toBe(true);    // M4 erreicht → bleibt aktiv
     expect(s2.nova.cells[0]).toBe(1);
     expect(s2.nova.cellsBought).toBe(3);
   });

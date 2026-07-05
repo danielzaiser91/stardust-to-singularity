@@ -1,7 +1,7 @@
 import { Decimal } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
-import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, isGainCapped, type Mults } from './formulas';
+import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, isGainCapped, autoIgniteUnlocked, type Mults } from './formulas';
 import { doSupernova, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
@@ -99,7 +99,7 @@ export function tick(s: GameState, dt: number): Mults {
       buyReactorsMax(s, r, 0.3);
     }
   }
-  if (s.nova.autoIgnite.on && s.nova.challenge === -1 && s.stats.runTime >= 1) {
+  if (s.nova.autoIgnite.on && autoIgniteUnlocked(s) && s.nova.challenge === -1 && s.stats.runTime >= 1) {
     // Kontinuierliche Zündung am goldenen Punkt: Am Cap hängt der Gewinn NUR am Plasma,
     // nicht an der Staubmenge — die Wolke muss also nicht kollabieren. Max. 1×/s,
     // ohne Dust-Reset → kein Flackern von Reihen/Planeten/Balken bei schnellen Zyklen.
