@@ -308,7 +308,8 @@ export class NovaPanel implements Panel {
     }
     this.root.append(seg);
 
-    // Hex-Grid als absolute Buttons
+    // Hex-Grid als absolute Buttons — Abstände so gewählt, dass Bounding-Boxen
+    // nicht überlappen (sonst schlucken Nachbarn die Klicks in den Eckbereichen)
     const grid = el('div', 'hexgrid');
     for (let i = 0; i < F.HEX_COORDS.length; i++) {
       const [q, r] = F.HEX_COORDS[i];
@@ -316,14 +317,14 @@ export class NovaPanel implements Panel {
         const s = this.st();
         if (A.placeNebula(s, i, this.brush)) emit('nebula-placed');
       });
-      b.style.left = `${50 + (q + r / 2) * 17.5}%`;
-      b.style.top = `${50 + r * 15.5}%`;
+      b.style.left = `${50 + (q + r / 2) * 16.5}%`;
+      b.style.top = `${50 + r * 17}%`;
       this.hexBtns.push(b);
       grid.append(b);
     }
     this.root.append(grid, this.cellCost, this.remCounts);
 
-    this.root.append(el('h3', '', t('nova.challenges')));
+    this.root.append(el('h3', '', t('nova.challenges')), el('div', 'sub', t('nova.chHow')));
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
       const row = el('div', 'row ch-row');
       const info = el('div', 'gen-info');
@@ -335,6 +336,12 @@ export class NovaPanel implements Panel {
         const s = this.st();
         if (s.nova.challenge === c) A.exitChallenge(s);
         else if (s.nova.challenge === -1) A.enterChallenge(s, c);
+      });
+      attachTip(enter, () => {
+        const s = this.st();
+        return s.stats.supernovae < C.CH_UNLOCK_NOVAE(c)
+          ? { title: '🔒 ' + t(`ch.${c}`), body: t('nova.chLockedInfo', { v: C.CH_UNLOCK_NOVAE(c), c: s.stats.supernovae }) }
+          : { title: t(`ch.${c}`), body: t('nova.chGoal') };
       });
       row.append(info, status, enter);
       this.chRows.push({ row, enter, status });
@@ -365,13 +372,19 @@ export class NovaPanel implements Panel {
 
   update(s: GameState, _m: F.Mults): void {
     const sci = s.settings.sciNotation;
-    setText(this.cellCost, `${t('misc.cost')}: ${fmt(F.nebulaCellCost(s), sci)} ${t('nova.shards')}`);
+    const cellCost = F.nebulaCellCost(s);
+    const affordable = s.nova.shards.gte(cellCost);
+    setText(this.cellCost, `${t('misc.cost')}: ${fmt(cellCost, sci)} ${t('nova.shards')}`);
     for (let i = 0; i < this.hexBtns.length; i++) {
       const b = this.hexBtns[i];
       const type = s.nova.cells[i];
       setClass(b, 'hex-1', type === 1);
       setClass(b, 'hex-2', type === 2);
       setClass(b, 'hex-3', type === 3);
+      // leere Zellen zeigen '+', wenn platzierbar; tote Klicks gibt es nicht mehr:
+      // nicht leistbar oder schon gleicher Typ → sichtbar disabled
+      setText(b, type === 0 && affordable ? '+' : '');
+      setDisabled(b, !affordable || type === this.brush);
     }
     setText(this.remCounts,
       `${t('nova.rem0')}: ${s.nova.remnants[0]} · ${t('nova.rem1')}: ${s.nova.remnants[1]} · ${t('nova.rem2')}: ${s.nova.remnants[2]}`);
@@ -381,6 +394,7 @@ export class NovaPanel implements Panel {
       const active = s.nova.challenge === c;
       const locked = s.stats.supernovae < C.CH_UNLOCK_NOVAE(c);
       setClass(r.row, 'active', active);
+      setClass(r.row, 'locked', locked && !s.nova.completed[c]);
       setText(r.status, s.nova.completed[c] ? '✓' : active ? t('misc.active')
         : locked ? `🔒 ${s.stats.supernovae}/${C.CH_UNLOCK_NOVAE(c)}` : '');
       setText(r.enter, active ? t('nova.chExit') : t('nova.chEnter'));

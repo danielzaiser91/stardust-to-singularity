@@ -165,14 +165,18 @@ button:disabled { opacity: 0.38; cursor: default; }
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   border: none; border-radius: 0; background: rgba(70, 90, 150, 0.25); padding: 0;
 }
-.hex:hover { background: rgba(120, 150, 220, 0.45); }
-.hex.hex-1 { background: radial-gradient(#ff8ab5, #b03060); box-shadow: 0 0 16px #ff64a8aa; }
-.hex.hex-2 { background: radial-gradient(#8ad4ff, #2060a8); box-shadow: 0 0 16px #64c3ffaa; }
-.hex.hex-3 { background: radial-gradient(#3d2b66, #17102e); box-shadow: 0 0 16px #5b2a86aa; }
+.hex { color: var(--cyan); font-size: 1rem; font-weight: 700; }
+.hex:not(:disabled):hover { background: rgba(120, 150, 220, 0.55); box-shadow: 0 0 14px rgba(100, 216, 255, 0.4); }
+.hex:disabled { opacity: 0.35; cursor: default; }
+.hex.hex-1 { background: radial-gradient(#ff8ab5, #b03060); box-shadow: 0 0 16px #ff64a8aa; opacity: 1; }
+.hex.hex-2 { background: radial-gradient(#8ad4ff, #2060a8); box-shadow: 0 0 16px #64c3ffaa; opacity: 1; }
+.hex.hex-3 { background: radial-gradient(#3d2b66, #17102e); box-shadow: 0 0 16px #5b2a86aa; opacity: 1; }
+.hex.hex-1:disabled, .hex.hex-2:disabled, .hex.hex-3:disabled { opacity: 0.8; }
 
 /* ── Challenges ── */
 .ch-row.active { background: rgba(255, 200, 100, 0.08); border-radius: 8px; }
-.ch-status { min-width: 30px; text-align: center; color: var(--gold); font-weight: 700; }
+.ch-row.locked { opacity: 0.55; }
+.ch-status { min-width: 30px; text-align: center; color: var(--gold); font-weight: 700; font-size: 0.72rem; }
 
 /* ── Skilltree ── */
 .tree { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }

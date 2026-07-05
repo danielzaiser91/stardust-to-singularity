@@ -66,6 +66,8 @@ export const en: Record<string, string> = {
   'nova.challenges': 'Challenges',
   'nova.chActive': 'Challenge active: {n}', 'nova.chEnter': 'Enter', 'nova.chExit': 'Abandon',
   'nova.chGoal': 'Reach Ignition under this restriction to complete.',
+  'nova.chHow': 'Special runs under a restriction: reach the goal and ignite to complete — rewards are permanent. More challenges unlock as your total supernova count grows.',
+  'nova.chLockedInfo': 'Unlocks at {v} total supernovae — you have {c}.',
   'ch.0': 'Cold Void', 'ch.0d': 'Compression cannot be bought', 'ch.0r': 'Compression +0.10 strength',
   'ch.1': 'Sparse Matter', 'ch.1d': 'Only generator tiers 1–4 exist', 'ch.1r': 'All generators ×2',
   'ch.2': 'Slow Burn', 'ch.2d': 'Fusion throughput ×0.1', 'ch.2r': 'Fusion throughput ×2',
