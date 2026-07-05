@@ -107,6 +107,20 @@ export function buyReactor(s: GameState, step: number): boolean {
   s.star.reactors[step]++;
   return true;
 }
+/** Bulk-Kauf bis Budget-Anteil erschöpft — O(1) auch bei extremem Plasma (Bot) */
+export function buyReactorsMax(s: GameState, step: number, budgetFrac: number): boolean {
+  if (step < 0 || step >= C.FUSION_STEPS) return false;
+  if (step > 0 && s.star.reactors[step - 1] === 0) return false;
+  const base = D(C.REACTOR_BASE_COST[step]);
+  const budget = s.star.plasma.mul(budgetFrac);
+  const n = affordGeometric(budget, base, C.REACTOR_COST_GROWTH, s.star.reactors[step]);
+  if (n < 1) return false;
+  const cost = costGeometric(n, base, C.REACTOR_COST_GROWTH, s.star.reactors[step]);
+  if (s.star.plasma.lt(cost)) return false;
+  s.star.plasma = s.star.plasma.sub(cost);
+  s.star.reactors[step] += n;
+  return true;
+}
 
 // ── Ebene 2: Supernova ───────────────────────────────────────────────────────
 function resetStarLayer(s: GameState): void {

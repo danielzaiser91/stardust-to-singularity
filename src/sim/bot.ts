@@ -3,7 +3,7 @@ import type { GameState, NebulaCell } from '../core/state';
 import { tick } from '../core/tick';
 import {
   computeMults, plasmaGain, shardGain, dmGain, entropyGain, canIgnite,
-  genMaxAfford, nodeAvailable, nodeCost, perkCost, reactorCost,
+  genMaxAfford, nodeAvailable, nodeCost, perkCost,
   nebulaCellCost, maxTier, autoIgniteUnlocked, HEX_NEIGHBORS,
 } from '../core/formulas';
 import * as A from '../core/actions';
@@ -117,10 +117,8 @@ export function botStep(s: GameState, profile: Profile): void {
   if (s.star.unlocked) {
     for (let u = 0; u < C.PLASMA_UPGRADE_COSTS.length; u++) A.buyPlasmaUpgrade(s, u);
     for (let r = 0; r < C.FUSION_STEPS; r++) {
-      // Reaktor kaufen, solange < 30 % des Plasmas
-      while (s.star.reactors[r] === 0 || reactorCost(s, r).lte(s.star.plasma.mul(0.3))) {
-        if (!A.buyReactor(s, r)) break;
-      }
+      if (s.star.reactors[r] === 0) A.buyReactor(s, r);
+      A.buyReactorsMax(s, r, 0.3);  // bis 30 % des Plasmas, O(1)
     }
   }
 
