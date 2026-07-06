@@ -92,6 +92,15 @@
       (z. B. `challengesCollapsed: boolean`), einfach in `initialState()` ergänzen (Template-
       Revive füllt bei alten Saves automatisch den Default, keine Migration nötig laut
       CLAUDE.md-Regel für additive Save-Felder).
+      Zusätzlich: solange eingeklappt, braucht die Überschrift einen Farb-Indikator + Tooltip,
+      damit man im eingeklappten Zustand nicht vergisst, dass da noch was offen ist:
+      - **Grün**: alle (aktuell freigeschalteten/erreichbaren) Challenges abgeschlossen.
+      - **Gelb/Orange o. ä.**: mindestens eine offen — Signal "hier gibt's noch was zu tun".
+      - Tooltip zeigt den konkreten Stand (z. B. "X/8 Challenges abgeschlossen" bzw. welche
+        noch offen sind).
+      - Design-Frage vorab klären: zählt "alle abgeschlossen" nur die Normal-Stufen, oder auch
+        Hart, wo bereits freigeschaltet? (Nicht freigeschaltete Hart-Stufen sollten den Spieler
+        nicht grundlos ins Gelb schicken.)
 
 - [ ] **`/ai-improve-learnings` ausführen.** Diese Session hatte einiges an nicht-offensichtlichen
       Lehren (Decimal-Präzisionsgrenzen bei extremen Skalen in drei verschiedenen Ausprägungen,
