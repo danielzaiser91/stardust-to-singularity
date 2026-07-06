@@ -48,3 +48,16 @@ export function capAffordCount(nFull: number, budgetFrac: number): number {
   if (budgetFrac >= 1 || nFull <= 0) return nFull;
   return Math.max(1, Math.floor(nFull * budgetFrac));
 }
+
+/**
+ * Harte Obergrenze für Zähler, die als Exponent in Decimal.pow() dienen (bought/compression/
+ * Reaktorstufen) — das sind normale JS-Zahlen, keine Decimals! Normale Addition liefe ab
+ * Number.MAX_VALUE (~1.8e308) in Infinity über → Decimal.pow(base, Infinity) vergiftet danach
+ * jeden Tick (Anzeige zeigt buchstäblich "Infinity", Produktion fällt auf 0/NaN). Der Zähler
+ * selbst braucht diese Größe nie: growth^MAX_SAFE_INTEGER hat bereits mehrere Billiarden
+ * Dezimalstellen — Deckeln hier kostet keine spürbare Balance, ist reines Sicherheitsnetz.
+ */
+export const MAX_COUNTER = Number.MAX_SAFE_INTEGER;
+export function addCounter(current: number, n: number): number {
+  return Math.min(current + n, MAX_COUNTER);
+}

@@ -114,6 +114,20 @@ Kollaps war das Spiel *langsamer* als davor, weil die Passiveffekte am Run-Total
   zu bricken. Lehre: **jede `.toNumber()`-Konvertierung eines Decimals, deren Ergebnis in
   ein normales `number`-Feld des States fließt, braucht einen `Number.isFinite()`-Guard**
   — die Decimal-Bibliothek selbst ist an ihren eigenen Grenzen nicht narrensicher.
+- **Teil 2 desselben Bugs — Überlauf ganz ohne NaN**: Der obige Fix verhinderte NaN aus
+  `affordGeometric`, aber `dust.compression`/`gens[].bought`/`star.reactors[]` bleiben
+  normale `number`-Felder mit **unbeschränktem** `+=`-Wachstum. Bei genug Spielzeit
+  erreicht `compression` irgendwann `Number.MAX_VALUE` (~1,8e308) rein durch normale,
+  korrekte Addition — kein Bug in der Rechnung, einfach IEEE-754-Überlauf zu `Infinity`.
+  Ab da vergiftet `Decimal.pow(x, Infinity)` dieselbe Kaskade wie oben, und weil
+  `compression`/Reaktorstufen an einer Stelle roh interpoliert wurden (`` `${s.dust.
+  compression}` `` ohne `fmt()`), stand buchstäblich "Infinity" im UI. Fix: `addCounter()`
+  in `decimal.ts` deckelt jede Erhöhung dieser drei Felder hart auf `Number.MAX_SAFE_
+  INTEGER` (~9e15) — `growth^9e15` hat bereits mehrere Billiarden Nachkommastellen, also
+  keine spürbare Balance-Auswirkung, nur ein Plateau weit jenseits jeder erreichbaren
+  Spielzeit. Lehre: ein `Number.isFinite()`-Guard reicht nicht, wenn das Feld selbst
+  **strukturell** keine Obergrenze hat — solche Zähler brauchen eine harte Decke an der
+  Quelle (jedem `+=`), nicht nur eine Absicherung gegen den Symptom-NaN.
 
 ## Gemessene Timeline (aktives Optimalspiel, Sim-Bot, Seed 42)
 

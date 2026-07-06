@@ -1,4 +1,4 @@
-import { D, ZERO, Decimal, affordGeometric, costGeometric, capAffordCount } from './decimal';
+import { D, ZERO, Decimal, affordGeometric, costGeometric, capAffordCount, addCounter } from './decimal';
 import * as C from './constants';
 import type { GameState, StarClass, GalaxyType, NebulaCell } from './state';
 import {
@@ -17,7 +17,7 @@ export function buyGenerator(s: GameState, m: Mults, tier: number, n: number): b
   s.dust.amount = s.dust.amount.sub(cost);
   const g = s.dust.gens[tier];
   g.amount = g.amount.add(n);
-  g.bought += n;
+  g.bought = addCounter(g.bought, n);
   return true;
 }
 export function buyGeneratorMax(s: GameState, m: Mults, tier: number): boolean {
@@ -28,7 +28,7 @@ export function buyCompression(s: GameState): boolean {
   const cost = compressionCost(s);
   if (s.dust.amount.lt(cost)) return false;
   s.dust.amount = s.dust.amount.sub(cost);
-  s.dust.compression++;
+  s.dust.compression = addCounter(s.dust.compression, 1);
   return true;
 }
 /** Bulk-Kauf per geschlossener Formel — O(1) auch bei Layer-2-Dust (Bot & Autobuyer).
@@ -42,7 +42,7 @@ export function buyCompressionMax(s: GameState, budgetFrac = 1): boolean {
   const cost = costGeometric(n, base, C.COMPRESSION_GROWTH, s.dust.compression);
   if (s.dust.amount.lt(cost)) return false;
   s.dust.amount = s.dust.amount.sub(cost);
-  s.dust.compression += n;
+  s.dust.compression = addCounter(s.dust.compression, n);
   return true;
 }
 export function click(s: GameState, m: Mults): Decimal {
@@ -112,7 +112,7 @@ export function buyReactor(s: GameState, step: number): boolean {
   const cost = reactorCost(s, step);
   if (s.star.plasma.lt(cost)) return false;
   s.star.plasma = s.star.plasma.sub(cost);
-  s.star.reactors[step]++;
+  s.star.reactors[step] = addCounter(s.star.reactors[step], 1);
   return true;
 }
 /** Bulk-Kauf bis Budget-Anteil erschöpft — O(1) auch bei extremem Plasma (Bot) */
@@ -126,7 +126,7 @@ export function buyReactorsMax(s: GameState, step: number, budgetFrac: number): 
   const cost = costGeometric(n, base, C.REACTOR_COST_GROWTH, s.star.reactors[step]);
   if (s.star.plasma.lt(cost)) return false;
   s.star.plasma = s.star.plasma.sub(cost);
-  s.star.reactors[step] += n;
+  s.star.reactors[step] = addCounter(s.star.reactors[step], n);
   return true;
 }
 

@@ -248,7 +248,7 @@ export class DustPanel implements Panel {
     setReserve(this.compRow, s.nova.challenge !== 0);
     setReserve(this.compMax, maxUnlocked);
     setText(this.compCost, fmt(F.compressionCost(s), sci));
-    setText(this.compEff, `${s.dust.compression} × | ${t('dust.compressionDesc', { v: m.compressionEffect.toFixed(2) })}`);
+    setText(this.compEff, `${fmtInt(D(s.dust.compression))} × | ${t('dust.compressionDesc', { v: m.compressionEffect.toFixed(2) })}`);
     setDisabled(this.compRow.querySelector('button')!, s.dust.amount.lt(F.compressionCost(s)));
 
     const top = F.maxTier(s);
@@ -470,7 +470,7 @@ export class StarPanel implements Panel {
       }
       if (e < C.FUSION_STEPS) {
         const rb = this.reactorBtns[e];
-        setText(rb.lvl, ` ${t('misc.level')}${s.star.reactors[e]} `);
+        setText(rb.lvl, ` ${t('misc.level')}${fmtInt(D(s.star.reactors[e]))} `);
         setText(rb.cost, fmt(F.reactorCost(s, e), sci));
         const locked = e > 0 && s.star.reactors[e - 1] === 0;
         const cantAfford = s.star.plasma.lt(F.reactorCost(s, e));

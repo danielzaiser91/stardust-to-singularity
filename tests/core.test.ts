@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { D, affordGeometric } from '../src/core/decimal';
+import { D, affordGeometric, addCounter, MAX_COUNTER } from '../src/core/decimal';
 import { initialState } from '../src/core/state';
 import { serialize, deserialize } from '../src/core/save';
 import { tick } from '../src/core/tick';
@@ -54,6 +54,17 @@ describe('decimal & formulas', () => {
     const n = affordGeometric(budget, D(10), 2.0, 1e17);
     expect(Number.isFinite(n)).toBe(true);
     expect(Number.isNaN(n)).toBe(false);
+  });
+
+  it('addCounter never overflows a plain-number counter to Infinity (production bug)', () => {
+    // Regression: dust.compression/gens[].bought are plain JS numbers used as Decimal.pow()
+    // exponents. Reported live: at ~1.8e308 dust, compression overflowed via normal += past
+    // Number.MAX_VALUE to Infinity, then Decimal.pow(effect, Infinity) poisoned production
+    // (UI literally rendered "Infinity" since that field is interpolated without fmt()).
+    expect(addCounter(Number.MAX_VALUE, Number.MAX_VALUE)).toBe(MAX_COUNTER);
+    expect(Number.isFinite(addCounter(Number.MAX_VALUE, 1))).toBe(true);
+    expect(addCounter(5, 3)).toBe(8);
+    expect(addCounter(MAX_COUNTER, 1)).toBe(MAX_COUNTER);
   });
 });
 
