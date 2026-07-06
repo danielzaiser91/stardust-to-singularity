@@ -25,7 +25,7 @@ export const de: Record<string, string> = {
 
   // — Star / Ignition —
   'star.name': 'Stern', 'star.plasma': 'Plasma',
-  'star.ignite': 'ZÜNDEN', 'star.igniteGain': '+{v} Plasma',
+  'star.ignite': 'ZÜNDEN', 'star.igniteGain': '+{v}',
   'star.igniteReq': 'Benötigt: {v} Staub',
   'star.igniteConfirm': 'Die Zündung kollabiert deine Staubwolke zu einem Stern. Staub, Generatoren und Kompression werden zurückgesetzt — dafür erhältst du Plasma, das die Staubproduktion dauerhaft verstärkt und die Fusion freischaltet.',
   'star.class': 'Sternklasse', 'star.class0': 'Roter Zwerg', 'star.class1': 'Gelber Stern', 'star.class2': 'Blauer Riese',
@@ -59,7 +59,7 @@ export const de: Record<string, string> = {
 
   // — Supernova —
   'nova.name': 'Supernova', 'nova.shards': 'Nova-Scherben',
-  'nova.go': 'SUPERNOVA AUSLÖSEN', 'nova.gain': '+{v} Scherben',
+  'nova.go': 'SUPERNOVA AUSLÖSEN', 'nova.gain': '+{v}',
   'nova.req': 'Benötigt: {v} Eisen',
   'nova.confirm': 'Dein Stern stirbt in einem Kataklysmus. Stern, Plasma, Upgrades, Elemente und Staub werden zurückgesetzt — dafür erhältst du Nova-Scherben zum Säen von Nebeln, und dein Überrest bleibt dieser Galaxie für immer erhalten.',
   'nova.remnant': 'Wähle deinen Überrest',
@@ -119,7 +119,7 @@ export const de: Record<string, string> = {
 
   // — Galaxy —
   'galaxy.name': 'Galaxie', 'galaxy.dm': 'Dunkle Materie',
-  'galaxy.go': 'VERSCHMELZEN', 'galaxy.gain': '+{v} Dunkle Materie',
+  'galaxy.go': 'VERSCHMELZEN', 'galaxy.gain': '+{v}',
   'galaxy.req': 'Benötigt: {v} Nova-Scherben',
   'galaxy.confirm': 'Deine Nebel, Überreste und Scherben verschmelzen zu einer Galaxie. Alles darunter wird zurückgesetzt — dafür erhältst du Dunkle Materie für Konstellationen. Challenge-Abschlüsse bleiben erhalten.',
   'galaxy.type': 'Galaxientyp',
@@ -142,7 +142,7 @@ export const de: Record<string, string> = {
 
   // — Singularity —
   'sing.name': 'Singularität', 'sing.entropy': 'Entropie',
-  'sing.go': 'KOLLABIEREN', 'sing.gain': '+{v} Entropie',
+  'sing.go': 'KOLLABIEREN', 'sing.gain': '+{v}',
   'sing.req': 'Benötigt: {v} Dunkle Materie',
   'sing.confirm': 'Deine Galaxie kollabiert zur Singularität. Konstellationen und alles darunter werden zurückgesetzt — dafür erhältst du Entropie für permanente Singularitäts-Perks.',
   'sing.feed': 'FÜTTERE DIE LEERE',

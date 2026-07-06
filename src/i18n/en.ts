@@ -25,7 +25,7 @@ export const en: Record<string, string> = {
 
   // — Star / Ignition —
   'star.name': 'Star', 'star.plasma': 'Plasma',
-  'star.ignite': 'IGNITE', 'star.igniteGain': '+{v} Plasma',
+  'star.ignite': 'IGNITE', 'star.igniteGain': '+{v}',
   'star.igniteReq': 'Needs {v} Dust',
   'star.igniteConfirm': 'Ignition collapses your dust cloud into a star. Your dust, generators and compression reset — but you gain Plasma, which permanently boosts dust production and unlocks Fusion.',
   'star.class': 'Star class', 'star.class0': 'Red Dwarf', 'star.class1': 'Yellow Star', 'star.class2': 'Blue Giant',
@@ -59,7 +59,7 @@ export const en: Record<string, string> = {
 
   // — Supernova —
   'nova.name': 'Supernova', 'nova.shards': 'Nova Shards',
-  'nova.go': 'GO SUPERNOVA', 'nova.gain': '+{v} Shards',
+  'nova.go': 'GO SUPERNOVA', 'nova.gain': '+{v}',
   'nova.req': 'Needs {v} Iron',
   'nova.confirm': 'Your star dies in a cataclysm. Star, plasma, upgrades, elements and dust all reset — but you gain Nova Shards to seed nebulae, and your remnant remains forever this galaxy.',
   'nova.remnant': 'Choose your remnant',
@@ -119,7 +119,7 @@ export const en: Record<string, string> = {
 
   // — Galaxy —
   'galaxy.name': 'Galaxy', 'galaxy.dm': 'Dark Matter',
-  'galaxy.go': 'COALESCE', 'galaxy.gain': '+{v} Dark Matter',
+  'galaxy.go': 'COALESCE', 'galaxy.gain': '+{v}',
   'galaxy.req': 'Needs {v} Nova Shards',
   'galaxy.confirm': 'Your nebulae, remnants and shards merge into a galaxy. Everything below resets — but you gain Dark Matter to light up constellations. Challenge completions are kept.',
   'galaxy.type': 'Galaxy type',
@@ -142,7 +142,7 @@ export const en: Record<string, string> = {
 
   // — Singularity —
   'sing.name': 'Singularity', 'sing.entropy': 'Entropy',
-  'sing.go': 'COLLAPSE', 'sing.gain': '+{v} Entropy',
+  'sing.go': 'COLLAPSE', 'sing.gain': '+{v}',
   'sing.req': 'Needs {v} Dark Matter',
   'sing.confirm': 'Your galaxy collapses into the singularity. Constellations and everything below reset — but you gain Entropy for permanent singularity perks.',
   'sing.feed': 'FEED THE VOID',

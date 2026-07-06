@@ -1,4 +1,4 @@
-import { el, btn, setText, setVisible, setReserve, setDisabled, setClass } from './dom';
+import { el, btn, setText, setHTML, setVisible, setReserve, setDisabled, setClass } from './dom';
 import { fmt, fmtInt, fmtTime, fmtMult, resTag, numTag } from './format';
 import { t, setLang, getLang } from '../i18n';
 import type { GameState, NebulaCell, StarClass, GalaxyType } from '../core/state';
@@ -283,10 +283,10 @@ export class DustPanel implements Panel {
         : Math.min(1, s.dust.total.log10().toNumber() / req.log10().toNumber()));
       const gain = F.plasmaGain(s, m);
       if (F.canIgnite(s)) {
-        setText(this.igniteLabel, t('star.igniteGain', { v: fmt(gain, s.settings.sciNotation) }));
+        setHTML(this.igniteLabel, t('star.igniteGain', { v: resTag('plasma', fmt(gain, s.settings.sciNotation)) }));
         setDisabled(this.igniteBtn, gain.lte(0));
       } else {
-        setText(this.igniteLabel, t('star.igniteReq', { v: fmt(req, true) }));
+        setHTML(this.igniteLabel, t('star.igniteReq', { v: fmt(req, true) }));
         setDisabled(this.igniteBtn, true);
       }
       setClass(this.igniteLabel, 'capped',
@@ -490,10 +490,10 @@ export class StarPanel implements Panel {
     setBar(this.novaBar, logFrac(fe, nReq));
     const gain = F.shardGain(s, m);
     if (F.canSupernova(s)) {
-      setText(this.novaLabel, t('nova.gain', { v: fmt(gain, sci) }));
+      setHTML(this.novaLabel, t('nova.gain', { v: resTag('shards', fmt(gain, sci)) }));
       setDisabled(this.novaBtn, gain.lte(0));
     } else {
-      setText(this.novaLabel, t('nova.req', { v: fmt(nReq, true) }));
+      setHTML(this.novaLabel, t('nova.req', { v: fmt(nReq, true) }));
       setDisabled(this.novaBtn, true);
     }
     setClass(this.novaLabel, 'capped', F.canSupernova(s) && F.isGainCapped(gain, s.nova.totalShards));
@@ -801,10 +801,10 @@ export class NovaPanel implements Panel {
     setBar(this.coalBar, logFrac(s.nova.totalShards, coalReq));
     const dmG = F.dmGain(s, m);
     if (F.canCoalesce(s)) {
-      setText(this.coalLabel, t('galaxy.gain', { v: fmt(dmG, sci) }));
+      setHTML(this.coalLabel, t('galaxy.gain', { v: resTag('dm', fmt(dmG, sci)) }));
       setDisabled(this.coalBtn, s.nova.challenge !== -1 || dmG.lte(0));
     } else {
-      setText(this.coalLabel, t('galaxy.req', { v: fmt(coalReq, true) }));
+      setHTML(this.coalLabel, t('galaxy.req', { v: fmt(coalReq, true) }));
       setDisabled(this.coalBtn, true);
     }
     setClass(this.coalLabel, 'capped', F.canCoalesce(s) && F.isGainCapped(dmG, s.galaxy.totalDM));
@@ -917,10 +917,10 @@ export class GalaxyPanel implements Panel {
     setBar(this.colBar, logFrac(s.galaxy.totalDM, colReq));
     const entG = F.entropyGain(s, m);
     if (F.canCollapse(s)) {
-      setText(this.colLabel, t('sing.gain', { v: fmt(entG, sci) }));
+      setHTML(this.colLabel, t('sing.gain', { v: resTag('entropy', fmt(entG, sci)) }));
       setDisabled(this.colBtn, s.nova.challenge !== -1 || entG.lte(0));
     } else {
-      setText(this.colLabel, t('sing.req', { v: fmt(colReq, true) }));
+      setHTML(this.colLabel, t('sing.req', { v: fmt(colReq, true) }));
       setDisabled(this.colBtn, true);
     }
     setClass(this.colLabel, 'capped', F.canCollapse(s) && F.isGainCapped(entG, s.sing.totalEntropy));

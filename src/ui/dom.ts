@@ -24,6 +24,16 @@ export function setText(node: Node, text: string): void {
   }
 }
 
+const lastHTML = new WeakMap<Node, string>();
+/** wie setText, aber innerHTML — für Labels mit <span class="tip-res">/<b class="tip-num">
+ *  Hervorhebung. Sicher, weil ausschließlich intern generiert (nie Spieler-/Netzwerk-Eingabe). */
+export function setHTML(elem: HTMLElement, html: string): void {
+  if (lastHTML.get(elem) !== html) {
+    lastHTML.set(elem, html);
+    elem.innerHTML = html;
+  }
+}
+
 export function setVisible(elem: HTMLElement, visible: boolean): void {
   const want = visible ? '' : 'none';
   if (elem.style.display !== want) elem.style.display = want;
