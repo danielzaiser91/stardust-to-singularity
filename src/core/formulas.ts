@@ -95,7 +95,11 @@ export function computeMults(s: GameState): Mults {
   const ch = s.nova.challenge;
   const tier = s.nova.completedTier;   // 0 = offen, 1 = Normal, 2 = Hard — Hard-Boni stapeln auf Normal
   const nodes = s.galaxy.nodes;
-  const gt = C.GALAXY_TYPES[s.galaxy.gtype];
+  // Galaxientyp-Boni stapeln wie Remnants: jede Wahl zählt, alle drei wirken gleichzeitig
+  const gp = s.stats.gtypePicks;
+  const gtAll = Math.pow(C.GALAXY_TYPE_ALL, gp[0]);
+  const gtOffline = Math.pow(C.GALAXY_TYPE_OFFLINE, gp[1]);
+  const gtActive = Math.pow(C.GALAXY_TYPE_ACTIVE, gp[2]);
   const perks = s.sing.perks;
 
   // — Node-Effekte einsammeln —
@@ -179,7 +183,7 @@ export function computeMults(s: GameState): Mults {
   const entropyAll = s.sing.totalEntropy.add(1).pow(C.ENTROPY_ALL_EXP);
 
   // — Global zusammensetzen —
-  const globalMult = achMult.mul(accretion).mul(nAll).mul(ngMult).mul(gt.all).mul(pulsarBurst)
+  const globalMult = achMult.mul(accretion).mul(nAll).mul(ngMult).mul(gtAll).mul(pulsarBurst)
     .mul(dmAll).mul(entropyAll);
 
   let dustMult = plasmaDust.mul(heBoost).mul(nebulaDustMult).mul(nDust).mul(perkDust).mul(globalMult)
@@ -197,7 +201,7 @@ export function computeMults(s: GameState): Mults {
     + (s.star.upgrades[3] ? 0.05 : 0)
     + siBoost.sub(1).toNumber() * 0.02;                     // Si verstärkt Compression leicht
 
-  let clickMult = oBoost.mul(nClick).mul(perkClick).mul(cometActive).mul(gt.active);
+  let clickMult = oBoost.mul(nClick).mul(perkClick).mul(cometActive).mul(gtActive);
   if (s.star.upgrades[7]) clickMult = clickMult.mul(5);
 
   const hRate = s.star.unlocked
@@ -247,7 +251,7 @@ export function computeMults(s: GameState): Mults {
     plasmaGainMult, plasmaGainExp,
     shardGainMult, dmGainMult, entropyGainMult,
     pulsarBurst, pulsarPeriod,
-    offlineMult: nOffline * gt.offline,
+    offlineMult: nOffline * gtOffline,
     nebulaDustMult,
     nebulaPlasmaMult,
     feNebulaMult: s.stats.coalescences >= C.MS_GALAXY[1] ? nebulaPlasmaMult : ONE,

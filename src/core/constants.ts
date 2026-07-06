@@ -97,11 +97,12 @@ export const COALESCE_REQ_GROWTH = 3;        // Anforderung ×3 je Coalescence (
 export const DM_EXP = 0.55;                  // dm = (totalShards/aktuelleReq)^exp
 export const CONSTELLATION_NODES = 45;       // 3 Äste à 15
 export const NODE_COST = (i: number) => Math.max(1, Math.floor(Math.pow(1.55, i % 15) * (1 + Math.floor(i / 15))));
-export const GALAXY_TYPES = [
-  { all: 1.25, offline: 1, active: 1 },      // Spiral: +25 % alles
-  { all: 1, offline: 2, active: 1 },         // Elliptisch: Offline/Autobuyer ×2
-  { all: 1, offline: 1, active: 3 },         // Irregulär: Klick/Komet ×3
-];
+// Galaxientyp-Wahl skaliert wie Remnants: JEDE Wahl zählt permanent (stats.gtypePicks),
+// alle drei Boni wirken gleichzeitig, jeder mit seiner eigenen Basis hoch Anzahl-Wahlen —
+// kein „aktiver" Typ mehr, mehrfach denselben Typ zu wählen verstärkt ihn exponentiell.
+export const GALAXY_TYPE_ALL = 1.25;         // Spiral: Gesamtproduktion ×1,25 je Wahl
+export const GALAXY_TYPE_OFFLINE = 2;        // Elliptisch: Offline-Fortschritt ×2 je Wahl
+export const GALAXY_TYPE_ACTIVE = 3;         // Irregulär: Klick-/Kometen-Kraft ×3 je Wahl
 
 // ── Ebene 4: Singularity ─────────────────────────────────────────────────────
 export const COLLAPSE_REQ = 300;             // total Dark Matter (Basis)

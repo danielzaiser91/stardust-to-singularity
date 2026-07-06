@@ -289,8 +289,7 @@ export function doCoalesce(s: GameState, gtype: GalaxyType): boolean {
   s.galaxy.dm = s.galaxy.dm.add(gain);
   s.galaxy.totalDM = s.galaxy.totalDM.add(gain);
   s.stats.lifetimeDM = s.stats.lifetimeDM.add(gain);
-  s.galaxy.gtype = gtype;
-  s.stats.gtypePicks[gtype]++;
+  s.stats.gtypePicks[gtype]++;   // wirkt permanent & stapelnd (siehe computeMults) — kein „aktiver" Typ mehr
   s.galaxy.count++;
   s.stats.coalescences++;
   s.stats.galaxyTime = 0;

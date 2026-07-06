@@ -320,6 +320,25 @@ describe('tick & actions', () => {
     expect(F.currencyForCap(s2, computeMults(s2), 'ignite')).toBeNull();
   });
 
+  it('galaxy type bonuses stack exponentially with pick count (no single "active" type)', () => {
+    const mk = (picks: [number, number, number]) => {
+      const s = initialState(1);
+      s.galaxy.unlocked = true;
+      s.stats.gtypePicks = picks;
+      return s;
+    };
+    const base = computeMults(mk([0, 0, 0]));
+    const oneSpiral = computeMults(mk([1, 0, 0]));
+    const twoSpiral = computeMults(mk([2, 0, 0]));
+    expect(oneSpiral.dustMult.div(base.dustMult).toNumber()).toBeCloseTo(C.GALAXY_TYPE_ALL, 5);
+    expect(twoSpiral.dustMult.div(base.dustMult).toNumber()).toBeCloseTo(C.GALAXY_TYPE_ALL ** 2, 5);
+    // beide anderen Typen wirken GLEICHZEITIG, nicht exklusiv
+    const mixed = computeMults(mk([1, 1, 1]));
+    expect(mixed.offlineMult).toBeCloseTo(base.offlineMult * C.GALAXY_TYPE_OFFLINE, 5);
+    expect(mixed.clickMult.div(base.clickMult).toNumber()).toBeCloseTo(C.GALAXY_TYPE_ACTIVE, 5);
+    expect(mixed.dustMult.div(base.dustMult).toNumber()).toBeCloseTo(C.GALAXY_TYPE_ALL, 5);
+  });
+
   it('coalescence resets challenges & lower milestones until galaxy milestones keep them', () => {
     const mk = (coalescences: number) => {
       const s = initialState(1);

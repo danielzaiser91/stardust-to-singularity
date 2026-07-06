@@ -647,19 +647,16 @@ export class NovaPanel implements Panel {
     });
     const gtSeg = el('div', 'seg');
     for (let g = 0; g < 3; g++) {
+      const base = [C.GALAXY_TYPE_ALL, C.GALAXY_TYPE_OFFLINE, C.GALAXY_TYPE_ACTIVE][g];
+      const effKey = ['galaxy.effAll', 'galaxy.effOffline', 'galaxy.effActive'][g];
       const b = btn('seg-btn', t(`galaxy.t${g}`), () => { this.st().ui.nextGtype = g as GalaxyType; });
       attachTip(b, () => {
         const s = this.st();
-        const active = s.galaxy.unlocked && s.galaxy.gtype === g;
-        const gt = C.GALAXY_TYPES[g];
-        const eff = [
-          ...(gt.all !== 1 ? [t('galaxy.effAll', { v: fmtMult(gt.all) })] : []),
-          ...(gt.offline !== 1 ? [t('galaxy.effOffline', { v: fmtMult(gt.offline) })] : []),
-          ...(gt.active !== 1 ? [t('galaxy.effActive', { v: fmtMult(gt.active) })] : []),
-        ].join(' · ');
+        const n = s.stats.gtypePicks[g];
         return {
           title: t(`galaxy.t${g}`),
-          body: `${eff}\n${t('choice.pickedUni', { n: s.stats.gtypePicks[g] })}${active ? `\n${t('galaxy.activeNow')}` : ''}`,
+          body: `${t(effKey, { v: fmtMult(base) })}\n${t('choice.pickedUni', { n })}`
+            + `\n${t('galaxy.currentBonus', { v: fmtMult(Math.pow(base, n)) })}\n${t('nova.remNext', { v: fmtMult(Math.pow(base, n + 1)) })}`,
         };
       });
       this.gtBtns.push(b);
