@@ -85,6 +85,14 @@
          was diese Session neu/geändert wurde (Tooltip-Überarbeitung, Cap-Badges,
          Automation-Beschreibungen), da dort am ehesten Meta-Ton reingerutscht ist.
 
+- [ ] **Challenges-Sektion einklappbar machen.** Der "CHALLENGES"-Bereich im Supernova-Panel
+      (`panels.ts`, `NovaPanel`) soll ein-/ausklappbar sein (Klick auf die Überschrift o. ä.),
+      damit er nicht dauerhaft Platz wegnimmt, wenn man ihn nicht braucht. Der Klapp-Zustand muss
+      im Savegame persistiert werden (überlebt Reload) — neues Feld in `GameState.ui`
+      (z. B. `challengesCollapsed: boolean`), einfach in `initialState()` ergänzen (Template-
+      Revive füllt bei alten Saves automatisch den Default, keine Migration nötig laut
+      CLAUDE.md-Regel für additive Save-Felder).
+
 - [ ] **`/ai-improve-learnings` ausführen.** Diese Session hatte einiges an nicht-offensichtlichen
       Lehren (Decimal-Präzisionsgrenzen bei extremen Skalen in drei verschiedenen Ausprägungen,
       Versionsschema-Umstellung, verwaiste Hintergrundprozesse) — in die generischen
