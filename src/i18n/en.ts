@@ -113,7 +113,7 @@ export const en: Record<string, string> = {
   'ch.6': 'Entropy Leak', 'ch.6d': 'Dust decays 1% per second', 'ch.6r': 'Dust production +25%',
   'ch.7': 'Singular Focus', 'ch.7d': 'Only Attractors exist', 'ch.7r': 'Attractors ×8',
   'nova.autoIgnite': 'Auto-Ignition',
-  'nova.autoIgniteTip': 'Ignites continuously at the golden point, no collapse needed — {v}, matching perfect manual spam.',
+  'nova.autoIgniteTip': 'Ignites continuously at the golden point, no collapse needed — {v}.',
   'nova.autoIgniteLock': 'Unlocks at your 2nd supernova',
 
   // — Galaxy —
@@ -281,8 +281,9 @@ export const en: Record<string, string> = {
 
   // — Gain-Cap —
   'cap.title': 'Gain cap',
-  'cap.body': 'At maximum: ×{v} of your total. Gathering more won\'t help — reset now!',
-  'cap.hint': 'Reset maximum: ×{v} of your total. Gold = cap reached.',
+  'cap.body': 'At cap: your total {r} could at most grow to ×{v} its current value. Gathering more won\'t help — reset now!',
+  'cap.bodyAuto': 'At cap: your total {r} can at most grow to ×{v} its current value — the auto-trickle already handles that continuously.',
+  'cap.hint': 'Gain per reset is capped: your total {r} can at most grow to ×{v} its current value. Gold = cap reached.',
 
   // — Update-Banner —
   'update.banner': '✦ New version available — click to save & reload',

@@ -33,15 +33,28 @@ function logFrac(cur: Decimal, req: Decimal | number): number {
   return Math.min(1, cur.log10().toNumber() / reqLog);
 }
 
+// Welche Währung sich beim jeweiligen Reset akkumuliert (die "Summe", auf die sich ×{v} bezieht).
+const CAP_TOTAL_RES: Record<'ignite' | 'nova' | 'coalesce' | 'collapse', { kind: 'plasma' | 'shards' | 'dm' | 'entropy'; nameKey: string }> = {
+  ignite: { kind: 'plasma', nameKey: 'star.plasma' },
+  nova: { kind: 'shards', nameKey: 'nova.shards' },
+  coalesce: { kind: 'dm', nameKey: 'galaxy.dm' },
+  collapse: { kind: 'entropy', nameKey: 'sing.entropy' },
+};
+
 /** Gemeinsamer Gain-Deckel-Tooltip: Erklärung · aktueller Deckelwert · Währung bis zum Deckel. */
 function capTipBody(
   s: GameState, m: F.Mults, total: Decimal, clampMult: number, isCapped: boolean,
   layer: 'ignite' | 'nova' | 'coalesce' | 'collapse', unitKey: string, resKind?: 'dust' | 'shards' | 'dm',
+  autoOn = false,
 ): { title: string; body: string } {
   const sci = s.settings.sciNotation;
   const n = numTag(String(clampMult + 1));
   const max = t('cap.max', { v: numTag(fmt(F.gainCapBound(total, clampMult), sci)) });
-  let body = `${t(isCapped ? 'cap.body' : 'cap.hint', { v: n })}\n${max}`;
+  const tr = CAP_TOTAL_RES[layer];
+  const r = resTag(tr.kind, t(tr.nameKey));
+  // "Jetzt resetten!" ist irreführend, solange der Auto-Trickle des Layers ohnehin laufend resettet.
+  const bodyKey = isCapped ? (autoOn ? 'cap.bodyAuto' : 'cap.body') : 'cap.hint';
+  let body = `${t(bodyKey, { v: n, r })}\n${max}`;
   if (!isCapped) {
     const need = F.currencyForCap(s, m, layer);
     if (need) {
@@ -156,7 +169,7 @@ export class DustPanel implements Panel {
       const s = this.st();
       const m = M(s);
       const capped = F.isGainCapped(F.plasmaGain(s, m), s.star.totalPlasma, C.PLASMA_CLAMP_MULT);
-      return capTipBody(s, m, s.star.totalPlasma, C.PLASMA_CLAMP_MULT, capped, 'ignite', 'dust.name', 'dust');
+      return capTipBody(s, m, s.star.totalPlasma, C.PLASMA_CLAMP_MULT, capped, 'ignite', 'dust.name', 'dust', s.nova.autoIgnite.on);
     });
     this.classSeg = el('div', 'seg');
     for (let c = 0; c < 3; c++) {
@@ -367,7 +380,7 @@ export class StarPanel implements Panel {
       const s = this.st();
       const m = M(s);
       const capped = F.isGainCapped(F.shardGain(s, m), s.nova.totalShards);
-      return capTipBody(s, m, s.nova.totalShards, C.GAIN_CLAMP_MULT, capped, 'nova', 'el.5');
+      return capTipBody(s, m, s.nova.totalShards, C.GAIN_CLAMP_MULT, capped, 'nova', 'el.5', undefined, s.galaxy.autoNova.on);
     });
     this.remSeg = el('div', 'seg');
     for (let r = 0; r < 3; r++) {

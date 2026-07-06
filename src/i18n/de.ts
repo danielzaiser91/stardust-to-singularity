@@ -113,7 +113,7 @@ export const de: Record<string, string> = {
   'ch.6': 'Entropie-Leck', 'ch.6d': 'Staub zerfällt 1 %/s', 'ch.6r': 'Staubproduktion +25 %',
   'ch.7': 'Singulärer Fokus', 'ch.7d': 'Nur Attraktoren existieren', 'ch.7r': 'Attraktoren ×8',
   'nova.autoIgnite': 'Auto-Zündung',
-  'nova.autoIgniteTip': 'Zündet kontinuierlich am goldenen Punkt, ohne die Wolke zu kollabieren — {v}, wie perfektes manuelles Spammen.',
+  'nova.autoIgniteTip': 'Zündet kontinuierlich am goldenen Punkt, ohne die Wolke zu kollabieren — {v}.',
   'nova.autoIgniteLock': 'Ab der 2. Supernova',
 
   // — Galaxy —
@@ -281,8 +281,9 @@ export const de: Record<string, string> = {
 
   // — Gain-Cap —
   'cap.title': 'Maximalgewinn',
-  'cap.body': 'Am Maximum: ×{v} deiner Summe. Mehr sammeln bringt nichts — jetzt resetten!',
-  'cap.hint': 'Reset-Maximum: ×{v} deiner Summe. Golden = Maximum erreicht.',
+  'cap.body': 'Am Deckel: deine bisherige Menge an {r} würde höchstens auf das ×{v}-fache wachsen. Mehr sammeln bringt nichts — jetzt resetten!',
+  'cap.bodyAuto': 'Am Deckel: deine bisherige Menge an {r} wächst höchstens auf das ×{v}-fache — der Auto-Trickle nutzt das schon laufend.',
+  'cap.hint': 'Gewinn pro Reset gedeckelt: deine bisherige Menge an {r} wächst höchstens auf das ×{v}-fache. Golden = Deckel erreicht.',
 
   // — Update-Banner —
   'update.banner': '✦ Neue Version verfügbar — klicken zum Speichern & Neuladen',
