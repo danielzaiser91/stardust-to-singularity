@@ -46,6 +46,21 @@
       einmaliger/abklingender Hinweis, ähnlich wie Lore-/Achievement-Toasts. Betroffene Stelle:
       `src/ui/panels.ts` Challenge-Karten (`hardUnlockable`-Logik, `.ch-toggle`-Segment).
 
+- [ ] **Meta-Texte raus, die den Spieler direkt ansprechen — durch immersive Texte ersetzen.**
+      Fällt aus dem Ton des Spiels: z. B. der Maximum-Tooltip "Diesen Punkt zu sehen ist selten:
+      gut gespielt!" (`misc.capReachedTip`, 2026-07-06 eingeführt) spricht den Spieler direkt an
+      wie eine Erfolgsmeldung/UI-Copy, statt in der Spielwelt zu bleiben (Staub/Sterne/Physik-
+      Fiktion). Zwei Teilaufgaben:
+      1. Gezielt `misc.capReachedTip` (und ggf. ähnliche Stellen wie Achievement-/Lore-Toasts)
+         auf direkte Anrede prüfen und durch einen Text ersetzen, der in der Fiktion bleibt
+         (z. B. Beschreibung eines physikalischen Grenzzustands statt Meta-Kommentar zum
+         Spielverhalten).
+      2. **Generell einmal alle Texte durchgehen** (`src/i18n/de.ts` + `en.ts`, beide Sprachen
+         synchron halten) und wo nötig durch bessere, zum Setting passende, immersive
+         Formulierungen ersetzen — nicht nur die eine Stelle. Kandidaten zuerst prüfen: alles,
+         was diese Session neu/geändert wurde (Tooltip-Überarbeitung, Cap-Badges,
+         Automation-Beschreibungen), da dort am ehesten Meta-Ton reingerutscht ist.
+
 ## Weitere Deploy-Plattformen (zum Testen nach GitHub Pages)
 
 - [ ] **Netlify** — Drag&Drop des `dist/`-Ordners oder Repo-Verknüpfung; Build: `npm run build`, Publish-Dir: `dist`, Base im Vite-Config auf `/` stellen (env-Variable `DEPLOY_BASE` vorbereitet). Kostenlos, eigene Subdomain `*.netlify.app`.
