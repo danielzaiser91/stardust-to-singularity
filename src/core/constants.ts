@@ -12,6 +12,9 @@ export const GEN_BASE_COST = [10, 1e3, 1e6, 1e10, 1e14, 1e18, 1e22, 1e26];
 export const GEN_GROWTH = [2.0, 2.3, 2.6, 3.0, 3.5, 4.0, 4.5, 5.0];
 export const GEN_RATE = [1, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.1];  // Output je Einheit/s
 export const GEN_MULT_PER_10 = 2;            // jede volle 10er-Packung verdoppelt Output der Stufe
+// Autobuyer-Budgetanteil je Stufe/Tick — sonst frisst die erste Stufe in einem Tick den
+// gesamten Staub weg, bevor andere Stufen drankommen (sichtbarer Staub bleibt bei 0).
+export const AUTOBUY_BUDGET_FRAC = 0.3;
 export const COMPRESSION_BASE = 500;
 export const COMPRESSION_GROWTH = 14;
 export const COMPRESSION_EFFECT = 1.25;      // × auf alle Generator-Produktion, pro Stufe

@@ -513,7 +513,7 @@ export class NovaPanel implements Panel {
   private chRows: {
     card: HTMLElement; statusIcon: HTMLElement; lockedLine: HTMLElement;
     toggle: HTMLElement; toggleBtns: [HTMLButtonElement, HTMLButtonElement];
-    restrictLine: HTMLElement; goalLine: HTMLElement; rewardLine: HTMLElement;
+    restrictLine: HTMLElement; goalLine: HTMLElement; rewardLine: HTMLElement; rewardValue: HTMLElement;
     startBtn: HTMLButtonElement; viewTier: 1 | 2;
   }[] = [];
   private coalBar = bar('bar-gal');
@@ -627,7 +627,10 @@ export class NovaPanel implements Panel {
 
       const restrictLine = el('div', 'ch-restrict', '');
       const goalLine = el('div', 'ch-goal', '');
-      const rewardLine = el('div', 'ch-reward', '');
+      const rewardLine = el('div', 'ch-reward');
+      const rewardLabel = el('span', 'ch-reward-label', `🏆 ${t('misc.reward')}:`);
+      const rewardValue = el('span', 'ch-reward-value', '');
+      rewardLine.append(rewardLabel, rewardValue);
 
       const startBtn = btn('ch-start', '', () => {
         const s = this.st();
@@ -636,7 +639,7 @@ export class NovaPanel implements Panel {
       });
 
       card.append(head, lockedLine, toggle, restrictLine, goalLine, rewardLine, startBtn);
-      this.chRows.push({ card, statusIcon, lockedLine, toggle, toggleBtns: [nBtn, hBtn], restrictLine, goalLine, rewardLine, startBtn, viewTier: 1 });
+      this.chRows.push({ card, statusIcon, lockedLine, toggle, toggleBtns: [nBtn, hBtn], restrictLine, goalLine, rewardLine, rewardValue, startBtn, viewTier: 1 });
       this.root.append(card);
     }
 
@@ -732,9 +735,6 @@ export class NovaPanel implements Panel {
 
       setClass(r.card, 'locked', locked);
       setClass(r.card, 'active', active);
-      setClass(r.card, 'completed', ctier >= 1);
-      setClass(r.card, 'completed-hard', ctier >= 2);
-      setText(r.statusIcon, active ? t('misc.active') : ctier >= 2 ? '★' : ctier >= 1 ? '✓' : locked ? '🔒' : '');
 
       // Gesperrt: nur Name + Freischalt-Hinweis, sonst nichts (reduziert Info, bevor sie relevant ist)
       setReserve(r.lockedLine, locked);
@@ -744,12 +744,23 @@ export class NovaPanel implements Panel {
       setReserve(r.goalLine, !locked);
       setReserve(r.rewardLine, !locked);
       setReserve(r.startBtn, !locked);
-      if (locked) continue;
+      if (locked) {
+        setClass(r.card, 'completed', false);
+        setClass(r.card, 'completed-hard', false);
+        setText(r.statusIcon, '🔒');
+        continue;
+      }
 
       // Ansicht folgt dem laufenden Versuch, sonst der zuletzt gewählten Stufe (auf Normal
       // geklemmt, solange Hard nicht wählbar ist — z. B. nach einem Coalescence-Reset).
       if (!active && !hardUnlockable) r.viewTier = 1;
       const viewTier: 1 | 2 = active ? (activeTier as 1 | 2) : r.viewTier;
+      // Status/Färbung folgt der ANGEZEIGTEN Stufe, nicht dem Gesamt-Bestwert — sonst bleibt
+      // die Kachel beim Umschalten auf Hard fälschlich grün/✓, obwohl Hard noch offen ist.
+      const viewDone = viewTier === 2 ? ctier >= 2 : ctier >= 1;
+      setClass(r.card, 'completed', viewDone && viewTier === 1);
+      setClass(r.card, 'completed-hard', viewDone && viewTier === 2);
+      setText(r.statusIcon, active ? t('misc.active') : viewDone ? (viewTier === 2 ? '★' : '✓') : '');
       setClass(r.toggleBtns[0], 'active', viewTier === 1);
       setClass(r.toggleBtns[1], 'active', viewTier === 2);
       setDisabled(r.toggleBtns[0], active);
@@ -758,7 +769,7 @@ export class NovaPanel implements Panel {
       const goalMult = viewTier === 2 ? C.CH_GOAL_MULT_TIER2[c] : C.CH_GOAL_MULT[c];
       setText(r.restrictLine, `⚠ ${t(`ch.${c}d`)}`);
       setText(r.goalLine, `🎯 ${fmt(D(C.IGNITION_REQ).mul(goalMult), true)} ${t('dust.name')}`);
-      setText(r.rewardLine, t(viewTier === 2 ? `ch.${c}r2` : `ch.${c}r`));
+      setText(r.rewardValue, t(viewTier === 2 ? `ch.${c}r2` : `ch.${c}r`));
 
       setText(r.startBtn, active ? t('nova.chExit') : t('nova.chEnter'));
       setClass(r.startBtn, 'danger', active);

@@ -99,7 +99,7 @@ export function tick(s: GameState, dt: number): Mults {
   if (s.star.upgrades[14]) {
     for (let r = 0; r < C.FUSION_STEPS; r++) {
       if (s.star.reactors[r] === 0) buyReactor(s, r);
-      buyReactorsMax(s, r, 0.3);
+      buyReactorsMax(s, r, C.AUTOBUY_BUDGET_FRAC);
     }
   }
   // Auto-Zündung: kontinuierlicher Trickle des aktuellen Zündungs-Gewinns, pro Tick berechnet,
@@ -151,7 +151,9 @@ export function tick(s: GameState, dt: number): Mults {
 }
 
 function autoBuyGen(s: GameState, m: Mults, tier: number): void {
-  const n = genMaxAfford(s, m, tier);
+  // Budget gedeckelt (statt gesamten Staub): sonst frisst Stufe 0 im selben Tick alles weg,
+  // bevor teurere Stufen drankommen — sichtbarer Staub bliebe dauerhaft bei 0.
+  const n = genMaxAfford(s, m, tier, C.AUTOBUY_BUDGET_FRAC);
   if (n > 0 && s.dust.amount.gte(genCost(s, m, tier, n))) buyGenerator(s, m, tier, n);
 }
 

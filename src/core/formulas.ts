@@ -267,9 +267,11 @@ export function genCost(s: GameState, m: Mults, tier: number, n = 1): Decimal {
   if (m.genCostExp !== 1) c = c.pow(m.genCostExp);
   return c;
 }
-export function genMaxAfford(s: GameState, m: Mults, tier: number): number {
+/** budgetFrac < 1: für Autobuyer — verhindert, dass eine Stufe den gesamten Staub verschlingt
+ *  und tiefere/teurere Stufen (die im selben Tick danach drankommen) leer ausgehen. */
+export function genMaxAfford(s: GameState, m: Mults, tier: number, budgetFrac = 1): number {
   const base = D(C.GEN_BASE_COST[tier]).div(m.genCostDiv);
-  let budget = s.dust.amount;
+  let budget = s.dust.amount.mul(budgetFrac);
   if (m.genCostExp !== 1) budget = budget.root(m.genCostExp);
   return affordGeometric(budget, base, C.GEN_GROWTH[tier], s.dust.gens[tier].bought);
 }
