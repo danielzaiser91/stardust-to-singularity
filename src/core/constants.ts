@@ -111,11 +111,11 @@ export const ENTROPY_EXP = 0.6;
 export const PERK_COUNT = 9;
 export const PERK_HAWKING_H = 2.5;           // Hawking: H-Rate ×2,5 je Level (geometrischer Endgame-Motor)
 export const PERK_BASE_COST = [1, 3, 10, 25, 100, 500, 2500, 10000, 25];
-// Hawking-Kostenwachstum 4→3 (Index 1): Sim (40-Tage-Endgame-Lauf, Seed 42) zeigte nur 2 Kollapse
-// in 40 Tagen, Endgame (2500 Entropie) unerreicht — die Kollaps-Leiter (×8 pro Dreieckszahl-Stufe)
-// lief dem Hawking-finanzierten Motor davon. Günstigere Level → mehr Level pro Entropie-Schub →
-// stärkerer H-Rate-Zusammensetzungseffekt. Siehe BALANCE.md.
-export const PERK_COST_GROWTH = [3, 3, 5, 6, 8, 10, 12, 15, 20];
+export const PERK_COST_GROWTH = [3, 4, 5, 6, 8, 10, 12, 15, 20];
+// ⚠ Endgame-Kalibrierung offen: 40-Tage-Sim (aktiv, Seed 42) erreicht nur 2 Kollapse, Endgame
+// (2500 Entropie) nicht. Zwei Konstanten-Fixes an Perk 1 (Hawking) wurden geprüft und verworfen
+// (Diagnose in BALANCE.md) — beide halfen nicht bzw. schadeten. Braucht eine echte Design-
+// Entscheidung, kein Constants-Tweak. Siehe BALANCE.md „Endgame-Kalibrierung" + todo.md.
 // Perk 9 „Sternen-Gedächtnis": L1 Plasma-Upgrades überleben Supernova,
 // L2 Reaktoren überleben Supernova, L3 Nebelzellen überleben Coalescence
 export const STELLAR_MEMORY_MAX = 3;

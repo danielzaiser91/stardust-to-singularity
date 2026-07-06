@@ -10,8 +10,8 @@ Fortschritt-Legende: ⬜ offen · 🔄 in Arbeit · ✅ erledigt · ⏸️ block
 
 | Aufgabe | Dein Zeitaufwand | Ablauf | Fortschritt |
 |---|---|---|---|
-| Endgame-Sim validieren (`--until endgame --profile active --maxDays 40`) | ~0 min | Erster Lauf (Seed 42): nur 2 Kollapse in 40 Tagen, Endgame NICHT erreicht — Kollaps-Leiter läuft dem Hawking-Motor davon (genau das im todo.md befürchtete Risiko). Fix angewendet: `PERK_COST_GROWTH[1]` (Hawking-Level-Kosten) 4→3, siehe BALANCE.md. Re-Validierungslauf läuft jetzt im Hintergrund | 🔄 Fix angewendet, Re-Validierung läuft |
-| Idle-Voll-Progression bis Endgame simulieren | ~0 min | Läuft parallel im Hintergrund (mit altem Perk-Kostenwert gestartet — vor dem Hawking-Fix; Ergebnis dient als Referenz, nicht als finale Freigabe) | 🔄 läuft im Hintergrund |
+| Endgame-Sim validieren (`--until endgame --profile active --maxDays 40`) | ~5–10 min | Bestätigt: nur 2 Kollapse in 40 Tagen, Endgame NICHT erreicht. Zwei Constants-Fixes geprüft (Hawking-Kosten 4→3: wirkungslos; Hawking-Basis 3→1: schädlich, verlangsamt Frühspiel) — beide verworfen, Details + Diagnose in BALANCE.md. Problem ist strukturell, braucht eine **Design-Entscheidung** von dir (4 Kandidaten-Hebel in todo.md), kein weiterer Constants-Rateversuch | ⏸️ validiert & dokumentiert — wartet auf deine Entscheidung, welcher Hebel gezogen wird |
+| Idle-Voll-Progression bis Endgame simulieren | ~0 min | Lief mit dem ALTEN Perk-Kostenwert (vor dem Hawking-Fix), 60 Tage: nur 1 Kollaps, Endgame nicht erreicht — erwartbar schlechter als aktiv, da idle grundsätzlich langsamer ist. Reiner Referenzwert, keine Aktion nötig; falls die aktive Re-Validierung anschlägt, ist ein separater Idle-Re-Lauf optional (niedrige Prio) | ✅ Referenzlauf fertig (alter Wert) |
 
 ## P2 — Kleinkram: Screenshots/GIF fürs README
 

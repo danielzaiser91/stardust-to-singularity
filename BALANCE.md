@@ -105,17 +105,42 @@ Langzeit-Territorium. Ein menschlicher Spieler ohne Optimal-Strategie liegt übe
 Werten.
 Prüfen mit: `npx tsx src/sim/run.ts --until endgame --profile active --maxDays 40`
 
-### Endgame-Kalibrierung (Kollaps-Kadenz vs. Hawking-Motor)
+### Endgame-Kalibrierung (Kollaps-Kadenz vs. Hawking-Motor) — OFFEN, kein Constants-Fix bisher wirksam
 
-Erster 40-Tage-Endgame-Lauf (Seed 42, `PERK_COST_GROWTH[1]` = 4): nur **2 Kollapse in 40 Tagen**,
-Endgame (2500 Entropie) nicht erreicht. Ursache: Die quadratische Kollaps-Leiter
-(`COLLAPSE_REQ_GROWTH^(n(n+1)/2)`, Mechanismus 3) wächst pro Stufe ×8^n — der Hawking-finanzierte
-Motor (H-Rate ×`PERK_HAWKING_H` je Level) konnte damit nicht mithalten, weil die Hawking-Level
-selbst durch Entropie finanziert werden, die nur bei einem Kollaps anfällt (gedeckelt auf ×4 des
-bisherigen Totals, Mechanismus 1) — ein selbstverstärkender Engpass zwischen Kollaps #2 und #3.
+40-Tage-Endgame-Lauf (Seed 42, aktiv): nur **2 Kollapse in 40 Tagen**, Endgame (2500 Entropie)
+nicht erreicht. Ursache: Die quadratische Kollaps-Leiter (`COLLAPSE_REQ_GROWTH^(n(n+1)/2)`,
+Mechanismus 3) wächst pro Stufe ×8^n — der Hawking-finanzierte Motor (H-Rate ×`PERK_HAWKING_H`
+je Level) hält damit nicht mit, weil Hawking-Level durch Entropie finanziert werden, die nur bei
+einem Kollaps anfällt (gedeckelt auf ×4 des bisherigen Totals, Mechanismus 1) — ein
+selbstverstärkender Engpass zwischen Kollaps #2 und #3.
 
-**Fix:** `PERK_COST_GROWTH[1]` (Hawking-Level-Kosten) 4→3 — günstigere Level pro Entropie-Schub,
-mehr Level pro Kollaps-Zyklus, stärkerer H-Rate-Zusammensetzungseffekt. Re-Validierung läuft;
-Ergebnis wird hier nachgetragen, sobald der Lauf durch ist. Falls der Fix nicht reicht: zweiter
-Hebel aus dem ursprünglichen Plan ist `PERK_HAWKING_H` 2,5→3 (stärkerer Multiplikator statt
-billigerer Level — kann alternativ oder zusätzlich gezogen werden).
+**Zwei Konstanten-Fixes geprüft und beide verworfen** (per schnellem 6-Tage-Diagnose-Sim, dann
+Determinismus-Kontrolle gegen einen zweiten identischen Lauf — kein RNG-Bug, die Unterschiede
+sind reale Folgen der geänderten Kaufentscheidung):
+
+1. **`PERK_COST_GROWTH[1]` 4→3** (Hawking-Level billiger bei höheren Stufen): **wirkungslos**.
+   Nach 2 Kollapsen liegt das gesamte je verdiente Entropie-Budget bei ~9 — viel zu wenig, um
+   überhaupt die Stufe zu erreichen, ab der Wachstumsrate 3 vs. 4 einen Unterschied macht
+   (Kosten bei Stufe 0 sind in beiden Fällen identisch: `base × growth^0 = base`). Der Bot kaufte
+   in beiden Fällen exakt 1 Hawking-Level + 2 Level des Event-Horizon-Perks — bit-identische
+   Ignitions-/Supernova-/Kollaps-Zahlen bei Tag 6.
+2. **`PERK_BASE_COST[1]` 3→1** (Hawking von Grund auf billiger): **schädlich**. Der Bot kauft
+   Perks in fester Priorität (Hawking zuerst, dann Event Horizon `perks[0]`, dann Rest) —
+   ein billigeres Hawking saugt das knappe frühe Entropie-Budget stärker auf und lässt weniger
+   für Event Horizon (`perkDust = 10^Level`, ein direkter, sehr starker früher Dust-Hebel) übrig.
+   Ergebnis nach 6 Tagen: nur 1 statt 2 Kollapse, ~106K statt ~242K Ignitions — die Umverteilung
+   verlangsamt die frühe Kaskade stärker, als der stärkere Hawking-Level sie beschleunigt.
+
+**Fazit:** Beide Konstanten wurden auf ihre Originalwerte zurückgesetzt (kein unbewiesener Fix im
+Code). Das Problem ist strukturell, kein einzelner Zahlendreher: Die Kollaps-Leiter (×8 pro
+Dreieckszahl) wächst schneller, als das Entropie-gefinanzierte Perk-System in vernünftiger Zeit
+mithalten kann, UND die Perks konkurrieren um dasselbe knappe Frühspiel-Budget. Ein echter Fix
+braucht eine Design-Entscheidung, keinen Constants-Tweak — Kandidaten:
+- Eigener, höherer Gain-Clamp-Multiplikator nur für Entropie (löst das „nur ×4 Budget pro
+  Kollaps"-Problem, hat aber Rückwirkung auf NG+-Pacing)
+- Hawking aus der gemeinsamen Perk-Kosten-Konkurrenz lösen (eigene Währung? Auto-finanziert?)
+- Kollaps-Leiter entschärfen (`COLLAPSE_REQ_GROWTH` senken oder Exponent-Formel ändern)
+- Akzeptieren, dass Endgame > Tag 40 liegt und `maxDays` für die Zielsetzung anheben
+
+Offen in [todo.md](todo.md); braucht Nutzer-Entscheidung, welcher Hebel gezogen wird, bevor
+weiter am Constants-Sheet gedreht wird.

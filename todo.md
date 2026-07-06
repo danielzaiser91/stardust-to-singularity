@@ -13,16 +13,22 @@
 - [ ] **galaxy.click** — neue, von der Incremental-Community betriebene Plattform (Nachfolger-Spirit von Kongregate), sehr passende Zielgruppe.
 - [ ] Reddit r/incremental_games — kein Hoster, aber Launch-Post („WIP Wednesday" / „Feedback Friday") für erste Spieler.
 
-## Balance: Singularitäts-Endgame-Redesign (v1 spielbar bis Ebene 5 ~Tag 11)
+## Balance: Singularitäts-Endgame-Redesign — VALIDIERT, Problem bestätigt, braucht Design-Entscheidung
 
-- [ ] **Endgame-Durchstich per Langzeit-Sim validieren.** Der geometrische Motor ist
-      eingebaut (Hawking-Strahlung: H-Rate ×2,5 je Level; Befund dazu in BALANCE.md:
-      polynomielle Ökonomie vs. geometrische Leitern → Kriechgang nach Kollaps #1 ~Tag 11).
-      Offen ist der Nachweis, dass der Motor die Kollaps-Kadenz ab #2/#3 trägt und das
-      Endgame (2500 Entropie) in ~Tag 20–30 fällt: `npm run sim -- --until endgame
-      --profile active --maxDays 40` (~30–60 min Rechenzeit). Falls die Hawking-Kosten
-      (3×4^Level) dem Einkommen davonlaufen: Kostenwachstum 4→3 oder PERK_HAWKING_H 2,5→3.
-- [ ] Idle-Voll-Progression bis Endgame simulieren (bisher bis Galaxie validiert: ~1,7× langsamer)
+- [x] ~~Endgame-Durchstich per Langzeit-Sim validieren~~ — erledigt: 40-Tage-Lauf (aktiv, Seed 42)
+      erreicht nur 2 Kollapse, Endgame (2500 Entropie) NICHT erreicht.
+- [x] ~~Idle-Voll-Progression bis Endgame simulieren~~ — erledigt: 60-Tage-Lauf, nur 1 Kollaps.
+- [ ] **Echten Fix finden (Design-Entscheidung nötig, kein Constants-Tweak mehr versuchen).**
+      Zwei Hawking-Kosten-Fixes wurden geprüft und beide verworfen (einer wirkungslos, einer
+      schädlich — Details + Diagnose in BALANCE.md „Endgame-Kalibrierung"). Das Problem ist
+      strukturell: Die quadratische Kollaps-Leiter wächst schneller, als das Entropie-finanzierte
+      Perk-System aufholen kann, UND alle Perks konkurrieren um dasselbe knappe Frühspiel-Budget.
+      Kandidaten-Hebel (siehe BALANCE.md für Details, einer oder mehrere nötig):
+      1. Eigener, höherer Gain-Clamp für Entropie speziell (Rückwirkung auf NG+-Pacing prüfen)
+      2. Hawking aus der Perk-Kosten-Konkurrenz lösen (separates Finanzierungsmodell)
+      3. Kollaps-Leiter entschärfen (`COLLAPSE_REQ_GROWTH` senken/Exponent ändern)
+      4. Akzeptieren: Endgame liegt bewusst > Tag 40, Zielsetzung entsprechend anpassen
+      Braucht eine Entscheidung, welcher Hebel gezogen wird, bevor weiter umgesetzt wird.
 
 ## Kleinkram
 
