@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { D, affordGeometric, addCounter, MAX_COUNTER } from '../src/core/decimal';
+import { D, affordGeometric, addCounter, MAX_COUNTER, costGeometric } from '../src/core/decimal';
 import { initialState } from '../src/core/state';
 import { serialize, deserialize } from '../src/core/save';
 import { tick } from '../src/core/tick';
@@ -54,6 +54,31 @@ describe('decimal & formulas', () => {
     const n = affordGeometric(budget, D(10), 2.0, 1e17);
     expect(Number.isFinite(n)).toBe(true);
     expect(Number.isNaN(n)).toBe(false);
+  });
+
+  it('affordGeometric finds the exact affordable boundary at moderate scale', () => {
+    // Sanity check for the binary search itself: returned n must be affordable, and one more
+    // unit must not be — independent of the extreme-scale bug covered below.
+    const base = D(10);
+    const n = affordGeometric(D(1000), base, 2.0, 0);
+    expect(costGeometric(n, base, 2.0, 0).lte(D(1000))).toBe(true);
+    expect(costGeometric(n + 1, base, 2.0, 0).gt(D(1000))).toBe(true);
+  });
+
+  it('affordGeometric caps at MAX_COUNTER instead of silently buying nothing (production bug)', () => {
+    // Regression: real save had 1e8488739272450767 dust, affording roughly 1.2e16 of a tier-7
+    // generator (base 1e26, growth 5) — beyond Number.MAX_SAFE_INTEGER. The log()/toNumber()
+    // estimate for n was off by ~100 units at that scale, so costGeometric(estimate) landed just
+    // above budget and "Max" silently bought nothing, even though "Buy 1" worked fine. A naive
+    // binary search using that (too-high) estimate as its upper bound also failed to converge,
+    // because JS doubles can't represent every integer once the search range exceeds 2^53.
+    // Fix: cap the search at MAX_COUNTER — buying more is pointless anyway, since addCounter()
+    // clamps bought/compression there regardless.
+    const budget = D('1e8488739272450767');
+    const base = D('1e26');
+    const n = affordGeometric(budget, base, 5.0, 0);
+    expect(n).toBe(MAX_COUNTER);
+    expect(costGeometric(n, base, 5.0, 0).lte(budget)).toBe(true);
   });
 
   it('addCounter never overflows a plain-number counter to Infinity (production bug)', () => {

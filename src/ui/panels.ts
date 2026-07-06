@@ -8,7 +8,7 @@ import * as A from '../core/actions';
 import { emit } from '../events';
 import type { Panel, Hud } from './hud';
 import { achLabel } from './hud';
-import { D, Decimal } from '../core/decimal';
+import { D, Decimal, MAX_COUNTER } from '../core/decimal';
 import { exportSave, importSave, saveGame, hardReset } from '../storage';
 import { attachTip } from './tooltip';
 import { spawnFloaty } from './floaty';
@@ -71,7 +71,11 @@ export class DustPanel implements Panel {
   private compCost = el('span', 'cost');
   private compEff = el('span', 'sub row-note');
   private compMax!: HTMLButtonElement;
-  private genRows: { row: HTMLElement; owned: HTMLElement; rate: HTMLElement; b1: HTMLButtonElement; bm: HTMLButtonElement; c1: HTMLElement }[] = [];
+  private compCapBadge!: HTMLElement;
+  private genRows: {
+    row: HTMLElement; owned: HTMLElement; rate: HTMLElement;
+    b1: HTMLButtonElement; bm: HTMLButtonElement; c1: HTMLElement; capBadge: HTMLElement;
+  }[] = [];
   private rowHigh = -1;   // höchste je gezeigte Generator-Stufe: reserviert Höhe, damit das Panel nicht springt
   private igniteBox: HTMLElement;
   private igniteBar = bar('bar-hot');
@@ -128,7 +132,11 @@ export class DustPanel implements Panel {
       const s = this.st();
       if (A.buyCompressionMax(s)) emit('buy');
     });
-    this.compRow.append(compBuy, this.compMax, this.compEff);
+    this.compCapBadge = el('div', 'cap-badge', t('misc.capReached'));
+    attachTip(this.compCapBadge, () => ({ title: t('misc.capReached'), body: t('misc.capReachedTip') }));
+    const compBtnWrap = el('div', 'buy-wrap');
+    compBtnWrap.append(compBuy, this.compMax, this.compCapBadge);
+    this.compRow.append(compBtnWrap, this.compEff);
     this.root.append(this.compRow);
 
     // Generatoren
@@ -157,8 +165,12 @@ export class DustPanel implements Panel {
       const b1 = btn('buy', t('btn.buy1'), () => buyGen(false));
       b1.append(c1);
       const bm = btn('buy alt', t('btn.max'), () => buyGen(true));
-      row.append(info, b1, bm);
-      this.genRows.push({ row, owned, rate, b1, bm, c1 });
+      const capBadge = el('div', 'cap-badge', t('misc.capReached'));
+      attachTip(capBadge, () => ({ title: t('misc.capReached'), body: t('misc.capReachedTip') }));
+      const btnWrap = el('div', 'buy-wrap');
+      btnWrap.append(b1, bm, capBadge);
+      row.append(info, btnWrap);
+      this.genRows.push({ row, owned, rate, b1, bm, c1, capBadge });
       this.root.append(row);
     }
 
@@ -249,7 +261,10 @@ export class DustPanel implements Panel {
     setReserve(this.compMax, maxUnlocked);
     setText(this.compCost, fmt(F.compressionCost(s), sci));
     setText(this.compEff, `${fmtInt(D(s.dust.compression))} × | ${t('dust.compressionDesc', { v: m.compressionEffect.toFixed(2) })}`);
-    setDisabled(this.compRow.querySelector('button')!, s.dust.amount.lt(F.compressionCost(s)));
+    const compCapped = s.dust.compression >= MAX_COUNTER;
+    setClass(this.compCapBadge, 'show', compCapped);
+    setDisabled(this.compRow.querySelector('button')!, compCapped || s.dust.amount.lt(F.compressionCost(s)));
+    setDisabled(this.compMax, compCapped || s.dust.amount.lt(F.compressionCost(s)));
 
     const top = F.maxTier(s);
     for (let i = 0; i < C.GEN_COUNT; i++) {
@@ -269,9 +284,11 @@ export class DustPanel implements Panel {
       const prod = g.amount.mul(F.tierMult(s, m, i)).mul(i === 0 ? m.dustMult : D(1));
       setText(r.rate, `+${fmt(prod, sci)}${t('unit.perSec')} ${i === 0 ? t('dust.name') : t(`gen.${i - 1}`)}`);
       setText(r.c1, fmt(F.genCost(s, m, i, 1), sci));
-      setDisabled(r.b1, s.dust.amount.lt(F.genCost(s, m, i, 1)));
+      const capped = g.bought >= MAX_COUNTER;
+      setClass(r.capBadge, 'show', capped);
+      setDisabled(r.b1, capped || s.dust.amount.lt(F.genCost(s, m, i, 1)));
       setReserve(r.bm, maxUnlocked);
-      setDisabled(r.bm, F.genMaxAfford(s, m, i) < 1);
+      setDisabled(r.bm, capped || F.genMaxAfford(s, m, i) < 1);
     }
 
     // Ignite

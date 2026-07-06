@@ -123,6 +123,17 @@ button:disabled { opacity: 0.38; cursor: default; }
 .buy { min-width: 76px; }
 .buy.alt { min-width: 52px; }
 
+/* Overlay über den Kauf-Buttons, wenn bought/compression die technische Obergrenze erreicht hat —
+   bewusst als kleiner Erfolg gestylt (Gold, wie ein Achievement), nicht als Fehler/Blockade. */
+.buy-wrap { position: relative; display: flex; gap: 8px; }
+.cap-badge {
+  position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  gap: 4px; border-radius: 8px; font-weight: 700; font-size: 0.76rem; white-space: nowrap;
+  color: #3a2400; background: linear-gradient(135deg, #ffe29a, #ffb347);
+  box-shadow: 0 0 14px rgba(255, 190, 80, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+.cap-badge.show { display: flex; }
+
 /* ── Elemente ── */
 .el-name { font-weight: 700; }
 .el-0 { color: #a8dadc; } .el-1 { color: #ffd166; } .el-2 { color: #b591f0; }

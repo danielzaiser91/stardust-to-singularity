@@ -128,6 +128,21 @@ Kollaps war das Spiel *langsamer* als davor, weil die Passiveffekte am Run-Total
   Spielzeit. Lehre: ein `Number.isFinite()`-Guard reicht nicht, wenn das Feld selbst
   **strukturell** keine Obergrenze hat — solche Zähler brauchen eine harte Decke an der
   Quelle (jedem `+=`), nicht nur eine Absicherung gegen den Symptom-NaN.
+- **Teil 3 — der Cap selbst kann falsch gerechnet werden**: Mit `bought` jetzt bei
+  `MAX_COUNTER` (~9e15) blieb ein drittes Symptom: "Max" kaufte bei einzelnen Stufen
+  sichtbar nichts, obwohl der Staub-Vorrat es klar hergab ("Kaufe 1" ging, "Max" nicht).
+  Ursache: `affordGeometric`s Schätzung für n (`budget.mul(g-1).div(first).log(g)
+  .toNumber()`) verliert bei n jenseits von `Number.MAX_SAFE_INTEGER` an Präzision —
+  im echten Fall war die Schätzung ~100 Einheiten zu hoch, `costGeometric(n)` landete
+  dadurch übers Budget, und `buyGenerator` lehnte konsequent ab. Ein naives Dekrementieren
+  (`n--` ein paar Mal) reicht nicht, weil die Abweichung nicht klein und fix ist, sondern
+  mit der Größenordnung von n selbst wächst. Fix: statt der Schätzung zu vertrauen, jetzt
+  eine **exakte Binärsuche** auf den größten bezahlbaren Wert, mit der Suchgrenze hart bei
+  `MAX_COUNTER` gekappt — wichtig, weil jenseits von `Number.MAX_SAFE_INTEGER` nicht mehr
+  jede Ganzzahl als Double darstellbar ist (ULP > 1), eine Suche mit unbeschränkter
+  Obergrenze also selbst nicht mehr konvergieren würde. Lehre: Schätzformeln, die über
+  `.toNumber()` aus einem Decimal gewonnen werden, taugen nur als STARTWERT für eine exakte
+  Suche, nie als Endergebnis — sobald der Wert die Integer-Präzision von JS-Doubles verlässt.
 
 ## Gemessene Timeline (aktives Optimalspiel, Sim-Bot, Seed 42)
 

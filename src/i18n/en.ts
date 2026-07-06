@@ -9,6 +9,8 @@ export const en: Record<string, string> = {
   'misc.locked': 'Locked', 'misc.cost': 'Cost', 'misc.owned': 'owned', 'misc.level': 'Lv.',
   'misc.reward': 'Reward', 'misc.goal': 'Goal', 'misc.active': 'ACTIVE', 'misc.completed': 'Completed',
   'misc.total': 'total',
+  'misc.capReached': '✦ Maxed!',
+  'misc.capReachedTip': 'Hit the technical ceiling — no further growth possible here. Seeing this is rare: well played!',
 
   // — Dust —
   'dust.name': 'Dust',

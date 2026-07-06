@@ -9,6 +9,8 @@ export const de: Record<string, string> = {
   'misc.locked': 'Gesperrt', 'misc.cost': 'Kosten', 'misc.owned': 'im Besitz', 'misc.level': 'Lv.',
   'misc.reward': 'Belohnung', 'misc.goal': 'Ziel', 'misc.active': 'AKTIV', 'misc.completed': 'Abgeschlossen',
   'misc.total': 'gesamt',
+  'misc.capReached': '✦ Maximum!',
+  'misc.capReachedTip': 'Technische Obergrenze erreicht — mehr geht hier nicht mehr. Diesen Punkt zu sehen ist selten: gut gespielt!',
 
   // — Dust —
   'dust.name': 'Staub',
