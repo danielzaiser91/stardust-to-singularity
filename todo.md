@@ -1,5 +1,51 @@
 # TODO — Nach dem Launch
 
+## Nächste Session — Rest-Bug + UI-Politur (Stand 2026-07-07)
+
+- [ ] **"Max"-Button manchmal wirkungslos beim ersten Klick.** Nutzer-Report: Klick auf "Max"
+      tut manchmal nichts; nach mehrmaligem Klicken (auch dazwischen auf andere Buttons) klappt
+      es dann doch. Der Binärsuche-Fix vom 2026-07-07 (`affordGeometric` in
+      `src/core/decimal.ts`) behebt den reproduzierbaren Fall (Protostern bei
+      `1e8488739272450767` Staub — "Max" ging konsequent nicht, "Kaufe 1" schon), aber es gibt
+      offenbar einen zusätzlichen FLAKY-Fall obendrauf, der noch nicht verstanden ist.
+      Hypothesen zu prüfen:
+      - Wettlauf zwischen UI-Update (10 Hz, `hud.update`) und Klick-Handler: Der
+        `disabled`-Zustand wird periodisch neu berechnet, der Klick-Handler nutzt aber den
+        Live-`dust.amount` zum Klickzeitpunkt — bei Werten hauchdünn an der Kostengrenze könnte
+        ein Klick kurz vor einem Update-Tick auf leicht veralteten Daten aufsetzen.
+      - `genMaxAfford`/`buyGeneratorMax` werden mehrfach mit potenziell leicht
+        unterschiedlichem `dust.amount` aufgerufen (einmal für die Anzeige, einmal beim Klick) —
+        die neue Binärsuche reagiert bei extremen Werten evtl. empfindlicher auf
+        Mini-Schwankungen als die alte log()-Schätzung.
+      - Reproduzieren: Save mit einer Stufe knapp unterhalb der "Max"-Kosten bauen, dann
+        Schritt für Schritt vergleichen, was sich zwischen "klappt nicht" und "klappt nach
+        mehreren Klicks" am State tatsächlich unterscheidet (evtl. Debug-Logging im
+        Klick-Handler vs. im Update-Loop).
+
+- [ ] **Nebelgarten-Tooltips kürzen.** Die Hex-Node-Tooltips (Emissions-/Reflexions-/
+      Dunkelnebel) erklären aktuell zu ausführlich, u. a. mit "Dieser Nebel..."-Einleitung. Der
+      ×2-pro-Nachbar-Mechanismus des Dunkelnebels ist selbsterklärend genug, muss nicht in
+      jedem einzelnen Node-Tooltip wiederholt werden. Neues Ziel:
+      - "Dieser Nebel..."-Einleitung weg.
+      - Stattdessen kurz + prominent der EFFEKTIVE Gesamt-Multiplikator statt der Herleitung,
+        z. B. "×8 Plasma- & Eisen-Gewinn".
+      - Dunkelnebel-Tooltip knapp: "×2 für alle Nachbarn, die kein Dunkelnebel sind."
+      - Generell: kurze Texte, maximaler Informationsgehalt, wichtigste Info zuerst + prominent
+        (gleiche Linie wie die Tooltip-Überarbeitung vom 2026-07-06 — resTag/numTag-Hervorhebung
+        nutzen wo sinnvoll).
+      - Betroffene Stellen: `src/ui/panels.ts` Hex-Grid-Tooltips, i18n-Keys `nova.hexEmTip`,
+        `nova.hexReTip`, `nova.hexReTipFe`, `nova.hexDarkTip`, `nova.hexDarks` in
+        `src/i18n/de.ts` + `en.ts`.
+
+- [ ] **Visuelle Einladung für frisch freigeschaltete Hard-Challenges.** Spieler ignorieren Hard
+      tendenziell, weil die Normal-Kachel schon grün + Häkchen zeigt ("fertig, weiter geht's") —
+      das Hart-Toggle geht in der Kachel visuell unter. Braucht einen auffälligen Hinweis GENAU
+      beim Freischalten (z. B. Glow/Pulse auf dem Hart-Toggle-Button, ein kleiner Badge/Punkt
+      wie bei ungelesenen Nachrichten, oder eine kurze Highlight-Phase), der über die reine
+      Toggle-Sichtbarkeit hinausgeht. Wichtig: nicht dauerhaft aufdringlich — eher ein
+      einmaliger/abklingender Hinweis, ähnlich wie Lore-/Achievement-Toasts. Betroffene Stelle:
+      `src/ui/panels.ts` Challenge-Karten (`hardUnlockable`-Logik, `.ch-toggle`-Segment).
+
 ## Weitere Deploy-Plattformen (zum Testen nach GitHub Pages)
 
 - [ ] **Netlify** — Drag&Drop des `dist/`-Ordners oder Repo-Verknüpfung; Build: `npm run build`, Publish-Dir: `dist`, Base im Vite-Config auf `/` stellen (env-Variable `DEPLOY_BASE` vorbereitet). Kostenlos, eigene Subdomain `*.netlify.app`.
@@ -36,10 +82,9 @@
 
 ## Feature-Ideen (User)
 
-- [ ] **Challenge-Schwierigkeitsstufen:** Ein späterer Layer (z. B. Singularität/NG+) schaltet
-      pro Challenge eine höhere Stufe frei (härtere Restriktion/höheres Ziel), die die permanente
-      Belohnung verbessert. Wiederholen abgeschlossener Challenges bekäme damit einen Sinn.
-      State-Vorschlag: `completed: boolean[]` → `completedTier: number[]` (Migration nötig).
+- [x] ~~**Challenge-Schwierigkeitsstufen**~~ — erledigt (2026-07-06): Hard-Tier pro Challenge
+      ab 5 Coalescences, `nova.completedTier: number[]`, eigene Ziel-Multiplikatoren
+      (`CH_GOAL_MULT_TIER2`), Karten-UI mit Normal/Hart-Toggle.
 
 ## Features (bewusst v1 ausgeklammert)
 
