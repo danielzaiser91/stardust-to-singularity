@@ -98,9 +98,10 @@
       - **Gelb/Orange o. ä.**: mindestens eine offen — Signal "hier gibt's noch was zu tun".
       - Tooltip zeigt den konkreten Stand (z. B. "X/8 Challenges abgeschlossen" bzw. welche
         noch offen sind).
-      - Design-Frage vorab klären: zählt "alle abgeschlossen" nur die Normal-Stufen, oder auch
-        Hart, wo bereits freigeschaltet? (Nicht freigeschaltete Hart-Stufen sollten den Spieler
-        nicht grundlos ins Gelb schicken.)
+      - **Entschieden:** gesperrte Hart-Stufen zählen NICHT mit (kein Gelb nur weil Hart noch
+        nicht freigeschaltet ist); freigeschaltete Hart-Stufen zählen mit (noch offenes
+        freigeschaltetes Hart hält den Indikator auf Gelb, auch wenn alle Normal-Stufen fertig
+        sind).
 
 - [ ] **`/ai-improve-learnings` ausführen.** Diese Session hatte einiges an nicht-offensichtlichen
       Lehren (Decimal-Präzisionsgrenzen bei extremen Skalen in drei verschiedenen Ausprägungen,
