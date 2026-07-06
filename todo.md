@@ -22,6 +22,16 @@
         mehreren Klicks" am State tatsächlich unterscheidet (evtl. Debug-Logging im
         Klick-Handler vs. im Update-Loop).
 
+- [ ] **"Maximum"-Badge auf die Reaktor-Buttons ausweiten.** Das goldene "✦ Maximum!"-Badge
+      (2026-07-06 eingeführt) muss die beiden zugehörigen Kauf-Buttons IMMER vollständig
+      verdecken — bei den Staub-Generatoren und bei Kompression ist das bereits so gelöst
+      (`.buy-wrap` + `.cap-badge`, position:absolute/inset:0, in `panels.ts`/`style.css`). Beim
+      Durchgehen aber aufgefallen: Die Fusionsreaktor-Buttons im Stern-Panel (`reactorBtns`,
+      `⚛ Reaktor` + `Max`) haben das Badge NICHT bekommen, obwohl `star.reactors[i]` über
+      denselben `addCounter`-Mechanismus genauso bei `MAX_COUNTER` gedeckelt wird. Nachziehen:
+      gleiches Muster (`buy-wrap`/`cap-badge`) auch für die Reaktor-Buttons in `StarPanel`
+      einbauen, Bedingung `s.star.reactors[e] >= MAX_COUNTER`.
+
 - [ ] **Nebelgarten-Tooltips kürzen.** Die Hex-Node-Tooltips (Emissions-/Reflexions-/
       Dunkelnebel) erklären aktuell zu ausführlich, u. a. mit "Dieser Nebel..."-Einleitung. Der
       ×2-pro-Nachbar-Mechanismus des Dunkelnebels ist selbsterklärend genug, muss nicht in
