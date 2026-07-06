@@ -334,21 +334,31 @@ button:disabled { opacity: 0.38; cursor: default; }
 
 .tooltip {
   position: fixed; z-index: 300; pointer-events: none;
-  max-width: 270px; padding: 9px 13px;
+  max-width: 280px; padding: 9px 13px;
   background: rgba(10, 14, 30, 0.96);
   border: 1px solid rgba(100, 216, 255, 0.35); border-radius: 10px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 12px rgba(100, 216, 255, 0.12);
   backdrop-filter: blur(10px);
-  font-size: 0.8rem; line-height: 1.45; color: var(--text);
+  font-size: 0.8rem; line-height: 1.5; color: var(--text);
   opacity: 0; transform: translateY(4px);
   transition: opacity 0.12s ease, transform 0.12s ease;
 }
 .tooltip.show { opacity: 1; transform: none; }
 .tooltip .tip-title {
   font-weight: 700; font-size: 0.82rem; color: var(--cyan);
-  letter-spacing: 0.04em; margin-bottom: 3px;
+  letter-spacing: 0.04em; margin-bottom: 4px; padding-bottom: 4px;
+  border-bottom: 1px solid rgba(120, 160, 255, 0.14);
 }
-.tooltip .tip-body { color: var(--text); white-space: pre-line; }
+.tooltip .tip-body { color: var(--text-dim); white-space: pre-line; }
+/* Zahlen/Ressourcen im Fließtext hervorheben — der Blick soll direkt zur entscheidenden
+   Zahl springen, statt den ganzen Absatz lesen zu müssen. */
+.tip-num { color: #fff; font-weight: 700; }
+.tip-res { font-weight: 700; white-space: nowrap; }
+.tip-res.res-dust { color: var(--cyan); }
+.tip-res.res-plasma { color: var(--gold); }
+.tip-res.res-shards { color: var(--magenta); }
+.tip-res.res-dm { color: var(--violet); }
+.tip-res.res-entropy { color: var(--white-hot); }
 
 /* ── Update-Banner ── */
 #update-banner {

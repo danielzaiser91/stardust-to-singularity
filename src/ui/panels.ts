@@ -1,5 +1,5 @@
 import { el, btn, setText, setVisible, setReserve, setDisabled, setClass } from './dom';
-import { fmt, fmtInt, fmtTime, fmtMult } from './format';
+import { fmt, fmtInt, fmtTime, fmtMult, resTag, numTag } from './format';
 import { t, setLang, getLang } from '../i18n';
 import type { GameState, NebulaCell, StarClass, GalaxyType } from '../core/state';
 import * as C from '../core/constants';
@@ -36,14 +36,19 @@ function logFrac(cur: Decimal, req: Decimal | number): number {
 /** Gemeinsamer Gain-Deckel-Tooltip: Erklärung · aktueller Deckelwert · Währung bis zum Deckel. */
 function capTipBody(
   s: GameState, m: F.Mults, total: Decimal, clampMult: number, isCapped: boolean,
-  layer: 'ignite' | 'nova' | 'coalesce' | 'collapse', unitKey: string,
+  layer: 'ignite' | 'nova' | 'coalesce' | 'collapse', unitKey: string, resKind?: 'dust' | 'shards' | 'dm',
 ): { title: string; body: string } {
   const sci = s.settings.sciNotation;
-  const max = t('cap.max', { v: fmt(F.gainCapBound(total, clampMult), sci) });
-  let body = `${t(isCapped ? 'cap.body' : 'cap.hint', { v: clampMult + 1 })}\n${max}`;
+  const n = numTag(String(clampMult + 1));
+  const max = t('cap.max', { v: numTag(fmt(F.gainCapBound(total, clampMult), sci)) });
+  let body = `${t(isCapped ? 'cap.body' : 'cap.hint', { v: n })}\n${max}`;
   if (!isCapped) {
     const need = F.currencyForCap(s, m, layer);
-    if (need) body += `\n${t('cap.need', { c: fmt(need.target, sci), u: t(unitKey), v: fmt(need.current, sci) })}`;
+    if (need) {
+      const target = fmt(need.target, sci);
+      const c = resKind ? resTag(resKind, target) : `${numTag(target)} ${t(unitKey)}`;
+      body += `\n${t('cap.need', { c, v: numTag(fmt(need.current, sci)) })}`;
+    }
   }
   return { title: (isCapped ? '⚠ ' : '') + t('cap.title'), body };
 }
@@ -80,7 +85,7 @@ export class DustPanel implements Panel {
       spawnFloaty(e.clientX, e.clientY, `+${fmt(gain, s.settings.sciNotation)}`);
     });
     this.clickBtn.append(this.clickVal);
-    attachTip(this.clickBtn, () => ({ title: t('dust.click'), body: t('dust.clickTip') }));
+    attachTip(this.clickBtn, () => ({ title: t('dust.click'), body: t('dust.clickTip', { v: numTag(`×${C.SOLAR_SAIL_CLICKS}`) }) }));
 
     // Hovern (Desktop) bzw. Halten (Touch) = 4 Auto-Klicks/s; Sound gedrosselt auf 1/s
     let hoverTimer: ReturnType<typeof setInterval> | undefined;
@@ -151,7 +156,7 @@ export class DustPanel implements Panel {
       const s = this.st();
       const m = M(s);
       const capped = F.isGainCapped(F.plasmaGain(s, m), s.star.totalPlasma, C.PLASMA_CLAMP_MULT);
-      return capTipBody(s, m, s.star.totalPlasma, C.PLASMA_CLAMP_MULT, capped, 'ignite', 'dust.name');
+      return capTipBody(s, m, s.star.totalPlasma, C.PLASMA_CLAMP_MULT, capped, 'ignite', 'dust.name', 'dust');
     });
     this.classSeg = el('div', 'seg');
     for (let c = 0; c < 3; c++) {
@@ -162,7 +167,7 @@ export class DustPanel implements Panel {
         const active = s.star.unlocked && s.star.cls === c;
         return {
           title: t(`star.class${c}`),
-          body: `${t(`star.class${c}d`)}\n${t('star.classEff', { s: fmtMult(cls.speed), p: fmtMult(cls.plasmaGain) })}`
+          body: `${t(`star.class${c}d`)}\n${t('star.classEff', { s: numTag(`×${fmtMult(cls.speed)}`), p: numTag(`×${fmtMult(cls.plasmaGain)}`) })}`
             + `${active ? `\n${t('star.classActive')}` : ''}`,
         };
       });
@@ -192,7 +197,7 @@ export class DustPanel implements Panel {
       return {
         title: t('nova.autoIgnite'),
         body: F.autoIgniteUnlocked(s)
-          ? t('nova.autoIgniteTip', { v: C.PLASMA_CLAMP_MULT + 1 })
+          ? t('nova.autoIgniteTip', { v: numTag(`×${C.PLASMA_CLAMP_MULT + 1}/s`) })
           : t('nova.autoIgniteLock'),
       };
     });
@@ -209,7 +214,6 @@ export class DustPanel implements Panel {
     // Spezial-Meilensteine (ab 3 Kollapsen): je 100 Käufe einer Generator-Stufe → Output ×3
     this.smsBox = el('div', 'ms-box');
     const smsHead = el('h3', '', t('sms.title'));
-    attachTip(smsHead, () => ({ title: t('sms.title'), body: t('sms.dustDesc', { s: C.SPECIAL_GEN_STEP, m: C.SPECIAL_GEN_MULT }) }));
     this.smsBox.append(smsHead, el('div', 'sub', t('sms.dustDesc', { s: C.SPECIAL_GEN_STEP, m: C.SPECIAL_GEN_MULT })));
     this.smsLine = el('div', 'sub', '');
     this.smsBox.append(this.smsLine);
@@ -377,14 +381,13 @@ export class StarPanel implements Panel {
         const effAt = (k: number) => r === 0 ? fmt(D(rp.neutronBase).pow(k), sci)
           : r === 1 ? fmtMult(k > 0 ? C.REMNANT_PULSAR_MULT + rp.pulsarPer * (k - 1) : 1)
           : fmtMult(1 + rp.bhPer * k);
-        const v = effAt(n);
         const tier = F.remnantTier(s, r as 0 | 1 | 2);
         const sms = s.stats.collapses >= C.MS_COLLAPSE[1]
-          ? `\n${t('sms.tier', { t: tier, c: n, n: (tier + 1) * C.SPECIAL_REMNANT_STEP })}` : '';
+          ? `\n${t('sms.tier', { t: numTag(String(tier)), c: n, n: (tier + 1) * C.SPECIAL_REMNANT_STEP })}` : '';
         return {
           title: t(`nova.rem${r}`),
-          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v, p: C.REMNANT_PULSAR_PERIOD, d: rp.pulsarDur })}`
-            + `\n${t('nova.remNext', { v: effAt(n + 1) })}${sms}`,
+          body: `${t(`nova.rem${r}d`)}\n${t(`nova.rem${r}b`, { n, v: numTag(`×${effAt(n)}`), p: C.REMNANT_PULSAR_PERIOD, d: rp.pulsarDur })}`
+            + `\n${t('nova.remNext', { v: numTag(`×${effAt(n + 1)}`) })}${sms}`,
         };
       });
       this.remBtns.push(b);
@@ -415,7 +418,7 @@ export class StarPanel implements Panel {
     // Spezial-Meilensteine (ab 2 Kollapsen): je 10 Remnants eines Typs → Effekt-Stufe
     this.smsBox = el('div', 'ms-box');
     const smsHead = el('h3', '', t('sms.title'));
-    attachTip(smsHead, () => ({ title: t('sms.title'), body: t('sms.tip', { n: C.SPECIAL_REMNANT_STEP }) }));
+    attachTip(smsHead, () => ({ title: t('sms.title'), body: t('sms.tip', { n: numTag(String(C.SPECIAL_REMNANT_STEP)) }) }));
     this.smsBox.append(smsHead);
     for (let rt = 0; rt < 3; rt++) {
       const row = el('div', 'ms-row');
@@ -527,11 +530,12 @@ export class NovaPanel implements Panel {
       const bb = btn('seg-btn', t(`nova.cell${b}`), () => { this.brush = b; this.syncBrush(); });
       attachTip(bb, () => ({
         title: t(`nova.cell${b}`),
-        body: t(`nova.cell${b}d`) + (b === 2
-          ? `\n${this.st().stats.coalescences >= C.MS_GALAXY[1]
-            ? t('nova.reFeOn', { v: fmtMult(C.NEBULA_REFLECTION_MULT), n: C.MS_GALAXY[1] })
-            : t('nova.reFeLocked', { v: fmtMult(C.NEBULA_REFLECTION_MULT), n: C.MS_GALAXY[1] })}`
-          : ''),
+        body: (b === 1 ? resTag('dust', t('nova.cell1d')) : b === 2 ? resTag('plasma', t('nova.cell2d')) : t('nova.cell3d'))
+          + (b === 2
+            ? `\n${this.st().stats.coalescences >= C.MS_GALAXY[1]
+              ? t('nova.reFeOn', { v: numTag(`×${fmtMult(C.NEBULA_REFLECTION_MULT)}`), n: C.MS_GALAXY[1] })
+              : t('nova.reFeLocked', { v: numTag(`×${fmtMult(C.NEBULA_REFLECTION_MULT)}`), n: C.MS_GALAXY[1] })}`
+            : ''),
       }));
       this.brushBtns.push(bb);
       seg.append(bb);
@@ -577,18 +581,18 @@ export class NovaPanel implements Panel {
         const m = M(s);
         const type = s.nova.cells[i];
         if (type === 0) return { title: t('nova.hexEmpty'), body: t('nova.hexEmptyTip') };
-        const bonus = fmtMult(C.NEBULA_DARK_BONUS);
+        const bonus = numTag(`×${fmtMult(C.NEBULA_DARK_BONUS)}`);
         if (type === 3) {
           const boosted = F.HEX_NEIGHBORS[i].filter(n => s.nova.cells[n] === 1 || s.nova.cells[n] === 2).length;
           return { title: t('nova.cell3'), body: `${t('nova.cell3d')}\n${t('nova.hexDarkTip', { n: boosted, b: bonus })}` };
         }
         const darks = F.HEX_NEIGHBORS[i].filter(n => s.nova.cells[n] === 3).length;
-        const v = fmtMult(F.nebulaCellMult(s, i, m.nebulaNodeMult));
+        const v = numTag(`×${fmtMult(F.nebulaCellMult(s, i, m.nebulaNodeMult))}`);
         const feOn = s.stats.coalescences >= C.MS_GALAXY[1];
         return {
           title: t(`nova.cell${type}`),
           body: `${t(type === 1 ? 'nova.hexEmTip' : feOn ? 'nova.hexReTipFe' : 'nova.hexReTip', { v })}\n${t('nova.hexDarks', { n: darks, b: bonus })}`
-            + (type === 2 && !feOn ? `\n${t('nova.reFeLocked', { n: C.MS_GALAXY[1] })}` : ''),
+            + (type === 2 && !feOn ? `\n${t('nova.reFeLocked', { v: numTag(`×${fmtMult(C.NEBULA_REFLECTION_MULT)}`), n: C.MS_GALAXY[1] })}` : ''),
         };
       }, { marker: false });
       this.hexBtns.push(b);
@@ -604,7 +608,7 @@ export class NovaPanel implements Panel {
     attachTip(respecBtn, () => ({ title: t('nova.respec'), body: t('nova.respecTip') }));
     const ctl = el('div', 'garden-ctl');
     ctl.append(this.eraseBtn, respecBtn);
-    attachTip(this.gardenTotal, () => ({ title: t('nova.nebula'), body: t('nova.gardenTotalTip', { b: fmtMult(C.NEBULA_DARK_BONUS) }) }));
+    attachTip(this.gardenTotal, () => ({ title: t('nova.nebula'), body: t('nova.gardenTotalTip', { b: numTag(`×${fmtMult(C.NEBULA_DARK_BONUS)}`) }) }));
     this.root.append(ctl, grid, this.gardenTotal);
 
     this.root.append(el('h3', '', t('nova.challenges')), el('div', 'sub', t('nova.chHow')));
@@ -643,7 +647,7 @@ export class NovaPanel implements Panel {
       const s = this.st();
       const m = M(s);
       const capped = F.isGainCapped(F.dmGain(s, m), s.galaxy.totalDM);
-      return capTipBody(s, m, s.galaxy.totalDM, C.GAIN_CLAMP_MULT, capped, 'coalesce', 'nova.shards');
+      return capTipBody(s, m, s.galaxy.totalDM, C.GAIN_CLAMP_MULT, capped, 'coalesce', 'nova.shards', 'shards');
     });
     const gtSeg = el('div', 'seg');
     for (let g = 0; g < 3; g++) {
@@ -655,8 +659,9 @@ export class NovaPanel implements Panel {
         const n = s.stats.gtypePicks[g];
         return {
           title: t(`galaxy.t${g}`),
-          body: `${t(effKey, { v: fmtMult(base) })}\n${t('choice.pickedUni', { n })}`
-            + `\n${t('galaxy.currentBonus', { v: fmtMult(Math.pow(base, n)) })}\n${t('nova.remNext', { v: fmtMult(Math.pow(base, n + 1)) })}`,
+          body: `${t(effKey, { v: numTag(fmtMult(base)) })}\n${t('choice.pickedUni', { n })}`
+            + `\n${t('galaxy.currentBonus', { v: numTag(fmtMult(Math.pow(base, n))) })}`
+            + `\n${t('nova.remNext', { v: numTag(`×${fmtMult(Math.pow(base, n + 1))}`) })}`,
         };
       });
       this.gtBtns.push(b);
@@ -808,7 +813,7 @@ export class GalaxyPanel implements Panel {
         nb.append(el('div', 'sub', nodeLabel(idx)), cost);
         attachTip(nb, () => ({
           title: `${t(`galaxy.branch${b}`)} ${i + 1}/15`,
-          body: `${nodeLabel(idx)} · ${t('misc.cost')}: ${fmtInt(F.nodeCost(idx))} ◈`,
+          body: `${nodeLabel(idx)}\n${t('misc.cost')}: ${resTag('dm', fmtInt(F.nodeCost(idx)))}`,
         }));
         this.nodeBtns.push({ b: nb, cost });
         col.append(nb);
@@ -825,7 +830,7 @@ export class GalaxyPanel implements Panel {
     label.prepend(this.autoChk);
     attachTip(label, () => ({
       title: t('galaxy.autoNova'),
-      body: t('galaxy.autoNovaTip', { r: C.AUTO_NOVA_RATE * 100 }),
+      body: t('galaxy.autoNovaTip', { r: numTag(`${C.AUTO_NOVA_RATE * 100}%`) }),
     }));
     this.autoRow.append(label);
     this.root.append(this.autoRow, this.autoLockNote);
@@ -837,7 +842,7 @@ export class GalaxyPanel implements Panel {
       const s = this.st();
       const m = M(s);
       const capped = F.isGainCapped(F.entropyGain(s, m), s.sing.totalEntropy);
-      return capTipBody(s, m, s.sing.totalEntropy, C.GAIN_CLAMP_MULT, capped, 'collapse', 'galaxy.dm');
+      return capTipBody(s, m, s.sing.totalEntropy, C.GAIN_CLAMP_MULT, capped, 'collapse', 'galaxy.dm', 'dm');
     });
     this.colBtn = btn('reset-btn sing', t('sing.go'), () => {
       const s = this.st();
@@ -994,7 +999,7 @@ export class SingPanel implements Panel {
     const mass = F.feedMass(s);
     setDisabled(this.feedBtn, mass.lte(0) || !s.sing.unlocked);
     const acc = s.sing.fed.gt(0) ? s.sing.fed.add(1).log10().add(1).pow(C.FEED_ACCRETION_EXP) : D(1);
-    setText(this.feedInfo, `${t('sing.fed', { v: fmt(s.sing.fed, sci) })} · ${t('sing.accretion', { v: fmt(acc, sci) })} · +${fmt(mass, sci)}`);
+    setText(this.feedInfo, `${t('sing.fed', { v: fmt(s.sing.fed, sci) })} · ${t('sing.accretion', { v: fmt(acc, sci) })} · ${t('sing.feedNext', { v: fmt(mass, sci) })}`);
 
     const d = s.sing.dilation;
     setDisabled(this.dilateBtn, d.active || d.cd > 0 || !s.sing.unlocked);

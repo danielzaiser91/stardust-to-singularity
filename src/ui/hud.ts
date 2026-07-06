@@ -9,7 +9,7 @@ import { on } from '../events';
 import { ACHIEVEMENT_META } from '../core/achievements';
 import { hideTip, attachTip } from './tooltip';
 import { REMNANT_PULSAR_MULT, STAR_CLASSES } from '../core/constants';
-import { fmtMult } from './format';
+import { fmtMult, numTag, resTag } from './format';
 
 export interface Panel { root: HTMLElement; update(s: GameState, m: Mults): void; }
 
@@ -54,7 +54,7 @@ export class Hud {
       const cls = STAR_CLASSES[s.star.cls];
       return {
         title: `★ ${t(`star.class${s.star.cls}`)}`,
-        body: `${t('star.classEff', { s: fmtMult(cls.speed), p: fmtMult(cls.plasmaGain) })}\n${t('hud.classTip')}`,
+        body: `${t('star.classEff', { s: numTag(`×${fmtMult(cls.speed)}`), p: numTag(`×${fmtMult(cls.plasmaGain)}`) })}\n${t('hud.classTip')}`,
       };
     });
     top.append(this.classPill);
@@ -69,15 +69,16 @@ export class Hud {
       const rp = remnantParams(s);
       const burst = REMNANT_PULSAR_MULT + rp.pulsarPer * Math.max(0, s.nova.remnants[1] - 1);
       const phase = s.nova.pulsarPhase;
+      const v = numTag(`×${burst}`);
       if (rp.pulsarDur >= this.lastPulsarPeriod) {
-        return { title: t('pulsar.title'), body: t('pulsar.perma', { v: burst }) };
+        return { title: t('pulsar.title'), body: t('pulsar.perma', { v }) };
       }
       const active = phase < rp.pulsarDur;
       return {
         title: t('pulsar.title'),
         body: active
-          ? t('pulsar.active', { v: burst, t: Math.ceil(rp.pulsarDur - phase) })
-          : t('pulsar.idle', { t: Math.ceil(this.lastPulsarPeriod - phase), v: burst, d: rp.pulsarDur }),
+          ? t('pulsar.active', { v, t: Math.ceil(rp.pulsarDur - phase) })
+          : t('pulsar.idle', { t: Math.ceil(this.lastPulsarPeriod - phase), v, d: rp.pulsarDur }),
       };
     });
     top.append(this.pulsarPill);
@@ -169,7 +170,9 @@ export class Hud {
 
   toast(title: string, body: string, kind = ''): void {
     const tst = el('div', `toast ${kind}`);
-    tst.append(el('div', 'toast-title', title), el('div', 'toast-body', body));
+    const bodyEl = el('div', 'toast-body');
+    bodyEl.innerHTML = body;  // achLabel() liefert gezielt <b class="tip-num">/<span class="tip-res"> — rein intern generiert
+    tst.append(el('div', 'toast-title', title), bodyEl);
     this.toastHost.append(tst);
     requestAnimationFrame(() => tst.classList.add('show'));
     setTimeout(() => {
@@ -216,8 +219,12 @@ export class Hud {
   }
 }
 
+const ACH_RES_KEYS = new Set(['dust', 'plasma', 'shards']);
 export function achLabel(i: number): string {
   const meta = ACHIEVEMENT_META[i];
-  const v = meta.k === 'gen' ? t(`gen.${meta.v}`) : meta.k === 'el' ? t(`el.${meta.v}`) : meta.v;
+  if (meta.k === 'gen') return t('achd.gen', { v: t(`gen.${meta.v}`) });
+  if (meta.k === 'el') return t('achd.el', { v: t(`el.${meta.v}`) });
+  if (!meta.v) return t(`achd.${meta.k}`);
+  const v = ACH_RES_KEYS.has(meta.k) ? resTag(meta.k as 'dust' | 'plasma' | 'shards', meta.v) : numTag(meta.v);
   return t(`achd.${meta.k}`, { v });
 }

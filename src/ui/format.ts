@@ -39,3 +39,20 @@ export function fmtTime(sec: number): string {
 export function fmtMult(x: number): string {
   return x === Math.floor(x) ? String(x) : x.toFixed(2).replace(/\.?0+$/, '');
 }
+
+/** Ressourcen-Icon + Farbe (identisch zu den HUD-Pills) — für Tooltip-Fließtext (innerHTML). */
+const RES_META: Record<string, { icon: string; cls: string }> = {
+  dust: { icon: '✦', cls: 'res-dust' },
+  plasma: { icon: '☀', cls: 'res-plasma' },
+  shards: { icon: '✸', cls: 'res-shards' },
+  dm: { icon: '◈', cls: 'res-dm' },
+  entropy: { icon: '◉', cls: 'res-entropy' },
+};
+export function resTag(kind: keyof typeof RES_META, value: string): string {
+  const r = RES_META[kind];
+  return `<span class="tip-res ${r.cls}">${r.icon} ${value}</span>`;
+}
+/** Hebt eine entscheidende Zahl im Tooltip-Fließtext hervor (Ziel/Bonus/Schwellenwert). */
+export function numTag(value: string): string {
+  return `<b class="tip-num">${value}</b>`;
+}

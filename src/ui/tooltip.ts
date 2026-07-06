@@ -58,7 +58,10 @@ function show(target: HTMLElement, content: TipContent): void {
   const el = ensure();
   titleEl.textContent = content.title ?? '';
   titleEl.style.display = content.title ? '' : 'none';
-  bodyEl.textContent = content.body;
+  // innerHTML statt textContent: Body-Strings enthalten gezielt <b class="tip-num">/<span class="tip-res">
+  // zur Zahlen-/Ressourcen-Hervorhebung. Sicher, weil ausschließlich intern generiert (i18n-Templates +
+  // eigene Zahlenformatierung) — nie Spieler- oder Netzwerk-Eingabe.
+  bodyEl.innerHTML = content.body;
 
   // erst unsichtbar platzieren, dann messen und clampen
   el.classList.remove('show');
