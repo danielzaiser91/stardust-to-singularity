@@ -101,7 +101,11 @@
       - **Entschieden:** gesperrte Hart-Stufen zählen NICHT mit (kein Gelb nur weil Hart noch
         nicht freigeschaltet ist); freigeschaltete Hart-Stufen zählen mit (noch offenes
         freigeschaltetes Hart hält den Indikator auf Gelb, auch wenn alle Normal-Stufen fertig
-        sind).
+        sind). Konkreter Übergang: Sind alle Normal-Stufen fertig, ist der Indikator GRÜN — sobald
+        aber Hart für (mind.) eine Challenge freigeschaltet wird, kippt er direkt auf die
+        "noch offen"-Farbe (Gelb/Orange), auch wenn der Spieler die Hart-Stufe noch gar nicht
+        angefasst hat. Erst wenn auch alle freigeschalteten Hart-Stufen geschafft sind, wird er
+        wieder grün.
 
 - [ ] **`/ai-improve-learnings` ausführen.** Diese Session hatte einiges an nicht-offensichtlichen
       Lehren (Decimal-Präzisionsgrenzen bei extremen Skalen in drei verschiedenen Ausprägungen,
