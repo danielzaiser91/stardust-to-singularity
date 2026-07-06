@@ -1,4 +1,4 @@
-import { Decimal, D, ZERO, ONE, affordGeometric, costGeometric, softpow } from './decimal';
+import { Decimal, D, ZERO, ONE, affordGeometric, costGeometric, softpow, capAffordCount } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
 
@@ -268,12 +268,14 @@ export function genCost(s: GameState, m: Mults, tier: number, n = 1): Decimal {
   return c;
 }
 /** budgetFrac < 1: für Autobuyer — verhindert, dass eine Stufe den gesamten Staub verschlingt
- *  und tiefere/teurere Stufen (die im selben Tick danach drankommen) leer ausgehen. */
+ *  und tiefere/teurere Stufen (die im selben Tick danach drankommen) leer ausgehen. Reduziert die
+ *  Kaufmenge (nicht das Decimal-Budget, s. capAffordCount) — bleibt auch bei Layer-2-Staub wirksam. */
 export function genMaxAfford(s: GameState, m: Mults, tier: number, budgetFrac = 1): number {
   const base = D(C.GEN_BASE_COST[tier]).div(m.genCostDiv);
-  let budget = s.dust.amount.mul(budgetFrac);
+  let budget = s.dust.amount;
   if (m.genCostExp !== 1) budget = budget.root(m.genCostExp);
-  return affordGeometric(budget, base, C.GEN_GROWTH[tier], s.dust.gens[tier].bought);
+  const nFull = affordGeometric(budget, base, C.GEN_GROWTH[tier], s.dust.gens[tier].bought);
+  return capAffordCount(nFull, budgetFrac);
 }
 /** Produktion-Multiplikator einer Stufe (ohne dt), inkl. Basisrate der Stufe */
 export function tierMult(s: GameState, m: Mults, tier: number): Decimal {

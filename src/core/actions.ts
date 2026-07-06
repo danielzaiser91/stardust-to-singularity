@@ -1,4 +1,4 @@
-import { D, ZERO, Decimal, affordGeometric, costGeometric } from './decimal';
+import { D, ZERO, Decimal, affordGeometric, costGeometric, capAffordCount } from './decimal';
 import * as C from './constants';
 import type { GameState, StarClass, GalaxyType, NebulaCell } from './state';
 import {
@@ -31,11 +31,13 @@ export function buyCompression(s: GameState): boolean {
   s.dust.compression++;
   return true;
 }
-/** Bulk-Kauf per geschlossener Formel — O(1) auch bei Layer-2-Dust (Bot & Autobuyer) */
-export function buyCompressionMax(s: GameState): boolean {
+/** Bulk-Kauf per geschlossener Formel — O(1) auch bei Layer-2-Dust (Bot & Autobuyer).
+ *  budgetFrac < 1: für den Autobuyer, s. genMaxAfford/capAffordCount. */
+export function buyCompressionMax(s: GameState, budgetFrac = 1): boolean {
   if (s.nova.challenge === 0) return false;
   const base = D(C.COMPRESSION_BASE);
-  const n = affordGeometric(s.dust.amount, base, C.COMPRESSION_GROWTH, s.dust.compression);
+  const nFull = affordGeometric(s.dust.amount, base, C.COMPRESSION_GROWTH, s.dust.compression);
+  const n = capAffordCount(nFull, budgetFrac);
   if (n < 1) return false;
   const cost = costGeometric(n, base, C.COMPRESSION_GROWTH, s.dust.compression);
   if (s.dust.amount.lt(cost)) return false;
@@ -118,8 +120,8 @@ export function buyReactorsMax(s: GameState, step: number, budgetFrac: number): 
   if (step < 0 || step >= C.FUSION_STEPS) return false;
   if (step > 0 && s.star.reactors[step - 1] === 0) return false;
   const base = D(C.REACTOR_BASE_COST[step]);
-  const budget = s.star.plasma.mul(budgetFrac);
-  const n = affordGeometric(budget, base, C.REACTOR_COST_GROWTH, s.star.reactors[step]);
+  const nFull = affordGeometric(s.star.plasma, base, C.REACTOR_COST_GROWTH, s.star.reactors[step]);
+  const n = capAffordCount(nFull, budgetFrac);
   if (n < 1) return false;
   const cost = costGeometric(n, base, C.REACTOR_COST_GROWTH, s.star.reactors[step]);
   if (s.star.plasma.lt(cost)) return false;

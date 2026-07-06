@@ -95,7 +95,7 @@ export function tick(s: GameState, dt: number): Mults {
   // — Autobuyer: vier getrennte Automationen (je eigenes Plasma-Upgrade) —
   if (s.star.upgrades[4]) for (let t = 0; t < Math.min(4, top); t++) autoBuyGen(s, m, t);
   if (s.star.upgrades[8]) for (let t = 4; t < Math.min(8, top); t++) autoBuyGen(s, m, t);
-  if (s.star.upgrades[13]) buyCompressionMax(s);
+  if (s.star.upgrades[13]) buyCompressionMax(s, C.AUTOBUY_BUDGET_FRAC);
   if (s.star.upgrades[14]) {
     for (let r = 0; r < C.FUSION_STEPS; r++) {
       if (s.star.reactors[r] === 0) buyReactor(s, r);

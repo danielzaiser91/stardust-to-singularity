@@ -31,3 +31,15 @@ export function costGeometric(n: number, base: Decimal, growth: number, bought: 
   const first = base.mul(Decimal.pow(growth, bought));
   return first.mul(Decimal.pow(growth, n).sub(1)).div(growth - 1);
 }
+
+/**
+ * Reduziert eine volle Max-Kaufmenge auf einen Budget-Anteil — auf n (Zahl), NICHT auf das
+ * Decimal-Budget: bei extremen Skalen (Layer-2-Decimals, z. B. "ee16...") ist budget.mul(0.3)
+ * numerisch identisch zum vollen Budget (der Faktor verschwindet in der Rundung), reduziert die
+ * Kaufmenge also gar nicht — Autobuyer würde weiterhin 100 % verkonsumieren. n*frac auf einer
+ * normalen JS-Zahl bleibt exakt und senkt die Kosten dank exponentiellem Wachstum drastisch.
+ */
+export function capAffordCount(nFull: number, budgetFrac: number): number {
+  if (budgetFrac >= 1 || nFull <= 0) return nFull;
+  return Math.max(1, Math.floor(nFull * budgetFrac));
+}

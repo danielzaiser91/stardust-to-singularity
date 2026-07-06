@@ -88,6 +88,16 @@ Kollaps war das Spiel *langsamer* als davor, weil die Passiveffekte am Run-Total
   Betreten alles und stecken in einer Frust-Schleife. Challenges resetten nur die Dust-Ebene
   und haben eigene, eskalierende Ziele (`CH_GOAL_MULT`) plus Freischaltung über
   Supernova-Zähler (`CH_UNLOCK_NOVAE`).
+- **Autobuyer-Budget als `dust.mul(frac)` deckeln**: Bricht sobald `dust` Layer-2-Skala
+  erreicht (break_eternity-Notation `ee16...`, siehe `fmt()`). Ein Decimal mit `mul(0.3)`
+  oder sogar `mul(1e-100)` ist dort **bit-identisch** zum Original — die Rundung
+  verschluckt jeden endlichen Faktor, weil die Mantisse an dieser Größenordnung keine
+  Präzision mehr für den Unterschied hat. Ein Autobuyer, der so "gedeckelt" wird, kauft
+  in Wahrheit weiterhin mit 100 % Budget und frisst den sichtbaren Staub auf 0 (führte
+  zu genau diesem Bug in Produktion). Fix: die Kauf**menge** `n` (eine normale JS-Zahl)
+  auf einen Anteil reduzieren, nicht das Decimal-Budget — `capAffordCount()` in
+  `decimal.ts`. `n * frac` bleibt exakt, und weniger Einheiten senken die Kosten dank
+  exponentiellem Wachstum drastisch (nicht nur um denselben Faktor).
 
 ## Gemessene Timeline (aktives Optimalspiel, Sim-Bot, Seed 42)
 
