@@ -150,9 +150,9 @@ function resetStarLayer(s: GameState): void {
     s.star.upgrades = s.star.upgrades.map((u, i) => (keep.has(i) ? u : false));
   }
   // Roguelite: Zündungs-Meilensteine & Klassen-Picks gelten pro Supernova-Run.
-  // Galaxie-Meilenstein 4 (6 Coalescences) macht sie permanent. VOR resetDustLayer
+  // Galaxie-Meilenstein (6 Coalescences) macht sie permanent. VOR resetDustLayer
   // nullen, damit auch die Kompressions-Persistenz (ignMs ≥ 25) mitfällt.
-  if (s.stats.coalescences < C.MS_GALAXY[3]) {
+  if (s.stats.coalescences < C.MS_GALAXY[4]) {
     s.stats.ignMs = 0;
     s.stats.classPicks = [0, 0, 0];
   }
@@ -237,8 +237,8 @@ export function enterChallenge(s: GameState, i: number, tier: 1 | 2 = 1): boolea
   if (s.stats.supernovae < C.CH_UNLOCK_NOVAE(i)) return false;
   if (s.nova.challenge !== -1) return false;
   if (tier === 2) {
-    // Hard: erst ab Galaxie-Fortschritt UND erst nachdem Normal bereits geschafft ist
-    if (s.stats.coalescences < C.CH_TIER2_UNLOCK_COALESCENCES) return false;
+    // Hard: erst ab Galaxie-Meilenstein (5 Coalescences) UND erst nachdem Normal bereits geschafft ist
+    if (s.stats.coalescences < C.MS_GALAXY[3]) return false;
     if (s.nova.completedTier[i] < 1) return false;
   }
   s.nova.challenge = i;
@@ -260,16 +260,16 @@ function resetNovaLayer(s: GameState): void {
   s.nova.totalShards = ZERO;
   // Galaxie-Meilensteine bestimmen, was die Coalescence überlebt:
   const coal = s.stats.coalescences;
-  // M7 (oder Sternen-Gedächtnis L3): Nebelgarten bleibt
-  if (coal < C.MS_GALAXY[6] && (s.sing.perks[8] ?? 0) < 3) {
+  // M8 (oder Sternen-Gedächtnis L3): Nebelgarten bleibt
+  if (coal < C.MS_GALAXY[7] && (s.sing.perks[8] ?? 0) < 3) {
     s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
     s.nova.cellsBought = 0;
   }
   // M3: Challenge-Abschlüsse (inkl. Hard-Stufe) bleiben
   if (coal < C.MS_GALAXY[2]) s.nova.completedTier = s.nova.completedTier.map(() => 0);
-  // M5: Supernova-Meilensteine bleiben. (Zündungs-Meilensteine resetten bereits
-  // pro Supernova in resetStarLayer — gleiche M4-Bedingung, keine Doppelung nötig.)
-  if (coal < C.MS_GALAXY[4]) {
+  // M6: Supernova-Meilensteine bleiben. (Zündungs-Meilensteine resetten bereits
+  // pro Supernova in resetStarLayer — gleiche M-Bedingung, keine Doppelung nötig.)
+  if (coal < C.MS_GALAXY[5]) {
     s.stats.novaMs = 0;
     s.nova.autoIgnite.on = false;  // Meilenstein weg → Schalter aus, bis neu freigespielt
   }

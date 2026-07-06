@@ -263,6 +263,7 @@ export const en: Record<string, string> = {
   'ms.gal0': 'Galaxy type choice',
   'ms.gal1': 'Reflection nebulae also boost iron gain',
   'ms.gal2': 'Challenge completions survive coalescence',
+  'ms.galHard': 'Hard tier becomes selectable for challenges',
   'ms.gal3': 'Ignition milestones become permanent (survive supernovae & coalescences)',
   'ms.gal4': 'Supernova milestones survive coalescence',
   'ms.gal5': 'Auto-supernova (1%/s shard trickle)',

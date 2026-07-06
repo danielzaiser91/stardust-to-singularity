@@ -263,6 +263,7 @@ export const de: Record<string, string> = {
   'ms.gal0': 'Galaxientyp-Wahl',
   'ms.gal1': 'Reflexionsnebel verstärken auch den Eisen-Gewinn',
   'ms.gal2': 'Challenge-Abschlüsse überleben die Coalescence',
+  'ms.galHard': 'Hard-Stufe für Challenges wählbar',
   'ms.gal3': 'Zündungs-Meilensteine werden permanent (überleben Supernovae & Coalescences)',
   'ms.gal4': 'Supernova-Meilensteine überleben die Coalescence',
   'ms.gal5': 'Auto-Supernova (1 %/s Scherben-Trickle)',

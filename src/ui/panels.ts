@@ -637,8 +637,8 @@ export class NovaPanel implements Panel {
         const s = this.st();
         if (s.nova.challenge === c) return { title: '★ ' + t(`ch.${c}`), body: t('nova.chGoalHard') };
         if (s.nova.completedTier[c] < 1) return { title: t('nova.chHard'), body: t('nova.chHardNeedNormal') };
-        if (s.stats.coalescences < C.CH_TIER2_UNLOCK_COALESCENCES)
-          return { title: '🔒 ' + t('nova.chHard'), body: t('nova.chHardLockedGal', { v: C.CH_TIER2_UNLOCK_COALESCENCES, c: s.stats.coalescences }) };
+        if (s.stats.coalescences < C.MS_GALAXY[3])
+          return { title: '🔒 ' + t('nova.chHard'), body: t('nova.chHardLockedGal', { v: C.MS_GALAXY[3], c: s.stats.coalescences }) };
         return s.nova.completedTier[c] >= 2
           ? { title: '★ ' + t(`ch.${c}`), body: t('nova.chDone') }
           : { title: '★ ' + t(`ch.${c}`), body: t('nova.chGoalHard') };
@@ -692,7 +692,7 @@ export class NovaPanel implements Panel {
     this.root.append(coalesceBox);
 
     this.ms = milestoneSection(
-      [t('ms.gal0'), t('ms.gal1'), t('ms.gal2'), t('ms.gal3'), t('ms.gal4'), t('ms.gal5'), t('ms.gal6')],
+      [t('ms.gal0'), t('ms.gal1'), t('ms.gal2'), t('ms.galHard'), t('ms.gal3'), t('ms.gal4'), t('ms.gal5'), t('ms.gal6')],
       C.MS_GALAXY, 'ms.u.gal', s => s.stats.coalescences);
     this.root.append(this.ms.root);
     this.syncBrush();
@@ -748,9 +748,9 @@ export class NovaPanel implements Panel {
       setDisabled(r.enter, otherActive || locked || (active && activeTier === 2));
 
       // Hard-Infozeilen: sobald Normal geschafft ist ODER die Freischaltung nah ist (Vorschau)
-      setReserve(r.hardInfo, ctier >= 1 || s.stats.coalescences >= C.CH_TIER2_UNLOCK_COALESCENCES - 2);
-      setReserve(r.hardEnter, ctier >= 1 || s.stats.coalescences >= C.CH_TIER2_UNLOCK_COALESCENCES - 2);
-      const hardReady = !locked && ctier >= 1 && s.stats.coalescences >= C.CH_TIER2_UNLOCK_COALESCENCES;
+      setReserve(r.hardInfo, ctier >= 1 || s.stats.coalescences >= C.MS_GALAXY[3] - 2);
+      setReserve(r.hardEnter, ctier >= 1 || s.stats.coalescences >= C.MS_GALAXY[3] - 2);
+      const hardReady = !locked && ctier >= 1 && s.stats.coalescences >= C.MS_GALAXY[3];
       setText(r.hardEnter, active && activeTier === 2 ? t('nova.chExit') : t('nova.chEnterHard'));
       setDisabled(r.hardEnter, otherActive || (active && activeTier === 1) || (!active && !hardReady));
     }

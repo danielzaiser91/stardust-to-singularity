@@ -89,8 +89,7 @@ export const CH4_COST_EXP = 1.2;
 // wachsenden Log-Abstände von CH_GOAL_MULT (14,40,90,170,280,400,600 → weiter steigend).
 // Erste-Fassung-Werte; per Spieler-Feedback nachjustierbar wie der Rest der Balance-Sheet.
 export const CH_GOAL_MULT_TIER2 = ['1e46', '1e110', '1e230', '1e430', '1e720', '1e1200', '1e1900', '1e2900'];
-// Ab so vielen Coalescences wird die Hard-Stufe wählbar (zusätzlich: Normal-Stufe muss bereits stehen).
-export const CH_TIER2_UNLOCK_COALESCENCES = 5;
+// Hard-Stufe wählbar ab MS_GALAXY[3] Coalescences (zusätzlich: Normal-Stufe muss bereits stehen).
 
 // ── Ebene 3: Galaxy ──────────────────────────────────────────────────────────
 export const COALESCE_REQ = 2500;            // total Nova Shards (Basis)
@@ -132,9 +131,9 @@ export const MS_NOVA = [1, 2, 4, 8, 12, 16, 20, 25, 30, 35, 40, 50];
 // Reihenfolge: erst die vier Automationen, dann die wichtigsten Boosts.
 export const MS_NOVA_KEEP = [4, 13, 8, 14, 1, 6, 10, 7, 11, -1];
 // Galaxie-Meilensteine: Typ-Wahl · Reflexionsnebel boosten auch Eisen · Challenges bleiben ·
-// Zündungs-Meilensteine permanent · Supernova-Meilensteine bleiben · Auto-Supernova ·
-// Nebelgarten bleibt („bleiben" = über Coalescence)
-export const MS_GALAXY = [1, 2, 3, 6, 9, 10, 12];
+// Hard-Challenge-Stufe wählbar · Zündungs-Meilensteine permanent · Supernova-Meilensteine bleiben ·
+// Auto-Supernova · Nebelgarten bleibt („bleiben" = über Coalescence)
+export const MS_GALAXY = [1, 2, 3, 5, 6, 9, 10, 12];
 // Auto-Trickle: kontinuierlicher Anteil des aktuellen Prestige-Gewinns pro Sekunde
 // (pro Tick berechnet); bei 100 % Akkumulation zählt ein Reset-Event (Leitern/Charge intakt).
 // Zündung: ln(20)/19 ≈ 15,8 %/s = kontinuierliches Äquivalent EINER vollen Zündung pro

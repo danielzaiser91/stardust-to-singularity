@@ -252,7 +252,7 @@ export function computeMults(s: GameState): Mults {
     nebulaPlasmaMult,
     feNebulaMult: s.stats.coalescences >= C.MS_GALAXY[1] ? nebulaPlasmaMult : ONE,
     nebulaNodeMult: nNebula,
-    autoNovaUnlocked: s.stats.coalescences >= C.MS_GALAXY[5],  // 10. Coalescence
+    autoNovaUnlocked: s.stats.coalescences >= C.MS_GALAXY[6],  // 10. Coalescence
   };
 }
 
@@ -308,10 +308,6 @@ export function igniteReq(s: GameState): Decimal {
   if (ch < 0) return D(C.IGNITION_REQ);
   const mult = s.nova.challengeTier >= 2 ? C.CH_GOAL_MULT_TIER2[ch] : C.CH_GOAL_MULT[ch];
   return D(C.IGNITION_REQ).mul(mult);
-}
-/** Kann die Hard-Stufe (Stufe 2) dieser Challenge angetreten werden? */
-export function canEnterChallengeTier2(s: GameState, i: number): boolean {
-  return s.stats.coalescences >= C.CH_TIER2_UNLOCK_COALESCENCES && s.nova.completedTier[i] >= 1;
 }
 export function plasmaGain(s: GameState, m: Mults): Decimal {
   if (s.dust.total.lt(igniteReq(s))) return ZERO;

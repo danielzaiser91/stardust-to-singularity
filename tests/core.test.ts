@@ -105,7 +105,7 @@ describe('tick & actions', () => {
     const s = initialState(1);
     s.star.unlocked = true;
     s.star.elements[5] = D(1e6);
-    s.stats.coalescences = 6;    // MS_GALAXY[3]
+    s.stats.coalescences = 6;    // MS_GALAXY[4]
     s.stats.ignMs = 40;
     s.stats.classPicks = [0, 40, 0];
     s.stats.novaTime = C.NOVA_MIN_TIME;
@@ -438,7 +438,7 @@ describe('tick & actions', () => {
     expect(actionsAll.enterChallenge(s, 1, 2)).toBe(false);
     s.nova.completedTier[1] = 1;                     // Normal geschafft
     expect(actionsAll.enterChallenge(s, 1, 2)).toBe(false);  // Coalescences noch zu niedrig
-    s.stats.coalescences = C.CH_TIER2_UNLOCK_COALESCENCES;
+    s.stats.coalescences = C.MS_GALAXY[3];
     expect(actionsAll.enterChallenge(s, 1, 2)).toBe(true);
     expect(s.nova.challenge).toBe(1);
     expect(s.nova.challengeTier).toBe(2);
