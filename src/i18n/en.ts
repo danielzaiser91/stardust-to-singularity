@@ -21,6 +21,7 @@ export const en: Record<string, string> = {
   'gen.0': 'Attractor', 'gen.1': 'Cluster', 'gen.2': 'Aggregate', 'gen.3': 'Planetesimal',
   'gen.4': 'Protoplanet', 'gen.5': 'Planet', 'gen.6': 'Gas Giant', 'gen.7': 'Protostar',
   'gen.produces': 'produces {t}',
+  'gen.ownedTip': 'Current count (grows from the tier above) · In parentheses: purchased tiers — every 10 give ×{v} output for this tier.',
 
   // — Star / Ignition —
   'star.name': 'Star', 'star.plasma': 'Plasma',
@@ -44,17 +45,17 @@ export const en: Record<string, string> = {
   'up.1': 'Stellar Wind', 'up.1d': 'Dust production ×2',
   'up.2': 'Alchemy', 'up.2d': 'Generators 10% cheaper per element discovered',
   'up.3': 'Dense Core', 'up.3d': 'Compression +0.05 strength',
-  'up.4': 'Auto-Attractors', 'up.4d': 'Autobuy generator tiers 1–4',
+  'up.4': 'Auto-Attractors', 'up.4d': 'Autobuy generator tiers 1–4 (up to {v} of dust)',
   'up.5': 'Long Tail', 'up.5d': 'Comet boosts last twice as long',
   'up.6': 'Proton Rain', 'up.6d': 'Hydrogen production ×3',
   'up.7': 'Magnetic Grip', 'up.7d': 'Click power ×5',
-  'up.8': 'Auto-Accretion', 'up.8d': 'Autobuy generator tiers 5–8',
+  'up.8': 'Auto-Accretion', 'up.8d': 'Autobuy generator tiers 5–8 (up to {v} of dust)',
   'up.9': 'Memory of Pressure', 'up.9d': 'Keep up to 10 Compression levels on Ignition',
   'up.10': 'Catalyst', 'up.10d': 'Fusion throughput ×2',
   'up.11': 'Deep Ignition', 'up.11d': 'Plasma gain exponent +0.05',
   'up.12': 'Solar Sail', 'up.12d': 'Passively attract dust equal to 4 clicks per second',
-  'up.13': 'Auto-Compression', 'up.13d': 'Autobuy Compression',
-  'up.14': 'Auto-Reactors', 'up.14d': 'Autobuy fusion reactors (up to 30% of plasma)',
+  'up.13': 'Auto-Compression', 'up.13d': 'Autobuy Compression (up to {v} of dust)',
+  'up.14': 'Auto-Reactors', 'up.14d': 'Autobuy fusion reactors (up to {v} of plasma)',
 
   // — Supernova —
   'nova.name': 'Supernova', 'nova.shards': 'Nova Shards',
@@ -263,8 +264,8 @@ export const en: Record<string, string> = {
   'ms.gal3': 'Ignition milestones become permanent (survive supernovae & coalescences)',
   'ms.gal4': 'Supernova milestones survive coalescence',
   'ms.gal5': 'Auto-supernova (1%/s shard trickle)',
-  'cap.max': 'Current cap: {v}',
-  'cap.need': 'Cap reached at {c} (currently {v})',
+  'cap.max': 'Reachable maximum: {v}',
+  'cap.need': 'Cap reached at {c} lifetime total (so far {v})',
   'ms.gal6': 'The nebula garden survives coalescence',
   'ms.col0': 'Singularity perks',
   'ms.col1': 'Special milestones for the supernova layer',
@@ -281,9 +282,9 @@ export const en: Record<string, string> = {
 
   // — Gain-Cap —
   'cap.title': 'Gain cap',
-  'cap.body': 'At cap: your total {r} could at most grow to ×{v} its current value. Gathering more won\'t help — reset now!',
-  'cap.bodyAuto': 'At cap: your total {r} can at most grow to ×{v} its current value — the auto-trickle already handles that continuously.',
-  'cap.hint': 'Gain per reset is capped: your total {r} can at most grow to ×{v} its current value. Gold = cap reached.',
+  'cap.body': 'At cap — gathering more won\'t help. Reset now!',
+  'cap.bodyAuto': 'At cap — the auto-trickle already handles that continuously.',
+  'cap.hint': 'Gain per reset is capped. Gold = cap reached.',
 
   // — Update-Banner —
   'update.banner': '✦ New version available — click to save & reload',

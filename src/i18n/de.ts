@@ -21,6 +21,7 @@ export const de: Record<string, string> = {
   'gen.0': 'Attraktor', 'gen.1': 'Cluster', 'gen.2': 'Aggregat', 'gen.3': 'Planetesimal',
   'gen.4': 'Protoplanet', 'gen.5': 'Planet', 'gen.6': 'Gasriese', 'gen.7': 'Protostern',
   'gen.produces': 'produziert {t}',
+  'gen.ownedTip': 'Bestand (wächst durch die Stufe darüber) · In Klammern: gekaufte Stufen — je 10 davon ×{v} Output dieser Stufe.',
 
   // — Star / Ignition —
   'star.name': 'Stern', 'star.plasma': 'Plasma',
@@ -44,17 +45,17 @@ export const de: Record<string, string> = {
   'up.1': 'Sternwind', 'up.1d': 'Staubproduktion ×2',
   'up.2': 'Alchemie', 'up.2d': 'Generatoren 10 % günstiger je entdecktem Element',
   'up.3': 'Dichter Kern', 'up.3d': 'Kompression +0,05 Stärke',
-  'up.4': 'Auto-Attraktoren', 'up.4d': 'Kauft Generator-Stufen 1–4 automatisch',
+  'up.4': 'Auto-Attraktoren', 'up.4d': 'Kauft Generator-Stufen 1–4 automatisch (bis {v} des Staubs)',
   'up.5': 'Langer Schweif', 'up.5d': 'Kometen-Boosts halten doppelt so lang',
   'up.6': 'Protonenregen', 'up.6d': 'Wasserstoff-Produktion ×3',
   'up.7': 'Magnetgriff', 'up.7d': 'Klick-Kraft ×5',
-  'up.8': 'Auto-Akkretion', 'up.8d': 'Kauft Generator-Stufen 5–8 automatisch',
+  'up.8': 'Auto-Akkretion', 'up.8d': 'Kauft Generator-Stufen 5–8 automatisch (bis {v} des Staubs)',
   'up.9': 'Erinnerung an Druck', 'up.9d': 'Behalte bis zu 10 Kompressionsstufen bei Zündung',
   'up.10': 'Katalysator', 'up.10d': 'Fusions-Durchsatz ×2',
   'up.11': 'Tiefe Zündung', 'up.11d': 'Plasma-Gewinn-Exponent +0,05',
   'up.12': 'Sonnensegel', 'up.12d': 'Zieht passiv Staub in Höhe von 4 Klicks pro Sekunde an',
-  'up.13': 'Auto-Kompression', 'up.13d': 'Kauft Kompression automatisch',
-  'up.14': 'Auto-Reaktoren', 'up.14d': 'Kauft Fusionsreaktoren automatisch (bis 30 % des Plasmas)',
+  'up.13': 'Auto-Kompression', 'up.13d': 'Kauft Kompression automatisch (bis {v} des Staubs)',
+  'up.14': 'Auto-Reaktoren', 'up.14d': 'Kauft Fusionsreaktoren automatisch (bis {v} des Plasmas)',
 
   // — Supernova —
   'nova.name': 'Supernova', 'nova.shards': 'Nova-Scherben',
@@ -263,8 +264,8 @@ export const de: Record<string, string> = {
   'ms.gal3': 'Zündungs-Meilensteine werden permanent (überleben Supernovae & Coalescences)',
   'ms.gal4': 'Supernova-Meilensteine überleben die Coalescence',
   'ms.gal5': 'Auto-Supernova (1 %/s Scherben-Trickle)',
-  'cap.max': 'Aktueller Deckel: {v}',
-  'cap.need': 'Deckel erreicht ab {c} (aktuell {v})',
+  'cap.max': 'Erreichbares Maximum: {v}',
+  'cap.need': 'Deckel erreicht ab {c} insgesamt erzeugt (bisher {v})',
   'ms.gal6': 'Der Nebelgarten überlebt die Coalescence',
   'ms.col0': 'Singularitäts-Perks',
   'ms.col1': 'Spezial-Meilensteine für die Supernova-Ebene',
@@ -281,9 +282,9 @@ export const de: Record<string, string> = {
 
   // — Gain-Cap —
   'cap.title': 'Maximalgewinn',
-  'cap.body': 'Am Deckel: deine bisherige Menge an {r} würde höchstens auf das ×{v}-fache wachsen. Mehr sammeln bringt nichts — jetzt resetten!',
-  'cap.bodyAuto': 'Am Deckel: deine bisherige Menge an {r} wächst höchstens auf das ×{v}-fache — der Auto-Trickle nutzt das schon laufend.',
-  'cap.hint': 'Gewinn pro Reset gedeckelt: deine bisherige Menge an {r} wächst höchstens auf das ×{v}-fache. Golden = Deckel erreicht.',
+  'cap.body': 'Am Deckel — mehr sammeln bringt nichts. Jetzt resetten!',
+  'cap.bodyAuto': 'Am Deckel — der Auto-Trickle nutzt das schon laufend.',
+  'cap.hint': 'Gewinn pro Reset ist gedeckelt. Golden = Deckel erreicht.',
 
   // — Update-Banner —
   'update.banner': '✦ Neue Version verfügbar — klicken zum Speichern & Neuladen',

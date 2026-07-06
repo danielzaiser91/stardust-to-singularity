@@ -33,28 +33,24 @@ function logFrac(cur: Decimal, req: Decimal | number): number {
   return Math.min(1, cur.log10().toNumber() / reqLog);
 }
 
-// Welche Währung sich beim jeweiligen Reset akkumuliert (die "Summe", auf die sich ×{v} bezieht).
-const CAP_TOTAL_RES: Record<'ignite' | 'nova' | 'coalesce' | 'collapse', { kind: 'plasma' | 'shards' | 'dm' | 'entropy'; nameKey: string }> = {
-  ignite: { kind: 'plasma', nameKey: 'star.plasma' },
-  nova: { kind: 'shards', nameKey: 'nova.shards' },
-  coalesce: { kind: 'dm', nameKey: 'galaxy.dm' },
-  collapse: { kind: 'entropy', nameKey: 'sing.entropy' },
+// Welche Währung der jeweilige Reset ausschüttet (bestimmt Icon/Farbe der Deckel-Zahl).
+const CAP_TOTAL_RES: Record<'ignite' | 'nova' | 'coalesce' | 'collapse', 'plasma' | 'shards' | 'dm' | 'entropy'> = {
+  ignite: 'plasma', nova: 'shards', coalesce: 'dm', collapse: 'entropy',
 };
 
-/** Gemeinsamer Gain-Deckel-Tooltip: Erklärung · aktueller Deckelwert · Währung bis zum Deckel. */
+/** Gemeinsamer Gain-Deckel-Tooltip: Erklärung · erreichbares Maximum · Währung bis zum Deckel. */
 function capTipBody(
   s: GameState, m: F.Mults, total: Decimal, clampMult: number, isCapped: boolean,
   layer: 'ignite' | 'nova' | 'coalesce' | 'collapse', unitKey: string, resKind?: 'dust' | 'shards' | 'dm',
   autoOn = false,
 ): { title: string; body: string } {
   const sci = s.settings.sciNotation;
-  const n = numTag(String(clampMult + 1));
-  const max = t('cap.max', { v: numTag(fmt(F.gainCapBound(total, clampMult), sci)) });
-  const tr = CAP_TOTAL_RES[layer];
-  const r = resTag(tr.kind, t(tr.nameKey));
+  // Die konkrete Zahl (mit Ressourcen-Icon) sagt schon alles — kein zusätzliches "×N deiner
+  // Summe" nötig, das dieselbe Info nur abstrakter wiederholt.
+  const max = t('cap.max', { v: resTag(CAP_TOTAL_RES[layer], fmt(F.gainCapBound(total, clampMult), sci)) });
   // "Jetzt resetten!" ist irreführend, solange der Auto-Trickle des Layers ohnehin laufend resettet.
   const bodyKey = isCapped ? (autoOn ? 'cap.bodyAuto' : 'cap.body') : 'cap.hint';
-  let body = `${t(bodyKey, { v: n, r })}\n${max}`;
+  let body = `${t(bodyKey)}\n${max}`;
   if (!isCapped) {
     const need = F.currencyForCap(s, m, layer);
     if (need) {
@@ -143,6 +139,10 @@ export class DustPanel implements Panel {
       const owned = el('div', 'gen-owned');
       const rate = el('div', 'gen-rate sub');
       info.append(name, owned, rate);
+      attachTip(owned, () => ({
+        title: t(`gen.${i}`),
+        body: t('gen.ownedTip', { v: numTag(fmtMult(C.GEN_MULT_PER_10)) }),
+      }));
       const c1 = el('span', 'cost');
       const buyGen = (max: boolean) => {
         const s = this.st();
@@ -265,7 +265,7 @@ export class DustPanel implements Panel {
       r.row.style.display = (visible || reserved) ? '' : 'none';
       setClass(r.row, 'row-reserved', reserved);
       if (!visible) continue;
-      setText(r.owned, `${fmtInt(g.amount)} (${g.bought})`);
+      setText(r.owned, `${fmtInt(g.amount)} (${fmtInt(D(g.bought))})`);
       const prod = g.amount.mul(F.tierMult(s, m, i)).mul(i === 0 ? m.dustMult : D(1));
       setText(r.rate, `+${fmt(prod, sci)}${t('unit.perSec')} ${i === 0 ? t('dust.name') : t(`gen.${i - 1}`)}`);
       setText(r.c1, fmt(F.genCost(s, m, i, 1), sci));
@@ -359,15 +359,22 @@ export class StarPanel implements Panel {
     const AUTOMATION_IDS = [4, 8, 13, 14];
     const gridNormal = el('div', 'up-grid');
     const gridAuto = el('div', 'up-grid');
+    const autoBudgetPct = numTag(`${Math.round(C.AUTOBUY_BUDGET_FRAC * 100)}%`);
     for (let u = 0; u < C.PLASMA_UPGRADE_COSTS.length; u++) {
       const b = btn('up-btn', '', () => {
         const s = this.st();
         if (A.buyPlasmaUpgrade(s, u)) emit('buy');
       });
-      b.append(el('div', 'up-name', t(`up.${u}`)), el('div', 'sub', t(`up.${u}d`)),
+      const isAuto = AUTOMATION_IDS.includes(u);
+      const sub = el('div', 'sub');
+      // Automation-Beschreibungen heben den Budget-Anteil hervor (innerHTML statt textContent —
+      // sicher, weil intern generiert); normale Upgrades bleiben reiner Text.
+      if (isAuto) sub.innerHTML = t(`up.${u}d`, { v: autoBudgetPct });
+      else sub.textContent = t(`up.${u}d`);
+      b.append(el('div', 'up-name', t(`up.${u}`)), sub,
         el('div', 'cost', `${C.PLASMA_UPGRADE_COSTS[u]} ${t('star.plasma')}`));
       this.upBtns.push(b);
-      (AUTOMATION_IDS.includes(u) ? gridAuto : gridNormal).append(b);
+      (isAuto ? gridAuto : gridNormal).append(b);
     }
     this.root.append(el('h3', '', t('star.upgrades')), gridNormal);
     this.root.append(el('h3', '', t('star.autoUps')), gridAuto);
