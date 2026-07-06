@@ -238,6 +238,13 @@ button:disabled { opacity: 0.38; cursor: default; }
 .ch-row.completed .ch-status { color: #7dffb0; font-size: 1rem; }
 .ch-row.completed .reward { color: #7dffb0; }
 .ch-row.completed .reward::before { content: '✓ '; }
+.ch-row.completed-hard {
+  border-left-color: var(--gold);
+  background: rgba(180, 140, 40, 0.14);
+}
+.ch-row.completed-hard .ch-status { color: var(--gold); font-size: 1.05rem; }
+.ch-row.completed-hard .reward-hard { color: var(--gold); }
+.ch-row.completed-hard .reward-hard::before { content: '★ '; }
 .ch-status { min-width: 30px; text-align: center; color: var(--gold); font-weight: 700; font-size: 0.72rem; }
 
 /* ── Skilltree ── */

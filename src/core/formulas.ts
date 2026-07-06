@@ -93,7 +93,7 @@ export function nebulaCellMult(s: GameState, i: number, nebulaNodeMult: number):
 
 export function computeMults(s: GameState): Mults {
   const ch = s.nova.challenge;
-  const done = s.nova.completed;
+  const tier = s.nova.completedTier;   // 0 = offen, 1 = Normal, 2 = Hard — Hard-Boni stapeln auf Normal
   const nodes = s.galaxy.nodes;
   const gt = C.GALAXY_TYPES[s.galaxy.gtype];
   const perks = s.sing.perks;
@@ -157,7 +157,7 @@ export function computeMults(s: GameState): Mults {
   const heBoost = elBoost(1), cBoost = elBoost(2), oBoost = elBoost(3), siBoost = elBoost(4);
 
   // — Plasma-Effekt auf Dust —
-  let plasmaDustExp = C.PLASMA_DUST_EXP + (done[5] ? 0.08 : 0);
+  let plasmaDustExp = C.PLASMA_DUST_EXP + 0.08 * tier[5];
   if (ch === 5) plasmaDustExp *= 0.5;                       // Challenge 6: Dim Star
   const plasmaDust = s.star.plasma.add(1).pow(plasmaDustExp);
 
@@ -170,7 +170,7 @@ export function computeMults(s: GameState): Mults {
   }
 
   // — Kometen-Boost —
-  const cometBoostMult = C.COMET_BOOST_MULT + (done[4] ? 2 : 0) + nCometBoost;
+  const cometBoostMult = C.COMET_BOOST_MULT + 2 * tier[4] + nCometBoost;
   const cometActive = s.dust.comet.boost > 0 ? cometBoostMult : 1;
 
   // — Kaskaden-Passiveffekte höherer Ebenen (Lifetime-Basen, resetten nie) —
@@ -184,16 +184,16 @@ export function computeMults(s: GameState): Mults {
 
   let dustMult = plasmaDust.mul(heBoost).mul(nebulaDustMult).mul(nDust).mul(perkDust).mul(globalMult)
     .mul(cometActive).mul(shardDust);
-  if (done[6]) dustMult = dustMult.mul(1.25);               // Challenge-7-Belohnung
+  if (tier[6] > 0) dustMult = dustMult.mul(Decimal.pow(1.25, tier[6]));  // Challenge-7-Belohnung (Hard: nochmal ×1,25)
   if (nDustExp + 0.01 * perks[7] > 0) dustMult = dustMult.pow(1 + nDustExp + 0.01 * perks[7]);
 
   let allGenMult = nAllGens.mul(globalMult);
-  if (done[1]) allGenMult = allGenMult.mul(2);
+  if (tier[1] > 0) allGenMult = allGenMult.mul(Decimal.pow(2, tier[1]));  // Challenge-2-Belohnung (Hard: ×4 statt ×2)
 
   const speed = nSpeed * perkSpeed * dilation;
 
   const compressionEffect = C.COMPRESSION_EFFECT
-    + (done[0] ? 0.10 : 0)
+    + 0.10 * tier[0]
     + (s.star.upgrades[3] ? 0.05 : 0)
     + siBoost.sub(1).toNumber() * 0.02;                     // Si verstärkt Compression leicht
 
@@ -212,7 +212,7 @@ export function computeMults(s: GameState): Mults {
 
   let fusionMult = nFusion * perkFusion
     * Math.pow(rp.neutronBase, s.nova.remnants[0])
-    * (done[2] ? 2 : 1)
+    * Math.pow(2, tier[2])   // Challenge-3-Belohnung (Hard: ×4 statt ×2)
     * (s.star.upgrades[10] ? 2 : 1);
   if (ch === 2) fusionMult *= 0.1;                          // Challenge 3: Slow Burn
 
@@ -227,7 +227,7 @@ export function computeMults(s: GameState): Mults {
   const entropyGainMult = prestigeMult.mul(ngPrestige);
 
   let genCostDiv = cBoost.mul(nGenCost);
-  if (done[3]) genCostDiv = genCostDiv.mul(2);
+  if (tier[3] > 0) genCostDiv = genCostDiv.mul(Decimal.pow(2, tier[3]));  // Challenge-4-Belohnung (Hard: ÷4 statt ÷2)
   if (s.star.upgrades[2]) {
     const discovered = s.star.elements.filter(e => e.gt(0)).length;
     genCostDiv = genCostDiv.mul(Math.pow(1.1, discovered));
@@ -275,7 +275,8 @@ export function tierMult(s: GameState, m: Mults, tier: number): Decimal {
     .mul(Decimal.pow(m.compressionEffect, s.dust.compression))  // Decimal: Number-Overflow ab ~5000 Stufen
     .mul(m.allGenMult)
     .mul(C.GEN_RATE[tier]);
-  if (tier === 0 && s.nova.completed[7]) mult = mult.mul(8);  // Challenge-8-Belohnung
+  // Challenge-8-Belohnung: Normal ×8, Hard ×16
+  if (tier === 0 && s.nova.completedTier[7] > 0) mult = mult.mul(s.nova.completedTier[7] >= 2 ? 16 : 8);
   // Spezial-Meilenstein (ab 3 Kollapsen): je 100 Käufe dieser Stufe im Run → Output ×3
   if (s.stats.collapses >= C.MS_COLLAPSE[2]) {
     const steps = Math.floor(s.dust.gens[tier].bought / C.SPECIAL_GEN_STEP);
@@ -304,7 +305,13 @@ export function maxTier(s: GameState): number {
 /** Zündschwelle: in Challenges eskaliert das Ziel je Challenge-Index */
 export function igniteReq(s: GameState): Decimal {
   const ch = s.nova.challenge;
-  return ch >= 0 ? D(C.IGNITION_REQ).mul(C.CH_GOAL_MULT[ch]) : D(C.IGNITION_REQ);
+  if (ch < 0) return D(C.IGNITION_REQ);
+  const mult = s.nova.challengeTier >= 2 ? C.CH_GOAL_MULT_TIER2[ch] : C.CH_GOAL_MULT[ch];
+  return D(C.IGNITION_REQ).mul(mult);
+}
+/** Kann die Hard-Stufe (Stufe 2) dieser Challenge angetreten werden? */
+export function canEnterChallengeTier2(s: GameState, i: number): boolean {
+  return s.stats.coalescences >= C.CH_TIER2_UNLOCK_COALESCENCES && s.nova.completedTier[i] >= 1;
 }
 export function plasmaGain(s: GameState, m: Mults): Decimal {
   if (s.dust.total.lt(igniteReq(s))) return ZERO;

@@ -75,7 +75,8 @@ export interface GameState {
     count: number;                // Supernovae seit letzter Coalescence (Basis der Fe-Leiter)
     pulsarPhase: number;          // Sekunden im Pulsar-Zyklus
     challenge: number;            // -1 = keine aktiv
-    completed: boolean[];         // 8
+    challengeTier: 1 | 2;         // Stufe des GERADE laufenden Versuchs (nur relevant, wenn challenge !== -1)
+    completedTier: number[];      // 8 — 0 = offen, 1 = Normal geschafft, 2 = Hard geschafft
     /** acc = akkumulierter Gewinn-Anteil des Auto-Trickles (1.0 = ein volles Event) */
     autoIgnite: { on: boolean; at: Decimal; acc: number };
   };
@@ -154,7 +155,8 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       count: 0,
       pulsarPhase: 0,
       challenge: -1,
-      completed: Array.from({ length: C.CHALLENGE_COUNT }, () => false),
+      challengeTier: 1,
+      completedTier: Array.from({ length: C.CHALLENGE_COUNT }, () => 0),
       autoIgnite: { on: false, at: D(1), acc: 0 },
     },
     galaxy: {

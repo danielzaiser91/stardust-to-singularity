@@ -4,7 +4,7 @@
  * (tests/balance.test.ts) validieren jede Änderung. Kein Magic Number außerhalb dieser Datei.
  */
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 // ── Ebene 0: Dust ────────────────────────────────────────────────────────────
 export const GEN_COUNT = 8;
@@ -85,6 +85,12 @@ export const CHALLENGE_COUNT = 8;
 export const CH_GOAL_MULT = ['1e6', '1e20', '1e60', '1e150', '1e320', '1e600', '1e1000', '1e1600'];
 export const CH7_DECAY = 0.01;               // 1 %/s Dust-Zerfall in Challenge 7
 export const CH4_COST_EXP = 1.2;
+// Hard-Stufe (Stufe 2) je Challenge: gleiche Restriktion, höheres Ziel — Fortsetzung der
+// wachsenden Log-Abstände von CH_GOAL_MULT (14,40,90,170,280,400,600 → weiter steigend).
+// Erste-Fassung-Werte; per Spieler-Feedback nachjustierbar wie der Rest der Balance-Sheet.
+export const CH_GOAL_MULT_TIER2 = ['1e46', '1e110', '1e230', '1e430', '1e720', '1e1200', '1e1900', '1e2900'];
+// Ab so vielen Coalescences wird die Hard-Stufe wählbar (zusätzlich: Normal-Stufe muss bereits stehen).
+export const CH_TIER2_UNLOCK_COALESCENCES = 5;
 
 // ── Ebene 3: Galaxy ──────────────────────────────────────────────────────────
 export const COALESCE_REQ = 2500;            // total Nova Shards (Basis)
@@ -105,7 +111,11 @@ export const ENTROPY_EXP = 0.6;
 export const PERK_COUNT = 9;
 export const PERK_HAWKING_H = 2.5;           // Hawking: H-Rate ×2,5 je Level (geometrischer Endgame-Motor)
 export const PERK_BASE_COST = [1, 3, 10, 25, 100, 500, 2500, 10000, 25];
-export const PERK_COST_GROWTH = [3, 4, 5, 6, 8, 10, 12, 15, 20];
+// Hawking-Kostenwachstum 4→3 (Index 1): Sim (40-Tage-Endgame-Lauf, Seed 42) zeigte nur 2 Kollapse
+// in 40 Tagen, Endgame (2500 Entropie) unerreicht — die Kollaps-Leiter (×8 pro Dreieckszahl-Stufe)
+// lief dem Hawking-finanzierten Motor davon. Günstigere Level → mehr Level pro Entropie-Schub →
+// stärkerer H-Rate-Zusammensetzungseffekt. Siehe BALANCE.md.
+export const PERK_COST_GROWTH = [3, 3, 5, 6, 8, 10, 12, 15, 20];
 // Perk 9 „Sternen-Gedächtnis": L1 Plasma-Upgrades überleben Supernova,
 // L2 Reaktoren überleben Supernova, L3 Nebelzellen überleben Coalescence
 export const STELLAR_MEMORY_MAX = 3;

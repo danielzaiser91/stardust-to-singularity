@@ -330,7 +330,7 @@ describe('tick & actions', () => {
       s.stats.novaMs = 20;
       s.stats.classPicks = [5, 20, 5];
       s.nova.autoIgnite.on = true;
-      s.nova.completed = s.nova.completed.map(() => true);
+      s.nova.completedTier = s.nova.completedTier.map(() => 1);
       s.nova.cells[0] = 1;
       s.nova.cellsBought = 3;
       s.stats.galaxyTime = C.GALAXY_MIN_TIME;   // volle Ladung → DM-Gewinn > 0
@@ -338,7 +338,7 @@ describe('tick & actions', () => {
     };
     const s1 = mk(0);   // 1. Coalescence: nichts davon erreicht → alles resettet
     expect(actionsAll.doCoalesce(s1, 0)).toBe(true);
-    expect(s1.nova.completed.every(c => !c)).toBe(true);
+    expect(s1.nova.completedTier.every(t => t === 0)).toBe(true);
     expect(s1.stats.ignMs).toBe(0);
     expect(s1.stats.novaMs).toBe(0);
     expect(s1.stats.classPicks).toEqual([0, 0, 0]);
@@ -353,7 +353,7 @@ describe('tick & actions', () => {
     expect(s1.stats.ignitions).toBe(ign);
     const s2 = mk(11);  // 12. Coalescence: M2–M5 erreicht → alles bleibt
     expect(actionsAll.doCoalesce(s2, 0)).toBe(true);
-    expect(s2.nova.completed.every(c => c)).toBe(true);
+    expect(s2.nova.completedTier.every(t => t >= 1)).toBe(true);
     expect(s2.stats.ignMs).toBe(30);
     expect(s2.stats.novaMs).toBe(20);
     expect(s2.stats.classPicks).toEqual([5, 20, 5]);
@@ -428,6 +428,42 @@ describe('tick & actions', () => {
     expect(s.star.unlocked).toBe(true);
     expect(s.dust.gens[0].bought).toBe(0);
     expect(s.dust.amount.lte(1000)).toBe(true);
+  });
+
+  it('challenge hard tier: gated behind unlock + normal completion, goal escalates, reward stacks', () => {
+    const s = initialState(1);
+    s.nova.unlocked = true;
+    s.stats.supernovae = 20;   // alle Challenges freigeschaltet
+    // Hard vor Freischaltung/Normal-Abschluss verweigert
+    expect(actionsAll.enterChallenge(s, 1, 2)).toBe(false);
+    s.nova.completedTier[1] = 1;                     // Normal geschafft
+    expect(actionsAll.enterChallenge(s, 1, 2)).toBe(false);  // Coalescences noch zu niedrig
+    s.stats.coalescences = C.CH_TIER2_UNLOCK_COALESCENCES;
+    expect(actionsAll.enterChallenge(s, 1, 2)).toBe(true);
+    expect(s.nova.challenge).toBe(1);
+    expect(s.nova.challengeTier).toBe(2);
+    expect(F.igniteReq(s).eq(D(C.IGNITION_REQ).mul(C.CH_GOAL_MULT_TIER2[1]))).toBe(true);
+    // Abschluss merkt sich Stufe 2, ohne die Stufe-1-Info zu verlieren
+    s.dust.total = F.igniteReq(s);
+    expect(doIgnite(s, 1)).toBe(true);
+    expect(s.nova.completedTier[1]).toBe(2);
+    // Belohnung stapelt: Alle-Generatoren-Bonus ×4 (Hard) statt ×2 (Normal)
+    const s2 = initialState(1);
+    s2.nova.completedTier[1] = 1;
+    const s3 = initialState(1);
+    s3.nova.completedTier[1] = 2;
+    expect(computeMults(s3).allGenMult.div(computeMults(s2).allGenMult).toNumber()).toBeCloseTo(2, 5);
+  });
+
+  it('save migration v3→v4 converts nova.completed booleans to completedTier', () => {
+    const s = initialState(1);
+    s.nova.completedTier = [1, 0, 1, 0, 0, 0, 0, 0];
+    const raw = JSON.parse(serialize(s));
+    raw.version = 3;
+    raw.nova.completed = [true, false, true, false, false, false, false, false];
+    delete raw.nova.completedTier;
+    const restored = deserialize(JSON.stringify(raw));
+    expect(restored.nova.completedTier).toEqual([1, 0, 1, 0, 0, 0, 0, 0]);
   });
 });
 

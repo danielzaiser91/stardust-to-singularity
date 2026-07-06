@@ -35,9 +35,9 @@ export const ACHIEVEMENT_CHECKS: Check[] = [
   s => s.nova.cellsBought >= 1, s => s.nova.cells.filter(c => c !== 0).length >= 7,
   s => s.nova.cells.every(c => c !== 0),
   // 49–51: Challenges
-  s => s.nova.completed.filter(Boolean).length >= 1,
-  s => s.nova.completed.filter(Boolean).length >= 4,
-  s => s.nova.completed.every(Boolean),
+  s => s.nova.completedTier.filter(t => t >= 1).length >= 1,
+  s => s.nova.completedTier.filter(t => t >= 1).length >= 4,
+  s => s.nova.completedTier.every(t => t >= 1),
   // 52–53: Coalescences
   s => s.stats.coalescences >= 1, s => s.stats.coalescences >= 3,
   // 54–56: Konstellations-Nodes

@@ -507,7 +507,7 @@ export class NovaPanel implements Panel {
   private tokenCost = el('div', 'sub token-cost');
   private tokenCostVal = el('span', 'token-cost-val', '');
   private gardenTotal = el('div', 'sub center');
-  private chRows: { row: HTMLElement; enter: HTMLButtonElement; status: HTMLElement }[] = [];
+  private chRows: { row: HTMLElement; enter: HTMLButtonElement; hardEnter: HTMLButtonElement; hardInfo: HTMLElement; status: HTMLElement }[] = [];
   private coalBar = bar('bar-gal');
   private coalLabel = el('div', 'sub center');
   private coalBtn!: HTMLButtonElement;
@@ -606,24 +606,45 @@ export class NovaPanel implements Panel {
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
       const row = el('div', 'row ch-row');
       const info = el('div', 'gen-info');
+      const hardInfo = el('div', '');
+      hardInfo.append(
+        el('div', 'sub', `${t('misc.goal')} (${t('nova.chHard')}): ${fmt(D(C.IGNITION_REQ).mul(C.CH_GOAL_MULT_TIER2[c]), true)} ${t('dust.name')}`),
+        el('div', 'sub reward-hard', `${t('misc.reward')} (${t('nova.chHard')}): ${t(`ch.${c}r2`)}`));
       info.append(el('div', 'gen-name', t(`ch.${c}`)), el('div', 'sub', t(`ch.${c}d`)),
         el('div', 'sub', `${t('misc.goal')}: ${fmt(D(C.IGNITION_REQ).mul(C.CH_GOAL_MULT[c]), true)} ${t('dust.name')}`),
-        el('div', 'sub reward', `${t('misc.reward')}: ${t(`ch.${c}r`)}`));
+        el('div', 'sub reward', `${t('misc.reward')}: ${t(`ch.${c}r`)}`), hardInfo);
       const status = el('div', 'ch-status');
       const enter = btn('buy', t('nova.chEnter'), () => {
         const s = this.st();
         if (s.nova.challenge === c) A.exitChallenge(s);
-        else if (s.nova.challenge === -1) A.enterChallenge(s, c);
+        else if (s.nova.challenge === -1) A.enterChallenge(s, c, 1);
       });
       attachTip(enter, () => {
         const s = this.st();
-        if (s.nova.completed[c]) return { title: '✓ ' + t(`ch.${c}`), body: t('nova.chDone') };
-        return s.stats.supernovae < C.CH_UNLOCK_NOVAE(c)
-          ? { title: '🔒 ' + t(`ch.${c}`), body: t('nova.chLockedInfo', { v: C.CH_UNLOCK_NOVAE(c), c: s.stats.supernovae }) }
+        if (s.nova.challenge === c) return { title: t(`ch.${c}`), body: t('nova.chGoal') };
+        if (s.stats.supernovae < C.CH_UNLOCK_NOVAE(c))
+          return { title: '🔒 ' + t(`ch.${c}`), body: t('nova.chLockedInfo', { v: C.CH_UNLOCK_NOVAE(c), c: s.stats.supernovae }) };
+        return s.nova.completedTier[c] >= 1
+          ? { title: '✓ ' + t(`ch.${c}`), body: t('nova.chDone') }
           : { title: t(`ch.${c}`), body: t('nova.chGoal') };
       });
-      row.append(info, status, enter);
-      this.chRows.push({ row, enter, status });
+      const hardEnter = btn('buy alt', t('nova.chEnterHard'), () => {
+        const s = this.st();
+        if (s.nova.challenge === c) A.exitChallenge(s);
+        else if (s.nova.challenge === -1) A.enterChallenge(s, c, 2);
+      });
+      attachTip(hardEnter, () => {
+        const s = this.st();
+        if (s.nova.challenge === c) return { title: '★ ' + t(`ch.${c}`), body: t('nova.chGoalHard') };
+        if (s.nova.completedTier[c] < 1) return { title: t('nova.chHard'), body: t('nova.chHardNeedNormal') };
+        if (s.stats.coalescences < C.CH_TIER2_UNLOCK_COALESCENCES)
+          return { title: '🔒 ' + t('nova.chHard'), body: t('nova.chHardLockedGal', { v: C.CH_TIER2_UNLOCK_COALESCENCES, c: s.stats.coalescences }) };
+        return s.nova.completedTier[c] >= 2
+          ? { title: '★ ' + t(`ch.${c}`), body: t('nova.chDone') }
+          : { title: '★ ' + t(`ch.${c}`), body: t('nova.chGoalHard') };
+      });
+      row.append(info, status, enter, hardEnter);
+      this.chRows.push({ row, enter, hardEnter, hardInfo, status });
       this.root.append(row);
     }
 
@@ -713,14 +734,25 @@ export class NovaPanel implements Panel {
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
       const r = this.chRows[c];
       const active = s.nova.challenge === c;
+      const activeTier = active ? s.nova.challengeTier : 0;
+      const otherActive = s.nova.challenge !== -1 && !active;
+      const ctier = s.nova.completedTier[c];
       const locked = s.stats.supernovae < C.CH_UNLOCK_NOVAE(c);
       setClass(r.row, 'active', active);
-      setClass(r.row, 'locked', locked && !s.nova.completed[c]);
-      setClass(r.row, 'completed', s.nova.completed[c]);
-      setText(r.status, s.nova.completed[c] ? '✓' : active ? t('misc.active')
-        : locked ? `🔒 ${s.stats.supernovae}/${C.CH_UNLOCK_NOVAE(c)}` : '');
-      setText(r.enter, active ? t('nova.chExit') : t('nova.chEnter'));
-      setDisabled(r.enter, locked || (!active && s.nova.challenge !== -1));
+      setClass(r.row, 'locked', locked && ctier < 1);
+      setClass(r.row, 'completed', ctier >= 1);
+      setClass(r.row, 'completed-hard', ctier >= 2);
+      setText(r.status, ctier >= 2 ? '★' : active ? t('misc.active') + (activeTier === 2 ? ' (★)' : '')
+        : ctier >= 1 ? '✓' : locked ? `🔒 ${s.stats.supernovae}/${C.CH_UNLOCK_NOVAE(c)}` : '');
+      setText(r.enter, active && activeTier === 1 ? t('nova.chExit') : t('nova.chEnter'));
+      setDisabled(r.enter, otherActive || locked || (active && activeTier === 2));
+
+      // Hard-Infozeilen: sobald Normal geschafft ist ODER die Freischaltung nah ist (Vorschau)
+      setReserve(r.hardInfo, ctier >= 1 || s.stats.coalescences >= C.CH_TIER2_UNLOCK_COALESCENCES - 2);
+      setReserve(r.hardEnter, ctier >= 1 || s.stats.coalescences >= C.CH_TIER2_UNLOCK_COALESCENCES - 2);
+      const hardReady = !locked && ctier >= 1 && s.stats.coalescences >= C.CH_TIER2_UNLOCK_COALESCENCES;
+      setText(r.hardEnter, active && activeTier === 2 ? t('nova.chExit') : t('nova.chEnterHard'));
+      setDisabled(r.hardEnter, otherActive || (active && activeTier === 1) || (!active && !hardReady));
     }
 
     // Coalescence

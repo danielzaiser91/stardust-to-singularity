@@ -83,6 +83,14 @@ const migrations: Record<number, (raw: Record<string, unknown>) => void> = {
     rescale(stats.gtypePicks, (raw.galaxy as Record<string, unknown> | undefined)?.count);
     delete stats.remnantPicks;
   },
+  // v3→v4: Challenges bekommen eine Hard-Stufe. `nova.completed: boolean[]` →
+  // `nova.completedTier: number[]` (true→1, false→0); alte Läufe hatten nie Stufe 2.
+  3: raw => {
+    const nova = raw.nova as Record<string, unknown> | undefined;
+    if (!nova || !Array.isArray(nova.completed)) return;
+    nova.completedTier = (nova.completed as unknown[]).map(v => (v ? 1 : 0));
+    delete nova.completed;
+  },
 };
 
 export function deserialize(json: string): GameState {

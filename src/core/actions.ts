@@ -78,9 +78,9 @@ export function doIgnite(s: GameState, cls: StarClass): boolean {
   const m = computeMults(s);
   const gain = plasmaGain(s, m);
   if (gain.lte(0)) return false;   // kein Reset für +0
-  // Challenge im Lauf? → abgeschlossen
+  // Challenge im Lauf? → abgeschlossen (Stufe des Versuchs merken, Hard schluckt Normal nicht wieder runter)
   if (s.nova.challenge >= 0) {
-    s.nova.completed[s.nova.challenge] = true;
+    s.nova.completedTier[s.nova.challenge] = Math.max(s.nova.completedTier[s.nova.challenge], s.nova.challengeTier);
     s.nova.challenge = -1;
   }
   s.star.unlocked = true;
@@ -232,17 +232,24 @@ export function respecNebula(s: GameState): boolean {
   return true;
 }
 
-export function enterChallenge(s: GameState, i: number): boolean {
+export function enterChallenge(s: GameState, i: number, tier: 1 | 2 = 1): boolean {
   if (!s.nova.unlocked || i < 0 || i >= C.CHALLENGE_COUNT) return false;
   if (s.stats.supernovae < C.CH_UNLOCK_NOVAE(i)) return false;
   if (s.nova.challenge !== -1) return false;
+  if (tier === 2) {
+    // Hard: erst ab Galaxie-Fortschritt UND erst nachdem Normal bereits geschafft ist
+    if (s.stats.coalescences < C.CH_TIER2_UNLOCK_COALESCENCES) return false;
+    if (s.nova.completedTier[i] < 1) return false;
+  }
   s.nova.challenge = i;
+  s.nova.challengeTier = tier;
   resetDustLayer(s);  // nur Dust-Ebene frisch — Plasma/Upgrades bleiben (Challenge = Ignition unter Restriktion)
   return true;
 }
 export function exitChallenge(s: GameState): boolean {
   if (s.nova.challenge === -1) return false;
   s.nova.challenge = -1;
+  s.nova.challengeTier = 1;
   resetDustLayer(s);
   return true;
 }
@@ -258,8 +265,8 @@ function resetNovaLayer(s: GameState): void {
     s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
     s.nova.cellsBought = 0;
   }
-  // M3: Challenge-Abschlüsse bleiben
-  if (coal < C.MS_GALAXY[2]) s.nova.completed = s.nova.completed.map(() => false);
+  // M3: Challenge-Abschlüsse (inkl. Hard-Stufe) bleiben
+  if (coal < C.MS_GALAXY[2]) s.nova.completedTier = s.nova.completedTier.map(() => 0);
   // M5: Supernova-Meilensteine bleiben. (Zündungs-Meilensteine resetten bereits
   // pro Supernova in resetStarLayer — gleiche M4-Bedingung, keine Doppelung nötig.)
   if (coal < C.MS_GALAXY[4]) {

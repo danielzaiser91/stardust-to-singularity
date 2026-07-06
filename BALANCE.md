@@ -91,16 +91,31 @@ Kollaps war das Spiel *langsamer* als davor, weil die Passiveffekte am Run-Total
 
 ## Gemessene Timeline (aktives Optimalspiel, Sim-Bot, Seed 42)
 
-| Meilenstein | gemessen (Sim v17, Seed 42) |
+| Meilenstein | gemessen |
 |---|---|
 | Erste Ignition | ~28 min (idle: ~37 min) |
-| Erste Supernova | ~4 h (idle: ~7 h) |
-| Alle 8 Challenges | ~6 h |
-| Erste Galaxie | ~8 h |
-| Erste Singularität | ~Tag 11 |
-| Endgame (Neues Universum) | > Tag 20 — Langzeitziel |
+| Erste Supernova | ~2,9 h (idle: ~4,8 h) |
+| Alle 8 Challenges | ~1,5 d |
+| Erste Galaxie | ~8,7 h |
+| Erste Singularität | ~Tag 2,6 |
+| Endgame (Neues Universum) | siehe unten — in Nachjustierung |
 
-Alle 5 Ebenen sind damit binnen ~1,5 Wochen erlebbar; der NG+-Abschluss ist bewusst
+Alle 5 Ebenen sind damit binnen ~3 Tagen erlebbar; der NG+-Abschluss ist bewusst
 Langzeit-Territorium. Ein menschlicher Spieler ohne Optimal-Strategie liegt über diesen
-Werten. Straffung der Singularitäts-Phase: siehe todo.md.
-Prüfen mit: `npx tsx src/sim/run.ts --until endgame --profile active --maxDays 30`
+Werten.
+Prüfen mit: `npx tsx src/sim/run.ts --until endgame --profile active --maxDays 40`
+
+### Endgame-Kalibrierung (Kollaps-Kadenz vs. Hawking-Motor)
+
+Erster 40-Tage-Endgame-Lauf (Seed 42, `PERK_COST_GROWTH[1]` = 4): nur **2 Kollapse in 40 Tagen**,
+Endgame (2500 Entropie) nicht erreicht. Ursache: Die quadratische Kollaps-Leiter
+(`COLLAPSE_REQ_GROWTH^(n(n+1)/2)`, Mechanismus 3) wächst pro Stufe ×8^n — der Hawking-finanzierte
+Motor (H-Rate ×`PERK_HAWKING_H` je Level) konnte damit nicht mithalten, weil die Hawking-Level
+selbst durch Entropie finanziert werden, die nur bei einem Kollaps anfällt (gedeckelt auf ×4 des
+bisherigen Totals, Mechanismus 1) — ein selbstverstärkender Engpass zwischen Kollaps #2 und #3.
+
+**Fix:** `PERK_COST_GROWTH[1]` (Hawking-Level-Kosten) 4→3 — günstigere Level pro Entropie-Schub,
+mehr Level pro Kollaps-Zyklus, stärkerer H-Rate-Zusammensetzungseffekt. Re-Validierung läuft;
+Ergebnis wird hier nachgetragen, sobald der Lauf durch ist. Falls der Fix nicht reicht: zweiter
+Hebel aus dem ursprünglichen Plan ist `PERK_HAWKING_H` 2,5→3 (stärkerer Multiplikator statt
+billigerer Level — kann alternativ oder zusätzlich gezogen werden).

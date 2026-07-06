@@ -22,8 +22,8 @@ export const LORE_TRIGGERS: Trigger[] = [
   s => s.stats.supernovae >= 1,                   // 14 SUPERNOVA
   s => s.nova.cellsBought >= 1,                   // 15 Erster Nebel gesät
   s => s.nova.remnants[1] >= 1,                   // 16 Ein Pulsar blinkt
-  s => s.nova.completed.some(Boolean),            // 17 Erste Challenge
-  s => s.nova.completed.filter(Boolean).length >= 8, // 18 Alle Challenges
+  s => s.nova.completedTier.some(t => t >= 1),            // 17 Erste Challenge
+  s => s.nova.completedTier.every(t => t >= 1), // 18 Alle Challenges
   s => s.nova.totalShards.gte(1e4),               // 19 Die Trümmer sammeln sich
   s => s.stats.coalescences >= 1,                 // 20 GALAXIE
   s => s.galaxy.nodes.filter(Boolean).length >= 1,   // 21 Erste Konstellation

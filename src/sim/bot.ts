@@ -90,7 +90,7 @@ export function botStep(s: GameState, profile: Profile): void {
 
   // — Challenges: der Reihe nach; nach Fehlversuch erst wieder bei ×100 Plasma (Backoff) —
   if (s.nova.unlocked && s.nova.challenge === -1) {
-    const next = s.nova.completed.findIndex(c => !c);
+    const next = s.nova.completedTier.findIndex(t => t < 1);
     if (next >= 0 && s.stats.runTime < 2 && s.star.plasma.gte(100)) {
       const attempts = challengeAttempts.get(s) ?? [];
       const last = attempts[next];
@@ -181,7 +181,7 @@ const MILESTONE_DEFS: { name: string; hit: (s: GameState) => boolean }[] = [
   { name: 'ignition_10', hit: s => s.stats.ignitions >= 10 },
   { name: 'supernova_1', hit: s => s.stats.supernovae >= 1 },
   { name: 'supernova_5', hit: s => s.stats.supernovae >= 5 },
-  { name: 'challenge_all', hit: s => s.nova.completed.every(Boolean) },
+  { name: 'challenge_all', hit: s => s.nova.completedTier.every(t => t >= 1) },
   { name: 'galaxy_1', hit: s => s.stats.coalescences >= 1 },
   { name: 'keystones_all', hit: s => s.galaxy.nodes[14] && s.galaxy.nodes[29] && s.galaxy.nodes[44] },
   { name: 'singularity_1', hit: s => s.stats.collapses >= 1 },
