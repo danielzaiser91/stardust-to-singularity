@@ -507,7 +507,12 @@ export class NovaPanel implements Panel {
   private tokenCost = el('div', 'sub token-cost');
   private tokenCostVal = el('span', 'token-cost-val', '');
   private gardenTotal = el('div', 'sub center');
-  private chRows: { row: HTMLElement; enter: HTMLButtonElement; hardEnter: HTMLButtonElement; hardInfo: HTMLElement; status: HTMLElement }[] = [];
+  private chRows: {
+    card: HTMLElement; statusIcon: HTMLElement; lockedLine: HTMLElement;
+    toggle: HTMLElement; toggleBtns: [HTMLButtonElement, HTMLButtonElement];
+    restrictLine: HTMLElement; goalLine: HTMLElement; rewardLine: HTMLElement;
+    startBtn: HTMLButtonElement; viewTier: 1 | 2;
+  }[] = [];
   private coalBar = bar('bar-gal');
   private coalLabel = el('div', 'sub center');
   private coalBtn!: HTMLButtonElement;
@@ -604,48 +609,31 @@ export class NovaPanel implements Panel {
 
     this.root.append(el('h3', '', t('nova.challenges')), el('div', 'sub', t('nova.chHow')));
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
-      const row = el('div', 'row ch-row');
-      const info = el('div', 'gen-info');
-      const hardInfo = el('div', '');
-      hardInfo.append(
-        el('div', 'sub', `${t('misc.goal')} (${t('nova.chHard')}): ${fmt(D(C.IGNITION_REQ).mul(C.CH_GOAL_MULT_TIER2[c]), true)} ${t('dust.name')}`),
-        el('div', 'sub reward-hard', `${t('misc.reward')} (${t('nova.chHard')}): ${t(`ch.${c}r2`)}`));
-      info.append(el('div', 'gen-name', t(`ch.${c}`)), el('div', 'sub', t(`ch.${c}d`)),
-        el('div', 'sub', `${t('misc.goal')}: ${fmt(D(C.IGNITION_REQ).mul(C.CH_GOAL_MULT[c]), true)} ${t('dust.name')}`),
-        el('div', 'sub reward', `${t('misc.reward')}: ${t(`ch.${c}r`)}`), hardInfo);
-      const status = el('div', 'ch-status');
-      const enter = btn('buy', t('nova.chEnter'), () => {
+      const card = el('div', 'ch-card');
+      const head = el('div', 'ch-head');
+      const statusIcon = el('div', 'ch-status-icon', '');
+      head.append(el('div', 'ch-name', t(`ch.${c}`)), statusIcon);
+
+      const lockedLine = el('div', 'ch-locked', '');
+
+      const toggle = el('div', 'seg ch-toggle');
+      const nBtn = btn('seg-btn', t('nova.chNormal'), () => { this.chRows[c].viewTier = 1; this.update(this.st(), M(this.st())); });
+      const hBtn = btn('seg-btn', t('nova.chHard'), () => { this.chRows[c].viewTier = 2; this.update(this.st(), M(this.st())); });
+      toggle.append(nBtn, hBtn);
+
+      const restrictLine = el('div', 'ch-restrict', '');
+      const goalLine = el('div', 'ch-goal', '');
+      const rewardLine = el('div', 'ch-reward', '');
+
+      const startBtn = btn('ch-start', '', () => {
         const s = this.st();
         if (s.nova.challenge === c) A.exitChallenge(s);
-        else if (s.nova.challenge === -1) A.enterChallenge(s, c, 1);
+        else if (s.nova.challenge === -1) A.enterChallenge(s, c, this.chRows[c].viewTier);
       });
-      attachTip(enter, () => {
-        const s = this.st();
-        if (s.nova.challenge === c) return { title: t(`ch.${c}`), body: t('nova.chGoal') };
-        if (s.stats.supernovae < C.CH_UNLOCK_NOVAE(c))
-          return { title: '🔒 ' + t(`ch.${c}`), body: t('nova.chLockedInfo', { v: C.CH_UNLOCK_NOVAE(c), c: s.stats.supernovae }) };
-        return s.nova.completedTier[c] >= 1
-          ? { title: '✓ ' + t(`ch.${c}`), body: t('nova.chDone') }
-          : { title: t(`ch.${c}`), body: t('nova.chGoal') };
-      });
-      const hardEnter = btn('buy alt', t('nova.chEnterHard'), () => {
-        const s = this.st();
-        if (s.nova.challenge === c) A.exitChallenge(s);
-        else if (s.nova.challenge === -1) A.enterChallenge(s, c, 2);
-      });
-      attachTip(hardEnter, () => {
-        const s = this.st();
-        if (s.nova.challenge === c) return { title: '★ ' + t(`ch.${c}`), body: t('nova.chGoalHard') };
-        if (s.nova.completedTier[c] < 1) return { title: t('nova.chHard'), body: t('nova.chHardNeedNormal') };
-        if (s.stats.coalescences < C.MS_GALAXY[3])
-          return { title: '🔒 ' + t('nova.chHard'), body: t('nova.chHardLockedGal', { v: C.MS_GALAXY[3], c: s.stats.coalescences }) };
-        return s.nova.completedTier[c] >= 2
-          ? { title: '★ ' + t(`ch.${c}`), body: t('nova.chDone') }
-          : { title: '★ ' + t(`ch.${c}`), body: t('nova.chGoalHard') };
-      });
-      row.append(info, status, enter, hardEnter);
-      this.chRows.push({ row, enter, hardEnter, hardInfo, status });
-      this.root.append(row);
+
+      card.append(head, lockedLine, toggle, restrictLine, goalLine, rewardLine, startBtn);
+      this.chRows.push({ card, statusIcon, lockedLine, toggle, toggleBtns: [nBtn, hBtn], restrictLine, goalLine, rewardLine, startBtn, viewTier: 1 });
+      this.root.append(card);
     }
 
     // Coalescence-Box lebt HIER (Ebene darunter) — der Galaxy-Tab existiert ja erst danach
@@ -738,21 +726,41 @@ export class NovaPanel implements Panel {
       const otherActive = s.nova.challenge !== -1 && !active;
       const ctier = s.nova.completedTier[c];
       const locked = s.stats.supernovae < C.CH_UNLOCK_NOVAE(c);
-      setClass(r.row, 'active', active);
-      setClass(r.row, 'locked', locked && ctier < 1);
-      setClass(r.row, 'completed', ctier >= 1);
-      setClass(r.row, 'completed-hard', ctier >= 2);
-      setText(r.status, ctier >= 2 ? '★' : active ? t('misc.active') + (activeTier === 2 ? ' (★)' : '')
-        : ctier >= 1 ? '✓' : locked ? `🔒 ${s.stats.supernovae}/${C.CH_UNLOCK_NOVAE(c)}` : '');
-      setText(r.enter, active && activeTier === 1 ? t('nova.chExit') : t('nova.chEnter'));
-      setDisabled(r.enter, otherActive || locked || (active && activeTier === 2));
+      const hardUnlockable = !locked && ctier >= 1 && s.stats.coalescences >= C.MS_GALAXY[3];
 
-      // Hard-Infozeilen: sobald Normal geschafft ist ODER die Freischaltung nah ist (Vorschau)
-      setReserve(r.hardInfo, ctier >= 1 || s.stats.coalescences >= C.MS_GALAXY[3] - 2);
-      setReserve(r.hardEnter, ctier >= 1 || s.stats.coalescences >= C.MS_GALAXY[3] - 2);
-      const hardReady = !locked && ctier >= 1 && s.stats.coalescences >= C.MS_GALAXY[3];
-      setText(r.hardEnter, active && activeTier === 2 ? t('nova.chExit') : t('nova.chEnterHard'));
-      setDisabled(r.hardEnter, otherActive || (active && activeTier === 1) || (!active && !hardReady));
+      setClass(r.card, 'locked', locked);
+      setClass(r.card, 'active', active);
+      setClass(r.card, 'completed', ctier >= 1);
+      setClass(r.card, 'completed-hard', ctier >= 2);
+      setText(r.statusIcon, active ? t('misc.active') : ctier >= 2 ? '★' : ctier >= 1 ? '✓' : locked ? '🔒' : '');
+
+      // Gesperrt: nur Name + Freischalt-Hinweis, sonst nichts (reduziert Info, bevor sie relevant ist)
+      setReserve(r.lockedLine, locked);
+      setText(r.lockedLine, locked ? `🔒 ${t('nova.chLockedInfo', { v: C.CH_UNLOCK_NOVAE(c), c: s.stats.supernovae })}` : '');
+      setReserve(r.toggle, hardUnlockable);
+      setReserve(r.restrictLine, !locked);
+      setReserve(r.goalLine, !locked);
+      setReserve(r.rewardLine, !locked);
+      setReserve(r.startBtn, !locked);
+      if (locked) continue;
+
+      // Ansicht folgt dem laufenden Versuch, sonst der zuletzt gewählten Stufe (auf Normal
+      // geklemmt, solange Hard nicht wählbar ist — z. B. nach einem Coalescence-Reset).
+      if (!active && !hardUnlockable) r.viewTier = 1;
+      const viewTier: 1 | 2 = active ? (activeTier as 1 | 2) : r.viewTier;
+      setClass(r.toggleBtns[0], 'active', viewTier === 1);
+      setClass(r.toggleBtns[1], 'active', viewTier === 2);
+      setDisabled(r.toggleBtns[0], active);
+      setDisabled(r.toggleBtns[1], active);
+
+      const goalMult = viewTier === 2 ? C.CH_GOAL_MULT_TIER2[c] : C.CH_GOAL_MULT[c];
+      setText(r.restrictLine, `⚠ ${t(`ch.${c}d`)}`);
+      setText(r.goalLine, `🎯 ${fmt(D(C.IGNITION_REQ).mul(goalMult), true)} ${t('dust.name')}`);
+      setText(r.rewardLine, t(viewTier === 2 ? `ch.${c}r2` : `ch.${c}r`));
+
+      setText(r.startBtn, active ? t('nova.chExit') : t('nova.chEnter'));
+      setClass(r.startBtn, 'danger', active);
+      setDisabled(r.startBtn, otherActive);
     }
 
     // Coalescence
