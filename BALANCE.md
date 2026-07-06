@@ -98,6 +98,22 @@ Kollaps war das Spiel *langsamer* als davor, weil die Passiveffekte am Run-Total
   auf einen Anteil reduzieren, nicht das Decimal-Budget — `capAffordCount()` in
   `decimal.ts`. `n * frac` bleibt exakt, und weniger Einheiten senken die Kosten dank
   exponentiellem Wachstum drastisch (nicht nur um denselben Faktor).
+- **`affordGeometric` kann bei extremen Skalen NaN liefern → permanente Save-Korruption**:
+  `inner.log(growth).toNumber()` gab bei sehr hohem `bought` (mehrere hundert Ignitionen
+  Autobuy-Wachstum) NaN zurück (break_eternity-Grenzfall). Das Ergebnis landet direkt in
+  `dust.compression`/`gens[].bought` — **normale JS-Zahlen, keine Decimals** — und
+  `compression` überlebt Ignitionen ab `MS_IGNITION[2]`, vergiftet also ab da JEDEN
+  folgenden Tick (`Decimal.pow(x, NaN)`), bis Staub komplett `NaN` ist. Zusätzlich ließ
+  `fmt()`s rekursiver Extrem-Skalen-Zweig (`` `e${fmt(new Decimal(e))}` ``) bei NaN-Input
+  den Browser-Tab mit "Maximum call stack size exceeded" abstürzen (e bleibt NaN, Abbruch
+  greift nie). Fix dreiteilig: (1) `affordGeometric` gibt bei nicht-finitem Ergebnis 0
+  zurück statt NaN durchzureichen: (2) `fmt()` prüft `d.isNan() || !d.isFinite()` als
+  allererstes und rendert `'0'`; (3) `save.ts` hat jetzt eine `sanitize()`-Pass nach dem
+  Laden, die jedes NaN/Infinity (Decimal wie normale Zahl) im gesamten State auf 0
+  zurücksetzt — heilt bereits korrumpierte Saves beim nächsten Laden, statt sie für immer
+  zu bricken. Lehre: **jede `.toNumber()`-Konvertierung eines Decimals, deren Ergebnis in
+  ein normales `number`-Feld des States fließt, braucht einen `Number.isFinite()`-Guard**
+  — die Decimal-Bibliothek selbst ist an ihren eigenen Grenzen nicht narrensicher.
 
 ## Gemessene Timeline (aktives Optimalspiel, Sim-Bot, Seed 42)
 

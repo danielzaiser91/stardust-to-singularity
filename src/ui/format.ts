@@ -5,6 +5,9 @@ const SUFFIXES = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi'];
 
 /** Zahlformatierung: < 1e21 mit Suffix (außer sci-only), darüber 1.23e45; ab e1e6 Layer-Notation */
 export function fmt(d: Decimal, sciOnly = false, decimals = 2): string {
+  // Absicherung: ein NaN/Infinity-Decimal (Bug oder korruptes Save) würde die e{fmt(e)}-Rekursion
+  // unten endlos laufen lassen (e bleibt NaN) und den Tab mit "Maximum call stack size" abstürzen.
+  if (d.isNan() || !d.isFinite()) return '0';
   if (d.lt(0)) return '-' + fmt(d.neg(), sciOnly, decimals);
   if (d.eq(0)) return '0';
   if (d.lt(1000)) {

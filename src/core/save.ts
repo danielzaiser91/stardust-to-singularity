@@ -41,6 +41,24 @@ function revive(template: unknown, data: unknown): unknown {
   return data !== undefined && data !== null ? data : template;
 }
 
+/**
+ * Repariert NaN/Infinity, die durch einen (behobenen) Bug in extremen Größenordnungen ins
+ * Save gerutscht sind — sonst bleibt der Fehler über jeden Reload hinweg bestehen, weil z. B.
+ * `dust.compression` Ignitionen überlebt und jeden Tick erneut NaN in die Produktion einspeist.
+ * Setzt betroffene Felder auf 0 zurück statt das ganze Save wegzuwerfen.
+ */
+function sanitize(v: unknown): unknown {
+  if (v instanceof Decimal) return v.isNan() || !v.isFinite() ? D(0) : v;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  if (Array.isArray(v)) return v.map(sanitize);
+  if (v !== null && typeof v === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(v)) out[k] = sanitize((v as Record<string, unknown>)[k]);
+    return out;
+  }
+  return v;
+}
+
 function structuredCloneSafe(v: unknown): unknown {
   if (v instanceof Decimal) return D(v);
   if (Array.isArray(v)) return v.map(structuredCloneSafe);
@@ -101,7 +119,7 @@ export function deserialize(json: string): GameState {
     v++;
   }
   raw.version = SAVE_VERSION;
-  const state = revive(initialState(0), raw) as GameState;
+  const state = sanitize(revive(initialState(0), raw)) as GameState;
   state.pending = { lore: [], ach: [] };  // transiente Queues nie aus Save übernehmen
   return state;
 }

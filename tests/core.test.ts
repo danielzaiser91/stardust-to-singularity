@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { D } from '../src/core/decimal';
+import { D, affordGeometric } from '../src/core/decimal';
 import { initialState } from '../src/core/state';
 import { serialize, deserialize } from '../src/core/save';
 import { tick } from '../src/core/tick';
@@ -43,6 +43,17 @@ describe('decimal & formulas', () => {
     const s = initialState(1);
     expect(ACHIEVEMENT_CHECKS.length).toBe(s.achievements.length);
     expect(LORE_TRIGGERS.length).toBe(s.loreSeen.length);
+  });
+
+  it('affordGeometric never returns NaN, even at extreme scale (production bug)', () => {
+    // Regression: at very high `bought` counts, budget.mul(g-1).div(first).log(g).toNumber()
+    // could return NaN inside break_eternity. That NaN then landed in dust.compression/
+    // gens[].bought — plain numbers, not Decimals — permanently poisoning every future tick
+    // (compression survives Ignitions past MS_IGNITION[2]) until the whole save read "NaN".
+    const budget = D('1e1000000');
+    const n = affordGeometric(budget, D(10), 2.0, 1e17);
+    expect(Number.isFinite(n)).toBe(true);
+    expect(Number.isNaN(n)).toBe(false);
   });
 });
 
@@ -511,6 +522,25 @@ describe('save system', () => {
     s.dust.amount = D('1.234e5678');
     const restored = deserialize(serialize(s));
     expect(restored.dust.amount.eq(D('1.234e5678'))).toBe(true);
+  });
+
+  it('heals NaN/Infinity that leaked into a save (production bug recovery)', () => {
+    // Real corrupted save: dust.amount/total = "NaN" (Decimal), dust.compression = null
+    // (JSON.stringify(NaN) for a plain number), gens wiped to 0 by the ensuing crash.
+    const s = initialState(1);
+    const raw = JSON.parse(serialize(s));
+    raw.dust.amount = 'NaN';
+    raw.dust.total = 'NaN';
+    raw.dust.compression = null;
+    const restored = deserialize(JSON.stringify(raw));
+    expect(restored.dust.amount.isNan()).toBe(false);
+    expect(restored.dust.amount.eq(0)).toBe(true);
+    expect(restored.dust.total.eq(0)).toBe(true);
+    expect(Number.isNaN(restored.dust.compression)).toBe(false);
+    expect(restored.dust.compression).toBe(0);
+    // muss weiterspielbar bleiben, nicht nur "nicht NaN"
+    tick(restored, 1);
+    expect(restored.dust.amount.isFinite()).toBe(true);
   });
 });
 

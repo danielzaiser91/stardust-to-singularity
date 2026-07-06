@@ -14,6 +14,11 @@ export function affordGeometric(budget: Decimal, base: Decimal, growth: number, 
   // n = floor( log_g( budget*(g-1)/first + 1 ) )
   const inner = budget.mul(growth - 1).div(first).add(1);
   const n = Math.floor(inner.log(growth).toNumber());
+  // Bei extremen Größenordnungen (viele Layer tief) kann break_eternitys .log()/.toNumber()
+  // NaN liefern. n landet u. a. direkt in dust.compression/gens[].bought (normale Zahlen, keine
+  // Decimals!) — einmal NaN dort vergiftet JEDEN folgenden Tick auf Dauer (übersteht Ignitionen).
+  // Lieber diesen Tick nichts kaufen als den Save dauerhaft zu korrumpieren.
+  if (!Number.isFinite(n)) return 0;
   return Math.max(n, 1);
 }
 
