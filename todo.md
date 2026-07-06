@@ -85,6 +85,11 @@
          was diese Session neu/geändert wurde (Tooltip-Überarbeitung, Cap-Badges,
          Automation-Beschreibungen), da dort am ehesten Meta-Ton reingerutscht ist.
 
+- [ ] **`/ai-improve-learnings` ausführen.** Diese Session hatte einiges an nicht-offensichtlichen
+      Lehren (Decimal-Präzisionsgrenzen bei extremen Skalen in drei verschiedenen Ausprägungen,
+      Versionsschema-Umstellung, verwaiste Hintergrundprozesse) — in die generischen
+      Agent-Learnings einpflegen, bevor sie wieder vergessen werden.
+
 ## Weitere Deploy-Plattformen (zum Testen nach GitHub Pages)
 
 - [ ] **Netlify** — Drag&Drop des `dist/`-Ordners oder Repo-Verknüpfung; Build: `npm run build`, Publish-Dir: `dist`, Base im Vite-Config auf `/` stellen (env-Variable `DEPLOY_BASE` vorbereitet). Kostenlos, eigene Subdomain `*.netlify.app`.
