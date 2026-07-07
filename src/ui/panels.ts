@@ -1,4 +1,4 @@
-import { el, btn, setText, setHTML, setVisible, setReserve, setDisabled, setClass } from './dom';
+import { el, btn, setText, setHTML, setVisible, setReserve, setDisabled, setClass, flashDenied } from './dom';
 import { fmt, fmtInt, fmtTime, fmtMult, resTag, numTag } from './format';
 import { t, setLang, getLang } from '../i18n';
 import type { GameState, NebulaCell, StarClass, GalaxyType } from '../core/state';
@@ -126,11 +126,13 @@ export class DustPanel implements Panel {
     const compBuy = btn('buy', t('dust.compression'), () => {
       const s = this.st();
       if (A.buyCompression(s)) emit('buy');
+      else flashDenied(compBuy);
     });
     compBuy.append(this.compCost);
     this.compMax = btn('buy alt', t('btn.max'), () => {
       const s = this.st();
       if (A.buyCompressionMax(s)) emit('buy');
+      else flashDenied(this.compMax);
     });
     this.compCapBadge = el('div', 'cap-badge', t('misc.capReached'));
     attachTip(this.compCapBadge, () => ({ title: t('misc.capReached'), body: t('misc.capReachedTip') }));
@@ -152,7 +154,7 @@ export class DustPanel implements Panel {
         body: t('gen.ownedTip', { v: numTag(fmtMult(C.GEN_MULT_PER_10)) }),
       }));
       const c1 = el('span', 'cost');
-      const buyGen = (max: boolean) => {
+      const buyGen = (max: boolean, triggerBtn: HTMLButtonElement) => {
         const s = this.st();
         const first = s.dust.gens[i].bought === 0;
         const ok = max ? A.buyGeneratorMax(s, M(s), i) : A.buyGenerator(s, M(s), i, 1);
@@ -160,11 +162,13 @@ export class DustPanel implements Panel {
           emit('buy');
           emit('gen-bought', i);          // Planet pulst in der Szene
           if (first) emit('gen-first', i); // einmaliger Kamera-Puls beim Erstkauf
+        } else {
+          flashDenied(triggerBtn);
         }
       };
-      const b1 = btn('buy', t('btn.buy1'), () => buyGen(false));
+      const b1 = btn('buy', t('btn.buy1'), () => buyGen(false, b1));
       b1.append(c1);
-      const bm = btn('buy alt', t('btn.max'), () => buyGen(true));
+      const bm = btn('buy alt', t('btn.max'), () => buyGen(true, bm));
       const capBadge = el('div', 'cap-badge', t('misc.capReached'));
       attachTip(capBadge, () => ({ title: t('misc.capReached'), body: t('misc.capReachedTip') }));
       const btnWrap = el('div', 'buy-wrap');
@@ -332,7 +336,9 @@ export class DustPanel implements Panel {
 export class StarPanel implements Panel {
   root = el('div');
   private elRows: { row: HTMLElement; stock: HTMLElement; boost: HTMLElement }[] = [];
-  private reactorBtns: { b: HTMLButtonElement; bm: HTMLButtonElement; lvl: HTMLElement; cost: HTMLElement }[] = [];
+  private reactorBtns: {
+    b: HTMLButtonElement; bm: HTMLButtonElement; lvl: HTMLElement; cost: HTMLElement; capBadge: HTMLElement;
+  }[] = [];
   private upBtns: HTMLButtonElement[] = [];
   private novaBox: HTMLElement;
   private novaBar = bar('bar-nova');
@@ -359,14 +365,20 @@ export class StarPanel implements Panel {
         const b = btn('buy', `⚛ ${t('star.reactor')}`, () => {
           const s = this.st();
           if (A.buyReactor(s, e)) emit('buy');
+          else flashDenied(b);
         });
         b.append(lvl, cost);
         const bm = btn('buy alt', t('btn.max'), () => {
           const s = this.st();
           if (A.buyReactorsMax(s, e, 1)) emit('buy');
+          else flashDenied(bm);
         });
-        this.reactorBtns.push({ b, bm, lvl, cost });
-        row.append(b, bm);
+        const capBadge = el('div', 'cap-badge', t('misc.capReached'));
+        attachTip(capBadge, () => ({ title: t('misc.capReached'), body: t('misc.capReachedTip') }));
+        const btnWrap = el('div', 'buy-wrap');
+        btnWrap.append(b, bm, capBadge);
+        this.reactorBtns.push({ b, bm, lvl, cost, capBadge });
+        row.append(btnWrap);
       }
       this.elRows.push({ row, stock, boost });
       this.root.append(row);
@@ -491,10 +503,12 @@ export class StarPanel implements Panel {
         setText(rb.cost, fmt(F.reactorCost(s, e), sci));
         const locked = e > 0 && s.star.reactors[e - 1] === 0;
         const cantAfford = s.star.plasma.lt(F.reactorCost(s, e));
-        setDisabled(rb.b, locked || cantAfford);
+        const capped = s.star.reactors[e] >= MAX_COUNTER;
+        setClass(rb.capBadge, 'show', capped);
+        setDisabled(rb.b, capped || locked || cantAfford);
         // Reaktor-Max ist eine Belohnung der ersten Supernova (dieser Galaxie) — Platz reservieren
         setReserve(rb.bm, s.stats.novaMs >= C.MS_NOVA[0]);
-        setDisabled(rb.bm, locked || cantAfford);
+        setDisabled(rb.bm, capped || locked || cantAfford);
       }
     }
     for (let u = 0; u < this.upBtns.length; u++) {

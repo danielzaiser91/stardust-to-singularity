@@ -52,3 +52,16 @@ export function setDisabled(b: HTMLButtonElement, disabled: boolean): void {
 export function setClass(elem: HTMLElement, cls: string, onOff: boolean): void {
   if (elem.classList.contains(cls) !== onOff) elem.classList.toggle(cls, onOff);
 }
+
+/**
+ * Kurzes Shake+Rot-Flash für einen Klick, der nichts bewirkt hat (z. B. Kauf-Button, der
+ * zwischen dem letzten UI-Update (10 Hz) und dem Klick knapp unbezahlbar wurde — sonst sieht
+ * das wie ein zufälliger Aussetzer aus, dabei war schlicht in diesem Sekundenbruchteil zu wenig
+ * Ressource da). Reflow-Trick (`offsetWidth` lesen), damit die Animation auch bei schnell
+ * wiederholten Fehlversuchen jedes Mal neu von vorne abspielt statt nur einmal zu greifen.
+ */
+export function flashDenied(elem: HTMLElement): void {
+  elem.classList.remove('denied');
+  void elem.offsetWidth;
+  elem.classList.add('denied');
+}

@@ -4,35 +4,21 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
 
 ## Nächste Session — Rest-Bug + UI-Politur (Stand 2026-07-07)
 
-- [ ] **"Max"-Button manchmal wirkungslos beim ersten Klick.** Nutzer-Report: Klick auf "Max"
-      tut manchmal nichts; nach mehrmaligem Klicken (auch dazwischen auf andere Buttons) klappt
-      es dann doch. Der Binärsuche-Fix vom 2026-07-07 (`affordGeometric` in
-      `src/core/decimal.ts`) behebt den reproduzierbaren Fall (Protostern bei
-      `1e8488739272450767` Staub — "Max" ging konsequent nicht, "Kaufe 1" schon), aber es gibt
-      offenbar einen zusätzlichen FLAKY-Fall obendrauf, der noch nicht verstanden ist.
-      Hypothesen zu prüfen:
-      - Wettlauf zwischen UI-Update (10 Hz, `hud.update`) und Klick-Handler: Der
-        `disabled`-Zustand wird periodisch neu berechnet, der Klick-Handler nutzt aber den
-        Live-`dust.amount` zum Klickzeitpunkt — bei Werten hauchdünn an der Kostengrenze könnte
-        ein Klick kurz vor einem Update-Tick auf leicht veralteten Daten aufsetzen.
-      - `genMaxAfford`/`buyGeneratorMax` werden mehrfach mit potenziell leicht
-        unterschiedlichem `dust.amount` aufgerufen (einmal für die Anzeige, einmal beim Klick) —
-        die neue Binärsuche reagiert bei extremen Werten evtl. empfindlicher auf
-        Mini-Schwankungen als die alte log()-Schätzung.
-      - Reproduzieren: Save mit einer Stufe knapp unterhalb der "Max"-Kosten bauen, dann
-        Schritt für Schritt vergleichen, was sich zwischen "klappt nicht" und "klappt nach
-        mehreren Klicks" am State tatsächlich unterscheidet (evtl. Debug-Logging im
-        Klick-Handler vs. im Update-Loop).
+- [x] ~~**"Max"-Button manchmal wirkungslos beim ersten Klick.**~~ — untersucht (2026-07-07):
+      Kernlogik ist deterministisch (30 identische Testläufe bei moderater UND bei
+      MAX_COUNTER-naher Größenordnung — immer dasselbe Ergebnis, kein Bug in
+      `affordGeometric`/`buyGeneratorMax`). Ursache ist die 10-Hz-Update-Lücke: der
+      `disabled`-Zustand wird nur alle 100 ms neu berechnet, während Autobuyer/Produktion jeden
+      Frame (60 Hz) den Staub verändern — knapp an der Kostengrenze kann ein Klick auf einen
+      Button treffen, der gerade eben (still) unbezahlbar geworden ist. Fix: kein Race-Fix nötig,
+      sondern Feedback bei Fehlschlag — `flashDenied()` in `dom.ts` (kurzes Schütteln + Rot-Rand,
+      `button.denied` in `style.css`) auf alle Kauf-Buttons verdrahtet (Generatoren, Kompression,
+      Reaktoren), damit ein wirkungsloser Klick sichtbar als "gerade nicht leistbar" statt als
+      Aussetzer wirkt.
 
-- [ ] **"Maximum"-Badge auf die Reaktor-Buttons ausweiten.** Das goldene "✦ Maximum!"-Badge
-      (2026-07-06 eingeführt) muss die beiden zugehörigen Kauf-Buttons IMMER vollständig
-      verdecken — bei den Staub-Generatoren und bei Kompression ist das bereits so gelöst
-      (`.buy-wrap` + `.cap-badge`, position:absolute/inset:0, in `panels.ts`/`style.css`). Beim
-      Durchgehen aber aufgefallen: Die Fusionsreaktor-Buttons im Stern-Panel (`reactorBtns`,
-      `⚛ Reaktor` + `Max`) haben das Badge NICHT bekommen, obwohl `star.reactors[i]` über
-      denselben `addCounter`-Mechanismus genauso bei `MAX_COUNTER` gedeckelt wird. Nachziehen:
-      gleiches Muster (`buy-wrap`/`cap-badge`) auch für die Reaktor-Buttons in `StarPanel`
-      einbauen, Bedingung `s.star.reactors[e] >= MAX_COUNTER`.
+- [x] ~~**"Maximum"-Badge auf die Reaktor-Buttons ausweiten.**~~ — erledigt (2026-07-07): gleiches
+      `buy-wrap`/`cap-badge`-Muster wie bei Generatoren/Kompression jetzt auch für die
+      Fusionsreaktor-Buttons in `StarPanel`, Bedingung `s.star.reactors[e] >= MAX_COUNTER`.
 
 - [ ] **Nebelgarten-Tooltips kürzen.** Die Hex-Node-Tooltips (Emissions-/Reflexions-/
       Dunkelnebel) erklären aktuell zu ausführlich, u. a. mit "Dieser Nebel..."-Einleitung. Der

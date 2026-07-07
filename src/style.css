@@ -96,6 +96,14 @@ button {
 button:hover:not(:disabled) { background: rgba(64, 82, 148, 0.7); box-shadow: 0 0 12px rgba(100, 216, 255, 0.25); }
 button:active:not(:disabled) { transform: scale(0.96); }
 button:disabled { opacity: 0.38; cursor: default; }
+/* Klick, der nichts bewirkt hat (Ressource knapp unter dem Update-Takt weggeschmolzen) —
+   kurzes Schütteln + Rot-Rand statt stillem Nichts-Passiert, damit es nicht wie ein Aussetzer wirkt. */
+@keyframes buy-denied {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-3px); }
+  40%, 80% { transform: translateX(3px); }
+}
+button.denied { animation: buy-denied 0.3s ease; border-color: var(--danger); }
 .cost { display: block; font-size: 0.74rem; color: var(--gold); font-variant-numeric: tabular-nums; }
 .lvl { color: var(--cyan); font-size: 0.8rem; }
 .sub { font-size: 0.78rem; color: var(--text-dim); }
