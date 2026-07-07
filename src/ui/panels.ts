@@ -729,6 +729,7 @@ export class NovaPanel implements Panel {
   private coalRow!: HTMLElement;
   private coalNeed!: HTMLElement;
   private coalBtn!: HTMLButtonElement;
+  private autoCoalBtn!: HTMLButtonElement;
   private gtBtns: HTMLButtonElement[] = [];
 
   constructor(private st: St, private hud: Hud) {
@@ -935,7 +936,19 @@ export class NovaPanel implements Panel {
       if (s.stats.lifetimeDM.lte(0)) this.hud.confirm(t('galaxy.go'), t('galaxy.confirm'), doIt);
       else doIt();
     });
-    coalesceBox.append(gtSeg, this.coalBtn);
+    this.autoCoalBtn = btn('seg-btn auto-btn', t('galaxy.autoCoalesce'), () => {
+      const s = this.st();
+      if (!F.autoCoalesceUnlocked(s)) return;
+      s.galaxy.autoCoalesce.on = !s.galaxy.autoCoalesce.on;
+      this.update(s, M(s));
+    });
+    attachTip(this.autoCoalBtn, () => ({
+      title: t('galaxy.autoCoalesce'),
+      body: t('galaxy.autoCoalesceTip', { r: numTag(`${C.AUTO_COALESCE_RATE * 100}%`) }),
+    }));
+    const coalRow2 = el('div', 'ignite-row');
+    coalRow2.append(this.coalBtn, this.autoCoalBtn);
+    coalesceBox.append(gtSeg, coalRow2);
     this.root.append(coalesceBox);
 
     this.ms = milestoneSection(
@@ -1062,6 +1075,9 @@ export class NovaPanel implements Panel {
       setClass(b, 'active', s.ui.nextGtype === g);
       setText(b, `${t(`galaxy.t${g}`)} (${s.stats.gtypePicks[g]})`);
     });
+    const autoCoalOk = F.autoCoalesceUnlocked(s);
+    setReserve(this.autoCoalBtn, autoCoalOk);
+    setClass(this.autoCoalBtn, 'active', autoCoalOk && s.galaxy.autoCoalesce.on);
 
     this.ms.update(s);
   }

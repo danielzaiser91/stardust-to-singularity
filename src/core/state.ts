@@ -93,6 +93,8 @@ export interface GameState {
     nodes: boolean[];             // 45 Konstellations-Nodes
     count: number;                // Coalescences seit letztem Collapse (Basis der Shard-Leiter)
     autoNova: { on: boolean; at: Decimal; acc: number };
+    /** Freischaltung: MS_COLLAPSE[3] (4. Kollaps) */
+    autoCoalesce: { on: boolean; acc: number };
   };
   sing: {
     unlocked: boolean;
@@ -175,6 +177,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       nodes: Array.from({ length: C.CONSTELLATION_NODES }, () => false),
       count: 0,
       autoNova: { on: false, at: D(1), acc: 0 },
+      autoCoalesce: { on: false, acc: 0 },
     },
     sing: {
       unlocked: false,

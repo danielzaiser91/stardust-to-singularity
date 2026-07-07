@@ -167,8 +167,9 @@ export const MS_GALAXY = [1, 2, 3, 5, 6, 9, 10, 12, 50];
 // Sekunde am ×20-Clamp — Auto ist damit exakt so stark wie optimaler manueller Spam.
 export const AUTO_IGNITE_RATE = Math.log(PLASMA_CLAMP_MULT + 1) / PLASMA_CLAMP_MULT;
 export const AUTO_NOVA_RATE = 0.01;
-// Kollaps-Meilensteine: Perks · Spezial-MS Supernova · Spezial-MS Staub · Remnants bleiben ·
-// Keystones bleiben
+export const AUTO_COALESCE_RATE = 0.01;
+// Kollaps-Meilensteine: Perks · Spezial-MS Supernova · Spezial-MS Staub + Nebelgarten-Sockel ·
+// Remnants bleiben + Auto-Verschmelzen · Keystones bleiben
 export const MS_COLLAPSE = [1, 2, 3, 4, 5];
 // ── Spezial-Meilensteine ─────────────────────────────────────────────────────
 // Supernova (ab 2 Kollapsen): je 10 Remnants EINES Typs steigt dessen Effekt eine Stufe.

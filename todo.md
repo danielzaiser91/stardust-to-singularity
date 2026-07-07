@@ -415,6 +415,39 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
 
   tsc/vitest (49/49)/Build grün.
 
+## Erledigt (Stand 2026-07-07, siebzehnte Runde)
+
+- [x] ~~**3. Kollaps: Nebelgarten-Sicherheitsnetz.**~~ — `effectiveCoalescences()` bekommt ab
+      `MS_COLLAPSE[2]` (3. Kollaps) einen FIXEN Sockel von `MS_GALAXY[7]` (=12, exakt der
+      Nebelgarten-bleibt-Schwellenwert) oben drauf — kein weiterer Multiplikator, ein kleines,
+      festes Sicherheitsnetz. Garantiert ab da, dass der Nebelgarten JEDE Verschmelzung übersteht,
+      selbst direkt nach einem frischen Reset (rohe Verschmelzungen = 0). (Ursprünglich als
+      "Auto-Knopf platziert Nodes nach Screenshot-Muster" angefragt, dann vom User selbst auf
+      diese viel einfachere Lösung revidiert.)
+
+- [x] ~~**4. Kollaps: Auto-Verschmelzen freischalten (analog zu den anderen Ebenen).**~~ — neue
+      Automation für die Coalescence-Ebene, 1:1 nach dem (diese Session bereits neu gestalteten)
+      Auto-Supernova-Muster: kontinuierlicher `dmGain`-Trickle OHNE Galaxie-Reset, zählt bei
+      100 % Akkumulation nur `stats.coalescences` + den GEWÄHLTEN Galaxientyp
+      (`s.stats.gtypePicks[s.ui.nextGtype]`) hoch. Freischaltung bei `MS_COLLAPSE[3]` (4. Kollaps)
+      — setzt sich damit konsistent in die Eskalationsreihe fort (Auto-Zündung: Meilenstein der
+      Nova-Ebene · Auto-Supernova: Meilenstein der Galaxie-Ebene · Auto-Verschmelzen: Meilenstein
+      der Singularitäts-Ebene). ZUSÄTZLICH zum bestehenden "Remnants überleben"-Effekt am selben
+      Schwellenwert (gleiches Muster wie `MS_COLLAPSE[1]`, das schon zwei gleichzeitige
+      Belohnungen hat). Neuer Toggle-Button "Auto-Verschmelzen" direkt neben dem manuellen
+      VERSCHMELZEN-Knopf in `NovaPanel` (`ignite-row`-Muster), unsichtbar bis freigeschaltet
+      (kein Re-Lock möglich, da `stats.collapses` nie sinkt). Nebenbei eine echte Karteileiche
+      gefunden und mitgefixt: `galaxy.autoNovaTip` behauptete noch "eine echte Supernova bei
+      100 %" — Text aus der Zeit VOR der Auto-Supernova-Neugestaltung (Runde 15), nie
+      aktualisiert. Beide Tipp-Texte jetzt korrekt ("zählt für die Meilensteine, ohne zu
+      resetten"). `ms.col3`-Text um "· Auto-Verschmelzen" ergänzt. Bot (`sim/bot.ts`) schaltet die
+      Automation im Idle-Profil analog zu den anderen ein. Zwei neue Tests (Trickle-Verhalten,
+      Sicherheitsnetz) + live geprüft: Toggle erscheint neben COALESCE, aktiviert korrekt,
+      Meilenstein-Liste zeigt "12× COALESCENCES" schon bei rohen 0 Verschmelzungen (Sicherheitsnetz
+      wirkt).
+
+  tsc/vitest (51/51)/Build grün.
+
 ## Offen
 
 - [ ] **Challenges neu balancieren — aktuell viel zu leicht durch Automationen.** Sobald

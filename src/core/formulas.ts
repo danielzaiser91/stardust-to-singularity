@@ -391,9 +391,14 @@ export function coalescenceBonusMult(s: GameState): number {
   return 1 + s.stats.collapses * C.COALESCENCE_BONUS_PER_COLLAPSE;
 }
 /** Effektive Verschmelzungszahl — ersetzt den rohen `stats.coalescences` überall im Gating
- *  UND in der Anzeige, da der rohe Zähler pro Collapse auf 0 fällt. */
+ *  UND in der Anzeige, da der rohe Zähler pro Collapse auf 0 fällt. Ab dem 3. Kollaps kommt ein
+ *  fixer Sockel oben drauf — exakt so hoch wie `MS_GALAXY[7]` (Nebelgarten bleibt), garantiert
+ *  also ab da, dass der Garten JEDE Verschmelzung übersteht, selbst direkt nach einem Kollaps
+ *  (raw = 0). Kein Multiplikator, bewusst ein kleines, festes Sicherheitsnetz statt eines
+ *  weiteren wachsenden Bonus. */
 export function effectiveCoalescences(s: GameState): number {
-  return s.stats.coalescences * coalescenceBonusMult(s);
+  const safetyNet = s.stats.collapses >= C.MS_COLLAPSE[2] ? C.MS_GALAXY[7] : 0;
+  return s.stats.coalescences * coalescenceBonusMult(s) + safetyNet;
 }
 /** Derselbe Galaxie-Reset-Bonus gilt auch für die zwei Ebenen darunter: ignMs/novaMs resetten
  *  sogar noch häufiger als coalescences (jede Ignition bzw. jede Coalescence-Runde), profitieren
@@ -531,4 +536,10 @@ export function feedContribution(gain: Decimal, weight: number): Decimal {
 }
 export function autoIgniteUnlocked(s: GameState): boolean {
   return effectiveNovaMs(s) >= C.MS_NOVA[1];   // Meilenstein: ab der 2. (effektiven) Supernova
+}
+/** Wie autoIgniteUnlocked/autoNovaUnlocked, eine Ebene weiter oben: Kollaps schaltet die
+ *  Automation der Ebene direkt darunter frei. stats.collapses resettet nie → einmal wahr,
+ *  für immer wahr (kein „Seen"-Flag nötig). */
+export function autoCoalesceUnlocked(s: GameState): boolean {
+  return s.stats.collapses >= C.MS_COLLAPSE[3];   // Meilenstein: ab dem 4. Kollaps
 }

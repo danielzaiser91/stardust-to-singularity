@@ -4,7 +4,7 @@ import { tick } from '../core/tick';
 import {
   computeMults, plasmaGain, shardGain, dmGain, entropyGain, canIgnite,
   genMaxAfford, nodeAvailable, nodeCost, perkCost,
-  nebulaCellCost, maxTier, autoIgniteUnlocked, HEX_NEIGHBORS, type Mults,
+  nebulaCellCost, maxTier, autoIgniteUnlocked, autoCoalesceUnlocked, HEX_NEIGHBORS, type Mults,
 } from '../core/formulas';
 import * as A from '../core/actions';
 
@@ -138,6 +138,7 @@ export function botStep(s: GameState, profile: Profile, mults: Mults): void {
   if (profile === 'idle') {
     s.galaxy.autoNova.on = m.autoNovaUnlocked;
     s.nova.autoIgnite.on = autoIgniteUnlocked(s);
+    s.galaxy.autoCoalesce.on = autoCoalesceUnlocked(s);
   }
 
   // — Dust: Generatoren von oben nach unten max kaufen, dann Compression —

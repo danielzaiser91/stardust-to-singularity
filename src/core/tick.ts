@@ -1,7 +1,7 @@
 import { Decimal } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
-import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, autoIgniteUnlocked, type Mults } from './formulas';
+import { computeMults, tierMult, maxTier, plasmaGain, shardGain, dmGain, genMaxAfford, genCost, clickAmount, autoIgniteUnlocked, autoCoalesceUnlocked, type Mults } from './formulas';
 import { buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax, buyPlasmaUpgrade, feedSplit } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
@@ -142,6 +142,25 @@ export function tick(s: GameState, dt: number): Mults {
         s.stats.supernovae++;
         s.stats.novaMs++;
         s.nova.remnants[s.ui.nextRemnant]++;
+      }
+    }
+  }
+  // Auto-Verschmelzen: gleicher Trickle wie Auto-Supernova — OHNE Galaxie-Reset. Bei 100 %
+  // Akkumulation zählt nur der GEWÄHLTE Galaxientyp (s.ui.nextGtype) + Meilenstein-Zähler hoch.
+  if (s.galaxy.autoCoalesce.on && autoCoalesceUnlocked(s) && s.nova.challenge === -1) {
+    const gain = dmGain(s, m);
+    if (gain.gt(0)) {
+      const frac = C.AUTO_COALESCE_RATE * gdt;
+      const pay = gain.mul(frac);
+      s.galaxy.unlocked = true;
+      s.galaxy.dm = s.galaxy.dm.add(feedSplit(s, C.FEED_WEIGHT_DM, pay));
+      s.galaxy.totalDM = s.galaxy.totalDM.add(pay);
+      s.stats.lifetimeDM = s.stats.lifetimeDM.add(pay);
+      s.galaxy.autoCoalesce.acc += frac;
+      if (s.galaxy.autoCoalesce.acc >= 1) {
+        s.galaxy.autoCoalesce.acc -= 1;
+        s.stats.coalescences++;
+        s.stats.gtypePicks[s.ui.nextGtype]++;
       }
     }
   }

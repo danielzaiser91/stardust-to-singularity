@@ -235,6 +235,37 @@ describe('tick & actions', () => {
     expect(s.nova.count).toBe(0);                      // kein echter Reset → keine Fe-Leiter-Eskalation
   });
 
+  it('auto-coalesce (4th collapse) trickles dark matter WITHOUT resetting the galaxy layer, counts the selected galaxy type', () => {
+    const s = initialState(1);
+    s.nova.unlocked = true;
+    s.galaxy.unlocked = true;
+    s.stats.collapses = C.MS_COLLAPSE[3];   // Meilenstein-Freischaltung (4. Kollaps)
+    s.galaxy.autoCoalesce.on = true;
+    s.ui.nextGtype = 2;          // Spieler hat Irregulär gewählt — Auto-Trickle muss DAS zählen
+    s.nova.totalShards = D('1e9');
+    s.stats.galaxyTime = C.GALAXY_MIN_TIME;   // voll aufgeladen
+    const before = s.stats.coalescences;
+    tick(s, 1);
+    expect(s.galaxy.dm.gt(0)).toBe(true);               // Trickle zahlt sofort anteilig
+    expect(s.stats.coalescences).toBe(before);          // noch kein Meilenstein-Event
+    for (let i = 0; i < 100; i++) tick(s, 1);
+    expect(s.stats.coalescences).toBe(before + 1);      // Meilenstein bei 100 % — aber KEIN Reset
+    expect(s.nova.totalShards.gt(0)).toBe(true);         // Scherben bleiben erhalten (kein Nova-Layer-Reset)
+    expect(s.stats.gtypePicks[2]).toBe(1);               // zählt den GEWÄHLTEN Galaxientyp
+    expect(s.stats.gtypePicks[0]).toBe(0);
+    expect(s.stats.gtypePicks[1]).toBe(0);
+    expect(s.galaxy.count).toBe(0);                      // kein echter Reset → keine Shard-Leiter-Eskalation
+  });
+
+  it('the 3rd-collapse safety net guarantees the nebula garden survives coalescence even right after a fresh reset', () => {
+    const s = initialState(1);
+    s.stats.coalescences = 0;   // frisch resettet (z. B. direkt nach einem Collapse)
+    s.stats.collapses = 0;
+    expect(F.effectiveCoalescences(s)).toBeLessThan(C.MS_GALAXY[7]);   // ohne Sockel: unter dem Nebelgarten-Meilenstein
+    s.stats.collapses = C.MS_COLLAPSE[2];   // 3. Kollaps
+    expect(F.effectiveCoalescences(s)).toBeGreaterThanOrEqual(C.MS_GALAXY[7]);   // mit Sockel: garantiert erreicht
+  });
+
   it('nebula tokens: replace is free, respec keeps tokens, cap at 19', () => {
     const s = initialState(1);
     s.nova.unlocked = true;
