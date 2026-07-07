@@ -366,6 +366,24 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
 
   tsc/vitest (48/48)/Build grün.
 
+## Erledigt (Stand 2026-07-07, vierzehnte Runde)
+
+- [x] ~~**Maximum-Badge verschwendet Platz — sollte die zwei (dann eh deaktivierten) Kauf-
+      Buttons ersetzen, nicht danebenstehen (bereits zweimal angefragt).**~~ — echter CSS-
+      Spezifitäts-Bug gefunden: `.cap-badge` war korrekt als `position: absolute; inset: 0`
+      codiert (sollte über beide Buttons überlagern), aber `attachTip()` hängt zusätzlich die
+      Klasse `has-tip` an, und `.has-tip { position: relative }` steht SPÄTER im Stylesheet —
+      bei gleicher Spezifität (je ein Klassen-Selektor) gewinnt die Quellreihenfolge, also
+      `has-tip`. Der Badge fiel dadurch zurück in den normalen Flex-Fluss (3. Spalte statt
+      Overlay) — exakt das gemeldete Verhalten. Fix: Selektor auf `.buy-wrap .cap-badge`
+      verschärft (Descendant-Selektor, höhere Spezifität, gewinnt unabhängig von der
+      Quellreihenfolge). Betrifft alle drei Stellen, die dasselbe Muster nutzen (Kompression,
+      Generatoren, Reaktoren). Live geprüft: `getComputedStyle` bestätigt `position: absolute`,
+      Badge füllt jetzt exakt die Breite von `.buy-wrap` (vorher 49px von 165px, jetzt 108px von
+      108px) — ein einziger breiter "Maxed!"-Badge statt drei Spalten.
+
+  tsc/vitest (48/48)/Build grün.
+
 ## Offen
 
 - [ ] **Challenges neu balancieren — aktuell viel zu leicht durch Automationen.** Sobald
