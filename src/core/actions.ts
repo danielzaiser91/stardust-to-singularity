@@ -296,10 +296,11 @@ function resetNovaLayer(s: GameState): void {
     s.stats.novaMs = 0;
     s.nova.autoIgnite.on = false;  // Meilenstein weg → Schalter aus, bis neu freigespielt
   }
-  // Meilenstein 4 Kollapse: Remnants überleben (Coalescence UND Collapse) — sonst kann die
-  // Spezial-Meilenstein-Leiter (remnantTier, ab 2 Kollapsen) nie über einen einzelnen
+  // Remnants überleben die Verschmelzung: entweder M9 (50 effektive Verschmelzungen, DIESEN
+  // Run) oder Meilenstein 4 Kollapse (permanent, über jeden künftigen Run hinweg) — sonst kann
+  // die Spezial-Meilenstein-Leiter (remnantTier, ab 2 Kollapsen) nie über einen einzelnen
   // Galaxie-Run hinaus wachsen, da sie direkt an s.nova.remnants hängt.
-  if (s.stats.collapses < C.MS_COLLAPSE[3]) s.nova.remnants = [0, 0, 0];
+  if (coal < C.MS_GALAXY[8] && s.stats.collapses < C.MS_COLLAPSE[3]) s.nova.remnants = [0, 0, 0];
   s.nova.count = 0;
   s.nova.pulsarPhase = 0;
   resetStarLayer(s);

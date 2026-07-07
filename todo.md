@@ -349,6 +349,23 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
   tsc/vitest (47/47)/Build grün. Live geprüft: 1500 Remnants rendern sichtbar undegradiert statt
   ausgebrannt; `visibilitychange`-Handler wirft keine Fehler.
 
+## Erledigt (Stand 2026-07-07, dreizehnte Runde)
+
+- [x] ~~**Neuer Meilenstein: 50× Verschmelzung → Remnants bleiben.**~~ — der bisherige
+      Remnant-Persistenz-Pfad (Runde 11) hing ausschließlich an `MS_COLLAPSE[3]` (4 Kollapse,
+      permanent über jeden künftigen Run) — ein deutlich höherer Einstieg als die anderen
+      "X überlebt Verschmelzung"-Meilensteine, die alle an `MS_GALAXY` (Verschmelzungs-Anzahl
+      DIESES Runs) hängen. Neuer 9. Eintrag `MS_GALAXY[8] = 50` (Array nur angehängt, alte
+      Indizes 0–7 unverändert) ergänzt das um einen zweiten, ODER-verknüpften Pfad: Remnants
+      bleiben, sobald ENTWEDER 50 effektive Verschmelzungen (dieser Galaxie-Run) ODER 4 Kollapse
+      (permanent) erreicht sind — reiht sich damit ins bestehende Muster (Nebelgarten,
+      Challenge-Abschlüsse, Supernova-Meilensteine) ein, behält aber zusätzlich den
+      Kollaps-Pfad für dauerhafte Freischaltung. Neuer Regressionstest deckt alle drei Fälle ab
+      (weder/nur-Verschmelzung/nur-Kollaps). Live geprüft: Meilenstein-Liste zeigt "50×
+      coalescences — Supernova remnants survive coalescence" korrekt einsortiert.
+
+  tsc/vitest (48/48)/Build grün.
+
 ## Offen
 
 - [ ] **Challenges neu balancieren — aktuell viel zu leicht durch Automationen.** Sobald

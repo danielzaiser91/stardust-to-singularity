@@ -286,6 +286,7 @@ export const de: Record<string, string> = {
   'cap.inline': 'Deckel: {v}',
   'cap.need': 'Deckel erreicht ab {c} insgesamt erzeugt (bisher {v})',
   'ms.gal6': 'Der Nebelgarten überlebt die Verschmelzung',
+  'ms.gal7': 'Supernova-Überreste überleben die Verschmelzung',
   'ms.col0': 'Singularitäts-Perks',
   'ms.col1': 'Spezial-Meilensteine für die Supernova-Ebene',
   'ms.col2': 'Spezial-Meilensteine für die Staub-Ebene',

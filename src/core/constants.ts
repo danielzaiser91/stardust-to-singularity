@@ -159,8 +159,8 @@ export const MS_NOVA = [1, 2, 4, 8, 12, 16, 20, 25, 30, 35, 40, 50];
 export const MS_NOVA_KEEP = [4, 13, 8, 14, 1, 6, 10, 7, 11, -1];
 // Galaxie-Meilensteine: Typ-Wahl · Reflexionsnebel boosten auch Eisen · Challenges bleiben ·
 // Hard-Challenge-Stufe wählbar · Zündungs-Meilensteine permanent · Supernova-Meilensteine bleiben ·
-// Auto-Supernova · Nebelgarten bleibt („bleiben" = über Coalescence)
-export const MS_GALAXY = [1, 2, 3, 5, 6, 9, 10, 12];
+// Auto-Supernova · Nebelgarten bleibt · Remnants bleiben („bleiben" = über Coalescence)
+export const MS_GALAXY = [1, 2, 3, 5, 6, 9, 10, 12, 50];
 // Auto-Trickle: kontinuierlicher Anteil des aktuellen Prestige-Gewinns pro Sekunde
 // (pro Tick berechnet); bei 100 % Akkumulation zählt ein Reset-Event (Leitern/Charge intakt).
 // Zündung: ln(20)/19 ≈ 15,8 %/s = kontinuierliches Äquivalent EINER vollen Zündung pro

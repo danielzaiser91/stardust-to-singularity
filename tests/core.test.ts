@@ -434,6 +434,28 @@ describe('tick & actions', () => {
     expect(s2.nova.cellsBought).toBe(3);
   });
 
+  it('remnants survive coalescence via EITHER 50 effective coalescences OR 4 collapses', () => {
+    const mk = (coalescences: number, collapses: number) => {
+      const s = initialState(1);
+      s.nova.unlocked = true;
+      s.nova.totalShards = D('1e9');
+      s.nova.remnants = [3, 2, 1];
+      s.stats.coalescences = coalescences;
+      s.stats.collapses = collapses;
+      s.stats.galaxyTime = C.GALAXY_MIN_TIME;
+      return s;
+    };
+    const s1 = mk(10, 0);   // weder 50 Verschmelzungen noch 4 Kollapse → resettet
+    expect(actionsAll.doCoalesce(s1, 0)).toBe(true);
+    expect(s1.nova.remnants).toEqual([0, 0, 0]);
+    const s2 = mk(C.MS_GALAXY[8], 0);   // 50 effektive Verschmelzungen (dieser Run) → bleibt
+    expect(actionsAll.doCoalesce(s2, 0)).toBe(true);
+    expect(s2.nova.remnants).toEqual([3, 2, 1]);
+    const s3 = mk(10, C.MS_COLLAPSE[3]);   // 4 Kollapse (permanent) → bleibt, obwohl Run frisch
+    expect(actionsAll.doCoalesce(s3, 0)).toBe(true);
+    expect(s3.nova.remnants).toEqual([3, 2, 1]);
+  });
+
   it('save migration v1→v2 seeds milestone counters from legacy stats', () => {
     const s = initialState(1);
     s.stats.ignitions = 42;

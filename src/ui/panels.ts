@@ -939,7 +939,7 @@ export class NovaPanel implements Panel {
     this.root.append(coalesceBox);
 
     this.ms = milestoneSection(
-      [t('ms.gal0'), t('ms.gal1'), t('ms.gal2'), t('ms.galHard'), t('ms.gal3'), t('ms.gal4'), t('ms.gal5'), t('ms.gal6')],
+      [t('ms.gal0'), t('ms.gal1'), t('ms.gal2'), t('ms.galHard'), t('ms.gal3'), t('ms.gal4'), t('ms.gal5'), t('ms.gal6'), t('ms.gal7')],
       C.MS_GALAXY, 'ms.u.gal', s => F.effectiveCoalescences(s),
       { st: this.st, text: s => t('ms.galBreakdown', {
         raw: s.stats.coalescences, mult: numTag(fmtMult(F.coalescenceBonusMult(s))), n: s.stats.collapses,
