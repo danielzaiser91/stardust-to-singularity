@@ -225,7 +225,7 @@ export function computeMults(s: GameState): Mults {
   const plasmaGainExp = C.PLASMA_EXP + (s.star.upgrades[11] ? 0.05 : 0);
 
   const shardGainMult = nShard.mul(prestigeMult).mul(ngPrestige)
-    .mul(1 + rp.bhPer * s.nova.remnants[2]).mul(D(1 + s.sing.perks[1]));
+    .mul(D(1 + s.sing.perks[1]));
 
   const dmGainMult = perkDM.mul(prestigeMult).mul(ngPrestige);
   const entropyGainMult = prestigeMult.mul(ngPrestige);
@@ -358,6 +358,13 @@ export function gainCapBound(total: Decimal, mult: number = C.GAIN_CLAMP_MULT): 
   return total.mul(mult).add(C.GAIN_CLAMP_FLOOR).floor();
 }
 
+/** Scherben-Clamp-Multiplikator: Schwarze Löcher heben den Deckel selbst an (statt nur den
+ *  Rohwert vor dem Clamp zu boosten, was oberhalb des Deckels wirkungslos verpufft). */
+export function shardClampMult(s: GameState): number {
+  const rp = remnantParams(s);
+  return C.GAIN_CLAMP_MULT + rp.bhPer * s.nova.remnants[2];
+}
+
 /**
  * Umkehrung der Gain-Formel fürs UI: Wie viel der zugrunde liegenden Währung nötig ist,
  * damit der (noch ungeclampte) Gewinn den Clamp-Deckel erreicht — dann lohnt der Reset.
@@ -382,7 +389,7 @@ export function currencyForCap(
   if (layer === 'nova') {
     current = s.star.elements[5]; req = novaReq(s); exp = C.SHARD_EXP;
     mult = m.shardGainMult; charge = Math.min(1, s.stats.novaTime / C.NOVA_MIN_TIME);
-    cap = gainCapBound(s.nova.totalShards);
+    cap = gainCapBound(s.nova.totalShards, shardClampMult(s));
   } else if (layer === 'coalesce') {
     current = s.nova.totalShards; req = coalesceReq(s); exp = C.DM_EXP;
     mult = m.dmGainMult; charge = Math.min(1, s.stats.galaxyTime / C.GALAXY_MIN_TIME);
@@ -410,7 +417,7 @@ export function shardGain(s: GameState, m: Mults): Decimal {
   const charge = Math.min(1, s.stats.novaTime / C.NOVA_MIN_TIME);
   // kein Softcap nötig: der ×4-Clamp begrenzt hart, Overkill soll sich lohnen
   const raw = fe.div(req).pow(C.SHARD_EXP).mul(m.shardGainMult).mul(charge);
-  return clampGain(raw, s.nova.totalShards);
+  return clampGain(raw, s.nova.totalShards, shardClampMult(s));
 }
 export function canSupernova(s: GameState): boolean { return s.star.elements[5].gte(novaReq(s)); }
 

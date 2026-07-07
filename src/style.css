@@ -160,6 +160,9 @@ button.denied { animation: buy-denied 0.3s ease; border-color: var(--danger); }
   border: 1px solid; text-align: center;
   display: flex; flex-direction: column; gap: 8px;
 }
+.reset-row { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
+.reset-row.has-cap { justify-content: space-between; }
+.reset-cap { white-space: nowrap; opacity: 0.75; }
 .reset-box.hot { border-color: rgba(255, 180, 80, 0.4); background: rgba(80, 40, 10, 0.3); }
 .reset-box.nova { border-color: rgba(255, 100, 168, 0.4); background: rgba(70, 15, 45, 0.3); }
 .reset-box.gal { border-color: rgba(167, 139, 250, 0.4); background: rgba(40, 25, 80, 0.3); }

@@ -86,8 +86,9 @@ export function tick(s: GameState, dt: number): Mults {
     s.dust.amount = s.dust.amount.mul(Math.pow(1 - C.CH7_DECAY, gdt));
   }
 
-  // — Hawking Radiation (Perk 2): passives Plasma/Shards —
-  if (s.sing.perks[1] > 0 && s.star.unlocked) {
+  // — Hawking Radiation (Perk 2): passives Plasma — erst ab Auto-Supernova (10. Coalescence),
+  // sonst würde der Trickle das Zündungs-Pacing schon vor jeder Automation aushebeln —
+  if (s.sing.perks[1] > 0 && s.star.unlocked && m.autoNovaUnlocked) {
     const hl = s.sing.perks[1];
     s.star.plasma = s.star.plasma.add(s.stats.bestPlasma.mul(0.001 * hl * gdt));
   }

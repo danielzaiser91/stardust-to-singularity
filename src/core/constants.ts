@@ -81,7 +81,7 @@ export const REMNANT_NEUTRON_FUSION = 1.5;   // × Fusion je Neutronenstern
 export const REMNANT_PULSAR_PERIOD = 60;
 export const REMNANT_PULSAR_DURATION = 10;
 export const REMNANT_PULSAR_MULT = 5;        // Basis-Burst; +2 je weiterem Pulsar
-export const REMNANT_BH_SHARDS = 0.5;        // +50 % Shard-Gain je kleinem BH
+export const REMNANT_BH_SHARDS = 0.5;        // +50 % Scherben-CLAMP je kleinem BH (hebt den Deckel selbst an)
 export const CHALLENGE_COUNT = 8;
 // Challenge i verlangt IGNITION_REQ × CH_GOAL_MULT[i] Dust — echte Meilensteine statt Formalität.
 // Leiter kalibriert an realer Spielerstärke zur Unlock-Zeit (Ch5 ≈ 1e350 absolut).
