@@ -384,6 +384,26 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
 
   tsc/vitest (48/48)/Build grün.
 
+## Erledigt (Stand 2026-07-07, fünfzehnte Runde)
+
+- [x] ~~**Bug: Remnants überlebten einen Kollaps über den 50-Verschmelzungen-Pfad, obwohl sie
+      das nicht sollten.**~~ — User-Meldung mit korrekter Kausalkette: ein Kollaps setzt
+      `stats.coalescences` im selben Zug auf 0 zurück, der 50er-Meilenstein (Runde 13) "gilt"
+      danach also nicht mehr — durfte deshalb nicht rückwirkend vor GENAU DIESEM Kollaps
+      schützen. Ursache: `resetNovaLayer()` liest `effectiveCoalescences()` IMMER vor dem Reset
+      (Alt-Verhalten, by design für Nebelgarten/Challenges/novaMs — die SOLLEN jeden Reset-Typ
+      überleben, sobald einmal erreicht) — ich hatte den neuen Remnants-Meilenstein blind nach
+      demselben Muster eingebaut, obwohl mein eigenes Design für ihn ausdrücklich NUR
+      "diesen Run" (normale Verschmelzung) meinte, nicht "übersteht auch einen Kollaps" (das
+      sollte exklusiv dem 4-Kollaps-Pfad vorbehalten sein). Fix: `resetNovaLayer()` bekommt einen
+      `viaCollapse`-Parameter; der 50er-Pfad greift nur, wenn `!viaCollapse`, der 4-Kollaps-Pfad
+      (hängt an `stats.collapses`, nicht an der Leiter) weiterhin immer. Zwei neue Testfälle
+      (schützt normale Verschmelzung, schützt NICHT vor Kollaps ohne 4 Kollapse) + live per
+      simuliertem Kollaps-Klick verifiziert: 50 Verschmelzungen + 0 Kollapse → Remnants weg;
+      10 Verschmelzungen + 4 Kollapse → Remnants bleiben.
+
+  tsc/vitest (49/49)/Build grün.
+
 ## Offen
 
 - [ ] **Challenges neu balancieren — aktuell viel zu leicht durch Automationen.** Sobald

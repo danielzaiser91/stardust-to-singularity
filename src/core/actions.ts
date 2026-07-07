@@ -278,7 +278,11 @@ export function exitChallenge(s: GameState): boolean {
 }
 
 // ── Ebene 3: Coalescence ─────────────────────────────────────────────────────
-function resetNovaLayer(s: GameState): void {
+/** `viaCollapse`: true, wenn resetGalaxyLayer() dies als Teil einer Kollaps-Kaskade aufruft —
+ *  die Verschmelzungs-Leiter (stats.coalescences) wird DANACH ebenfalls auf 0 gesetzt, ein
+ *  Meilenstein, der NUR an dieser Leiter hängt (M9, nicht an stats.collapses), darf einen
+ *  Kollaps also nicht überleben, obwohl er noch mit dem alten (Vor-Reset-)Stand ausgewertet wird. */
+function resetNovaLayer(s: GameState, viaCollapse = false): void {
   s.nova.shards = ZERO;
   s.nova.totalShards = ZERO;
   // Galaxie-Meilensteine bestimmen, was die Coalescence überlebt (effektiv, s. coalescenceBonusMult):
@@ -296,11 +300,15 @@ function resetNovaLayer(s: GameState): void {
     s.stats.novaMs = 0;
     s.nova.autoIgnite.on = false;  // Meilenstein weg → Schalter aus, bis neu freigespielt
   }
-  // Remnants überleben die Verschmelzung: entweder M9 (50 effektive Verschmelzungen, DIESEN
-  // Run) oder Meilenstein 4 Kollapse (permanent, über jeden künftigen Run hinweg) — sonst kann
-  // die Spezial-Meilenstein-Leiter (remnantTier, ab 2 Kollapsen) nie über einen einzelnen
-  // Galaxie-Run hinaus wachsen, da sie direkt an s.nova.remnants hängt.
-  if (coal < C.MS_GALAXY[8] && s.stats.collapses < C.MS_COLLAPSE[3]) s.nova.remnants = [0, 0, 0];
+  // Remnants überleben die Verschmelzung: M9 (50 effektive Verschmelzungen) schützt NUR vor
+  // einer NORMALEN Verschmelzung (viaCollapse=false) — bei einem Kollaps setzt dieselbe Aktion
+  // die Verschmelzungs-Leiter im selben Zug auf 0 zurück, der Meilenstein "gilt" danach also
+  // nicht mehr und darf nicht rückwirkend vor GENAU DIESEM Kollaps schützen. Nur Meilenstein
+  // 4 Kollapse (permanent, hängt an stats.collapses statt an der Leiter) schützt auch durch
+  // einen Kollaps hindurch — sonst kann die Spezial-Meilenstein-Leiter (remnantTier, ab
+  // 2 Kollapsen) nie über einen einzelnen Galaxie-Run hinaus wachsen.
+  const remnantsSurvive = (!viaCollapse && coal >= C.MS_GALAXY[8]) || s.stats.collapses >= C.MS_COLLAPSE[3];
+  if (!remnantsSurvive) s.nova.remnants = [0, 0, 0];
   s.nova.count = 0;
   s.nova.pulsarPhase = 0;
   resetStarLayer(s);
@@ -347,7 +355,7 @@ function resetGalaxyLayer(s: GameState): void {
   s.galaxy.count = 0;
   s.stats.gtypePicks = [0, 0, 0];  // Invariante: Summe == galaxy.count
   s.galaxy.autoNova = { on: false, at: D(1), acc: 0 };
-  resetNovaLayer(s);   // liest effectiveCoalescences() VOR dem Reset — Persistenz-Checks nutzen den alten Stand
+  resetNovaLayer(s, true);   // liest effectiveCoalescences() VOR dem Reset — Persistenz-Checks nutzen den alten Stand
   s.stats.coalescences = 0;   // frische Verschmelzungs-Leiter je Galaxie; coalescenceBonusMult() gleicht das aus
 }
 

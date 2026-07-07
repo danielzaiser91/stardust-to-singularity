@@ -456,6 +456,29 @@ describe('tick & actions', () => {
     expect(s3.nova.remnants).toEqual([3, 2, 1]);
   });
 
+  it('the 50-coalescence remnant path protects a normal coalescence but NOT a collapse', () => {
+    // Ein Kollaps setzt stats.coalescences im selben Zug auf 0 — der 50er-Meilenstein "gilt"
+    // danach nicht mehr und darf nicht rückwirkend vor GENAU DIESEM Kollaps schützen. Nur
+    // Meilenstein 4 Kollapse (hängt an stats.collapses, nicht an der Leiter) darf das.
+    const mk = (collapses: number) => {
+      const s = initialState(1);
+      s.nova.unlocked = true;
+      s.galaxy.unlocked = true;
+      s.nova.remnants = [3, 2, 1];
+      s.stats.coalescences = C.MS_GALAXY[8];   // 50 effektive Verschmelzungen (dieser Run)
+      s.stats.collapses = collapses;
+      s.galaxy.totalDM = D(C.COLLAPSE_REQ).mul(100);
+      s.stats.singTime = C.COLLAPSE_MIN_TIME;
+      return s;
+    };
+    const s1 = mk(0);   // 50 Verschmelzungen, aber 0 Kollapse → Remnants NICHT geschützt
+    expect(actionsAll.doCollapse(s1)).toBe(true);
+    expect(s1.nova.remnants).toEqual([0, 0, 0]);
+    const s2 = mk(C.MS_COLLAPSE[3]);   // zusätzlich 4 Kollapse → bleibt
+    expect(actionsAll.doCollapse(s2)).toBe(true);
+    expect(s2.nova.remnants).toEqual([3, 2, 1]);
+  });
+
   it('save migration v1→v2 seeds milestone counters from legacy stats', () => {
     const s = initialState(1);
     s.stats.ignitions = 42;
