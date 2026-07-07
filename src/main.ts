@@ -190,6 +190,7 @@ function hint(id: string, cond: boolean): void {
   }
 }
 setInterval(() => {
+  if (document.hidden) return;  // Hintergrund-Tab: niemand sieht den Toast, Prüfung spart sich
   hint('welcome', state.stats.played < 30 && state.stats.ignitions === 0);
   hint('comet', state.dust.comet.active);
   hint('ignite', canIgnite(state) && state.stats.ignitions === 0);

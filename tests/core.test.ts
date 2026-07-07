@@ -212,23 +212,27 @@ describe('tick & actions', () => {
     expect(growth).toBeLessThan(C.PLASMA_CLAMP_MULT + 1);
   });
 
-  it('auto-supernova (10th coalescence) trickles shards, real supernova at 100%', () => {
+  it('auto-supernova (10th coalescence) trickles shards WITHOUT resetting the star layer, counts the selected remnant', () => {
     const s = initialState(1);
     s.star.unlocked = true;
     s.nova.unlocked = true;
     s.galaxy.unlocked = true;
     s.stats.coalescences = 10;   // Meilenstein-Freischaltung (ohne Konstellations-Node)
     s.galaxy.autoNova.on = true;
+    s.ui.nextRemnant = 1;        // Spieler hat Pulsar gewählt — Auto-Trickle muss DAS zählen
     s.star.elements[5] = D(1e12);
     s.stats.novaTime = C.NOVA_MIN_TIME;   // voll aufgeladen
     const before = s.stats.supernovae;
     tick(s, 1);
     expect(s.nova.shards.gt(0)).toBe(true);            // Trickle zahlt sofort anteilig
-    expect(s.stats.supernovae).toBe(before);           // noch kein Reset-Event
+    expect(s.stats.supernovae).toBe(before);           // noch kein Meilenstein-Event
     for (let i = 0; i < 100; i++) tick(s, 1);
-    expect(s.stats.supernovae).toBe(before + 1);       // echte Supernova bei 100 %
-    expect(s.star.elements[5].eq(0)).toBe(true);       // Star-Layer resettet, Leiter/Charge laufen
-    expect(s.nova.count).toBe(1);
+    expect(s.stats.supernovae).toBe(before + 1);       // Meilenstein bei 100 % — aber KEIN Reset
+    expect(s.star.elements[5].gt(0)).toBe(true);       // Fe bleibt erhalten (kein Star-Layer-Reset)
+    expect(s.nova.remnants[1]).toBe(1);                // zählt den GEWÄHLTEN Remnant-Typ, nicht die Heuristik
+    expect(s.nova.remnants[0]).toBe(0);
+    expect(s.nova.remnants[2]).toBe(0);
+    expect(s.nova.count).toBe(0);                      // kein echter Reset → keine Fe-Leiter-Eskalation
   });
 
   it('nebula tokens: replace is free, respec keeps tokens, cap at 19', () => {
@@ -316,6 +320,8 @@ describe('tick & actions', () => {
     s.nova.remnants = [0, 10, 0];        // Stufe 1 → 20 s Dauer
     expect(F.remnantParams(s).pulsarDur).toBe(20);
     expect(computeMults(s).pulsarBurst).toBe(1);              // Phase 45 > 20 → inaktiv
+    s.nova.remnants = [0, 100, 0];       // Stufe 10 → rohe Formel gäbe 110 s, weit über dem Zyklus
+    expect(F.remnantParams(s).pulsarDur).toBe(60);             // an C.REMNANT_PULSAR_PERIOD gedeckelt
   });
 
   it('resets are blocked when the gain would floor to +0 (e.g. charge at 0)', () => {
@@ -457,27 +463,39 @@ describe('tick & actions', () => {
     expect((restored.stats as Record<string, unknown>).remnantPicks).toBeUndefined();
   });
 
-  it('stellar memory perk protects upgrades/reactors across supernova', () => {
+  it('stellar memory perk protects reactors + retains fusion material across supernova', () => {
     const s = initialState(1);
     s.star.unlocked = true;
     s.star.elements[5] = D(1e6);
-    s.star.upgrades[4] = true;
+    s.star.elements[1] = D(1000);  // He
     s.star.reactors[0] = 7;
-    s.sing.perks[8] = 2;   // L2: Upgrades + Reaktoren bleiben
+    s.sing.perks[8] = 1;   // L1: Reaktoren bleiben, noch kein Material-Retain
     s.stats.novaTime = C.NOVA_MIN_TIME;
     expect(doSupernova(s, 0)).toBe(true);
-    expect(s.star.upgrades[4]).toBe(true);
     expect(s.star.reactors[0]).toBe(7);
-    // ohne Perk: alles weg
+    expect(s.star.elements[1].eq(0)).toBe(true);
+
     const s2 = initialState(1);
     s2.star.unlocked = true;
     s2.star.elements[5] = D(1e6);
-    s2.star.upgrades[4] = true;
+    s2.star.elements[1] = D(1000);
     s2.star.reactors[0] = 7;
+    s2.sing.perks[8] = 2;   // L2: 10 % Fusionsmaterial bleibt
     s2.stats.novaTime = C.NOVA_MIN_TIME;
     expect(doSupernova(s2, 0)).toBe(true);
-    expect(s2.star.upgrades[4]).toBe(false);
-    expect(s2.star.reactors[0]).toBe(0);
+    expect(s2.star.reactors[0]).toBe(7);
+    expect(s2.star.elements[1].eq(100)).toBe(true);
+
+    // ohne Perk: alles weg
+    const s3 = initialState(1);
+    s3.star.unlocked = true;
+    s3.star.elements[5] = D(1e6);
+    s3.star.elements[1] = D(1000);
+    s3.star.reactors[0] = 7;
+    s3.stats.novaTime = C.NOVA_MIN_TIME;
+    expect(doSupernova(s3, 0)).toBe(true);
+    expect(s3.star.reactors[0]).toBe(0);
+    expect(s3.star.elements[1].eq(0)).toBe(true);
   });
 
   it('ignition resets dust layer and grants plasma', () => {
@@ -530,6 +548,24 @@ describe('tick & actions', () => {
     delete raw.nova.completedTier;
     const restored = deserialize(JSON.stringify(raw));
     expect(restored.nova.completedTier).toEqual([1, 0, 1, 0, 0, 0, 0, 0]);
+  });
+
+  it('feedSplit credits a nonzero amount even at tetrational (layer ≥ 2) magnitudes', () => {
+    // Realer Bug (2026-07-07): gain.sub(gain.mul(0.5)) löscht sich bei „eeX"-Zahlen komplett
+    // aus (gain und gain*0,5 sind an dieser Größenordnung intern ununterscheidbar) → 0 zurück,
+    // dust.amount fror für immer auf 0 ein. feedSplit muss stattdessen direkt multiplizieren.
+    const s = initialState(1);
+    s.sing.unlocked = true;
+    const hugeGain = D('ee16.7396548473526960');
+    const credited = actionsAll.feedSplit(s, C.FEED_WEIGHT_DUST, hugeGain);
+    expect(credited.gt(0)).toBe(true);
+    expect(credited.eq(0)).toBe(false);
+    // normale Größenordnung: weiterhin ein echter ~50/50-Split
+    const s2 = initialState(1);
+    s2.sing.unlocked = true;
+    const normalGain = D(2e10);
+    const credited2 = actionsAll.feedSplit(s2, C.FEED_WEIGHT_DUST, normalGain);
+    expect(credited2.eq(1e10)).toBe(true);
   });
 });
 

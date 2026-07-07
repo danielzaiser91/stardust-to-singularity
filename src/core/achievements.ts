@@ -1,5 +1,5 @@
 import type { GameState } from './state';
-import { effectiveCoalescences, type Mults } from './formulas';
+import { effectiveCoalescences, effectiveIgnMs, effectiveNovaMs, type Mults } from './formulas';
 import { D } from './decimal';
 import * as C from './constants';
 
@@ -54,8 +54,8 @@ export const ACHIEVEMENT_CHECKS: Check[] = [
   s => s.galaxy.nodes.filter(Boolean).length >= 15,
   s => s.galaxy.nodes.filter(Boolean).length >= 30,
   // 63–66: die jeweils LETZTE Meilenstein-Stufe jeder Ebene
-  s => s.stats.ignMs >= last(C.MS_IGNITION),
-  s => s.stats.novaMs >= last(C.MS_NOVA),
+  s => effectiveIgnMs(s) >= last(C.MS_IGNITION),
+  s => effectiveNovaMs(s) >= last(C.MS_NOVA),
   s => effectiveCoalescences(s) >= last(C.MS_GALAXY),
   s => s.stats.collapses >= last(C.MS_COLLAPSE),
 ];

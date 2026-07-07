@@ -297,18 +297,26 @@ export class DustPanel implements Panel {
 
     this.ms = milestoneSection(
       [t('ms.ign0'), t('ms.ign1'), t('ms.ign2')],
-      C.MS_IGNITION, 'ms.u.ign', s => s.stats.ignMs);
+      C.MS_IGNITION, 'ms.u.ign', s => F.effectiveIgnMs(s),
+      { st: this.st, text: s => t('ms.galBreakdown', {
+        raw: s.stats.ignMs, mult: numTag(fmtMult(F.coalescenceBonusMult(s))), n: s.stats.collapses,
+      }) });
     this.root.append(this.ms.root);
 
     // Spezial-Meilensteine (ab 3 Kollapsen): je 100 Käufe einer Generator-Stufe → Output ×3
     this.smsBox = el('div', 'ms-box');
     const smsHead = el('h3', '', t('sms.title'));
     this.smsBox.append(smsHead, el('div', 'sub', t('sms.dustDesc', { s: C.SPECIAL_GEN_STEP, m: C.SPECIAL_GEN_MULT })));
-    this.smsLine = el('div', 'sub', '');
-    this.smsBox.append(this.smsLine);
+    this.smsRow = el('div', 'ms-row');
+    this.smsIcon = el('span', 'ms-icon', '○');
+    this.smsLine = el('span', '', '');
+    this.smsRow.append(this.smsIcon, this.smsLine);
+    this.smsBox.append(this.smsRow);
     this.root.append(this.smsBox);
   }
   private smsBox!: HTMLElement;
+  private smsRow!: HTMLElement;
+  private smsIcon!: HTMLElement;
   private smsLine!: HTMLElement;
   private ms!: ReturnType<typeof milestoneSection>;
 
@@ -320,7 +328,7 @@ export class DustPanel implements Panel {
       : t('dust.cometBoost', { v: fmtMult(m.cometBoostMult), t: Math.ceil(s.dust.comet.boost) }));
 
     // Max-Buttons sind eine Belohnung der ersten Ignition (dieser Galaxie)
-    const maxUnlocked = s.stats.ignMs >= C.MS_IGNITION[0];
+    const maxUnlocked = F.effectiveIgnMs(s) >= C.MS_IGNITION[0];
     setReserve(this.compRow, s.nova.challenge !== 0);
     setReserve(this.compMax, maxUnlocked);
     setText(this.compCost, fmt(F.compressionCost(s), sci));
@@ -374,9 +382,9 @@ export class DustPanel implements Panel {
       setClass(this.igniteLabel, 'capped', igniteCapped);
       setCapDisplay(this.igniteCap, this.igniteRow, this.igniteNeed, s, m, s.star.totalPlasma,
         C.PLASMA_CLAMP_MULT, 'ignite', 'dust.name', 'dust', igniteCapped, s.nova.autoIgnite.on);
-      setReserve(this.classSeg, s.stats.ignMs >= C.MS_IGNITION[1]);
+      setReserve(this.classSeg, F.effectiveIgnMs(s) >= C.MS_IGNITION[1]);
       this.classBtns.forEach((b, c) => setClass(b, 'active', s.ui.nextClass === c));
-      setReserve(this.autoBtn, s.nova.unlocked);
+      setReserve(this.autoBtn, s.stats.autoIgniteSeen);
       const autoOk = F.autoIgniteUnlocked(s);
       setClass(this.autoBtn, 'dim', !autoOk);
       setClass(this.autoBtn, 'active', autoOk && s.nova.autoIgnite.on);
@@ -388,7 +396,10 @@ export class DustPanel implements Panel {
         const steps = Math.floor(s.dust.gens[i].bought / C.SPECIAL_GEN_STEP);
         if (steps > 0) parts.push(`#${i + 1} ×${fmt(D(C.SPECIAL_GEN_MULT).pow(steps), sci)}`);
       }
-      setText(this.smsLine, parts.length ? parts.join(' · ') : t('sms.dustNone'));
+      const done = parts.length > 0;
+      setText(this.smsLine, done ? parts.join(' · ') : t('sms.dustNone'));
+      setClass(this.smsRow, 'done', done);
+      setText(this.smsIcon, done ? '✓' : '○');
     }
     this.ms.update(s);
   }
@@ -402,6 +413,7 @@ export class StarPanel implements Panel {
     b: HTMLButtonElement; bm: HTMLButtonElement; lvl: HTMLElement; cost: HTMLElement; capBadge: HTMLElement;
   }[] = [];
   private upBtns: HTMLButtonElement[] = [];
+  private autoUpBtn!: HTMLButtonElement;
   private upIndicator = el('span', 'collapse-indicator');
   private upChevron = el('span', 'collapse-chevron', '▾');
   private upContainer = el('div', 'up-container');
@@ -474,8 +486,15 @@ export class StarPanel implements Panel {
       this.upBtns.push(b);
       (isAuto ? gridAuto : gridNormal).append(b);
     }
+    this.autoUpBtn = btn('seg-btn auto-btn sm', t('star.autoUpgrades'), () => {
+      const s = this.st();
+      if (s.stats.collapses < C.MS_COLLAPSE[1]) return;
+      s.star.autoUpgrades = !s.star.autoUpgrades;
+      this.update(s, M(s));
+    });
+    attachTip(this.autoUpBtn, () => ({ title: t('star.autoUpgrades'), body: t('star.autoUpgradesTip') }));
     const upHead = el('h3', 'collapse-head');
-    upHead.append(el('span', '', t('star.upgrades')), this.upIndicator, this.upChevron);
+    upHead.append(el('span', '', t('star.upgrades')), this.autoUpBtn, this.upIndicator, this.upChevron);
     upHead.addEventListener('click', () => {
       const s = this.st();
       s.ui.upgradesCollapsed = !s.ui.upgradesCollapsed;
@@ -570,7 +589,10 @@ export class StarPanel implements Panel {
         ...C.MS_NOVA_KEEP.map(id => id === -1
           ? t('ms.novaKeepAll')
           : t('ms.novaKeep', { v: t(`up.${id}`) }))],
-      C.MS_NOVA, 'ms.u.nova', s => s.stats.novaMs);
+      C.MS_NOVA, 'ms.u.nova', s => F.effectiveNovaMs(s),
+      { st: this.st, text: s => t('ms.galBreakdown', {
+        raw: s.stats.novaMs, mult: numTag(fmtMult(F.coalescenceBonusMult(s))), n: s.stats.collapses,
+      }) });
     this.root.append(this.ms.root);
 
     // Spezial-Meilensteine (ab 2 Kollapsen): je 10 Remnants eines Typs → Effekt-Stufe
@@ -580,15 +602,16 @@ export class StarPanel implements Panel {
     this.smsBox.append(smsHead);
     for (let rt = 0; rt < 3; rt++) {
       const row = el('div', 'ms-row');
+      const icon = el('span', 'ms-icon', '○');
       const txt = el('span', '', '');
-      row.append(el('span', 'ms-icon', '✦'), txt);
+      row.append(icon, txt);
       this.smsBox.append(row);
-      this.smsRows.push(txt);
+      this.smsRows.push({ row, icon, txt });
     }
     this.root.append(this.smsBox);
   }
   private smsBox!: HTMLElement;
-  private smsRows: HTMLElement[] = [];
+  private smsRows: { row: HTMLElement; icon: HTMLElement; txt: HTMLElement }[] = [];
   private ms!: ReturnType<typeof milestoneSection>;
 
   update(s: GameState, m: F.Mults): void {
@@ -616,7 +639,7 @@ export class StarPanel implements Panel {
         setClass(rb.capBadge, 'show', capped);
         setDisabled(rb.b, capped || locked || cantAfford);
         // Reaktor-Max ist eine Belohnung der ersten Supernova (dieser Galaxie) — Platz reservieren
-        setReserve(rb.bm, s.stats.novaMs >= C.MS_NOVA[0]);
+        setReserve(rb.bm, F.effectiveNovaMs(s) >= C.MS_NOVA[0]);
         setDisabled(rb.bm, capped || locked || cantAfford);
       }
     }
@@ -627,6 +650,9 @@ export class StarPanel implements Panel {
     setVisible(this.upContainer, !s.ui.upgradesCollapsed);
     setClass(this.upChevron, 'collapsed', s.ui.upgradesCollapsed);
     setClass(this.upIndicator, 'done', s.star.upgrades.every(Boolean));
+    const autoUpOk = s.stats.collapses >= C.MS_COLLAPSE[1];
+    setReserve(this.autoUpBtn, autoUpOk);
+    setClass(this.autoUpBtn, 'active', autoUpOk && s.star.autoUpgrades);
     const fe = s.star.elements[5];
     setVisible(this.novaBox, fe.gt(0) || s.nova.unlocked);
     const nReq = F.novaReq(s);
@@ -645,6 +671,7 @@ export class StarPanel implements Panel {
     setCapDisplay(this.novaCap, this.novaRow, this.novaNeed, s, m, s.nova.totalShards,
       novaClampMult, 'nova', 'el.5', undefined, novaCapped, s.galaxy.autoNova.on);
     const autoNovaOk = m.autoNovaUnlocked;
+    setReserve(this.autoNovaBtn, s.stats.autoNovaSeen);
     setClass(this.autoNovaBtn, 'dim', !autoNovaOk);
     setClass(this.autoNovaBtn, 'active', autoNovaOk && s.galaxy.autoNova.on);
     this.remBtns.forEach((b, r) => {
@@ -661,9 +688,13 @@ export class StarPanel implements Panel {
       ];
       for (let rt = 0; rt < 3; rt++) {
         const tier = F.remnantTier(s, rt as 0 | 1 | 2);
-        setText(this.smsRows[rt], `${t(`nova.rem${rt}`)} — ${t('sms.tier', {
+        const done = tier >= 1;
+        const { row, icon, txt } = this.smsRows[rt];
+        setText(txt, `${t(`nova.rem${rt}`)} — ${t('sms.tier', {
           t: tier, c: s.nova.remnants[rt], n: (tier + 1) * C.SPECIAL_REMNANT_STEP,
         })} · ${eff[rt]}`);
+        setClass(row, 'done', done);
+        setText(icon, done ? '✓' : '○');
       }
     }
     this.ms.update(s);
@@ -680,6 +711,9 @@ export class NovaPanel implements Panel {
   private tokenCost = el('div', 'sub token-cost');
   private tokenCostVal = el('span', 'token-cost-val', '');
   private gardenTotal = el('div', 'sub center');
+  private nebIndicator = el('span', 'collapse-indicator');
+  private nebChevron = el('span', 'collapse-chevron', '▾');
+  private nebContainer = el('div', 'neb-container');
   private chRows: {
     card: HTMLElement; statusIcon: HTMLElement; lockedLine: HTMLElement;
     activeLine: HTMLElement; activeValue: HTMLElement;
@@ -698,9 +732,27 @@ export class NovaPanel implements Panel {
   private gtBtns: HTMLButtonElement[] = [];
 
   constructor(private st: St, private hud: Hud) {
+    const nebHead = el('h3', 'collapse-head');
+    nebHead.append(el('span', '', t('nova.nebula')), this.nebIndicator, this.nebChevron);
+    nebHead.addEventListener('click', () => {
+      const s = this.st();
+      s.ui.nebulaCollapsed = !s.ui.nebulaCollapsed;
+      this.update(s, M(s));
+    });
+    attachTip(this.nebIndicator, () => {
+      const s = this.st();
+      const bought = s.nova.cellsBought;
+      const total = C.NEBULA_CELLS;
+      return {
+        title: t('nova.nebula'),
+        body: bought >= total ? t('nova.nebIndicatorDone') : t('nova.nebIndicatorOpen', { n: bought, total }),
+      };
+    });
+    this.root.append(nebHead, this.nebContainer);
+
     this.tokenCost.append(el('span', '', t('nova.nextToken') + ' '), this.tokenCostVal);
     attachTip(this.tokenCost, () => ({ title: t('nova.tokenTipT'), body: t('nova.tokenTip') }));
-    this.root.append(el('h3', '', t('nova.nebula')), el('div', 'sub', t('nova.nebulaDesc')), this.tokenCost);
+    this.nebContainer.append(el('div', 'sub', t('nova.nebulaDesc')), this.tokenCost);
     const seg = el('div', 'seg');
     for (const b of [1, 2, 3] as NebulaCell[]) {
       const bb = btn('seg-btn', t(`nova.cell${b}`), () => { this.brush = b; this.syncBrush(); });
@@ -717,7 +769,7 @@ export class NovaPanel implements Panel {
       this.brushBtns.push(bb);
       seg.append(bb);
     }
-    this.root.append(seg);
+    this.nebContainer.append(seg);
 
     // Hex-Grid als absolute Buttons — Abstände so gewählt, dass Bounding-Boxen
     // nicht überlappen (sonst schlucken Nachbarn die Klicks in den Eckbereichen)
@@ -786,7 +838,7 @@ export class NovaPanel implements Panel {
     const ctl = el('div', 'garden-ctl');
     ctl.append(this.eraseBtn, respecBtn);
     attachTip(this.gardenTotal, () => ({ title: t('nova.nebula'), body: t('nova.gardenTotalTip', { b: numTag(`×${fmtMult(C.NEBULA_DARK_BONUS)}`) }) }));
-    this.root.append(ctl, grid, this.gardenTotal);
+    this.nebContainer.append(ctl, grid, this.gardenTotal);
 
     const chHead = el('h3', 'collapse-head');
     chHead.append(el('span', '', t('nova.challenges')), this.chIndicator, this.chChevron);
@@ -878,7 +930,9 @@ export class NovaPanel implements Panel {
           if (s.settings.autoTab) this.hud.selectTab('galaxy');
         }
       };
-      if (s.stats.coalescences === 0) this.hud.confirm(t('galaxy.go'), t('galaxy.confirm'), doIt);
+      // stats.coalescences resettet bei jedem Collapse (Runde 6) — für "schon mal gemacht" braucht
+      // es einen ECHTEN Lifetime-Wert; lifetimeDM resettet nie und ist nur > 0 nach mind. 1 Coalesce.
+      if (s.stats.lifetimeDM.lte(0)) this.hud.confirm(t('galaxy.go'), t('galaxy.confirm'), doIt);
       else doIt();
     });
     coalesceBox.append(gtSeg, this.coalBtn);
@@ -927,6 +981,9 @@ export class NovaPanel implements Panel {
     setHTML(this.gardenTotal, t(F.effectiveCoalescences(s) >= C.MS_GALAXY[1] ? 'nova.gardenTotalFe' : 'nova.gardenTotal', {
       d: resTag('dust', `×${fmt(m.nebulaDustMult, sci)}`), p: resTag('plasma', `×${fmt(m.nebulaPlasmaMult, sci)}`),
     }));
+    setVisible(this.nebContainer, !s.ui.nebulaCollapsed);
+    setClass(this.nebChevron, 'collapsed', s.ui.nebulaCollapsed);
+    setClass(this.nebIndicator, 'done', maxed);
 
     setVisible(this.chContainer, !s.ui.challengesCollapsed);
     setClass(this.chChevron, 'collapsed', s.ui.challengesCollapsed);
@@ -1091,7 +1148,7 @@ export class GalaxyPanel implements Panel {
     this.root.append(collapseBox);
 
     this.ms = milestoneSection(
-      [t('ms.col0'), t('ms.col1'), t('ms.col2'), t('ms.col3')],
+      [t('ms.col0'), t('ms.col1'), t('ms.col2'), t('ms.col3'), t('ms.col4')],
       C.MS_COLLAPSE, 'ms.u.col', s => s.stats.collapses);
     this.root.append(this.ms.root);
   }

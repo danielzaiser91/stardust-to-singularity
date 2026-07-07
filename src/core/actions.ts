@@ -5,16 +5,21 @@ import {
   computeMults, genCost, genMaxAfford, compressionCost, clickAmount, maxTier,
   plasmaGain, canIgnite, shardGain, canSupernova, dmGain, canCoalesce,
   entropyGain, canCollapse, reactorCost, nebulaCellCost, nodeCost, nodeAvailable,
-  perkCost, feedContribution, effectiveCoalescences, type Mults,
+  perkCost, feedContribution, effectiveCoalescences, effectiveIgnMs, effectiveNovaMs, type Mults,
 } from './formulas';
 
 /** Teilt einen Ressourcen-Gewinn: Hälfte bleibt Spielwährung, Hälfte nährt die Leere
- *  (log-gewichtet nach Ressourcenstufe). Vor dem Singularitäts-Unlock unverändert. */
+ *  (log-gewichtet nach Ressourcenstufe). Vor dem Singularitäts-Unlock unverändert.
+ *  `gain.sub(voidShare)` statt direktem `.mul(1-FRAC)` würde bei tetrationsgroßen Gewinnen
+ *  (Layer ≥ 2, „eeX"-Notation) durch Auslöschung exakt 0 ergeben — `gain` und `gain*0,5`
+ *  sind an dieser Größenordnung intern ununterscheidbar, die Subtraktion kollabiert komplett.
+ *  Realer Bug, 2026-07-07: fror `dust.amount` dauerhaft auf 0 ein. Direkte Multiplikation
+ *  ist an jeder Größenordnung sicher (reine Mantissen-Skalierung, keine Auslöschung). */
 export function feedSplit(s: GameState, weight: number, gain: Decimal): Decimal {
   if (!s.sing.unlocked || gain.lte(0)) return gain;
   const voidShare = gain.mul(C.FEED_SPLIT_FRAC);
   s.sing.fed = s.sing.fed.add(feedContribution(voidShare, weight));
-  return gain.sub(voidShare);
+  return gain.mul(1 - C.FEED_SPLIT_FRAC);
 }
 
 /** Alle Spieler-Aktionen. Geben true zurück, wenn etwas passiert ist. */
@@ -76,8 +81,8 @@ function resetDustLayer(s: GameState): void {
   s.dust.amount = D(10);
   s.dust.total = D(10);
   for (const g of s.dust.gens) { g.amount = ZERO; g.bought = 0; }
-  // Meilenstein 25 Zündungen (dieser Galaxie): Kompression bleibt; sonst Upgrade 10: bis zu 10
-  if (s.stats.ignMs < C.MS_IGNITION[2]) {
+  // Meilenstein 25 (effektive) Zündungen: Kompression bleibt; sonst Upgrade 10: bis zu 10
+  if (effectiveIgnMs(s) < C.MS_IGNITION[2]) {
     if (!s.star.upgrades[9]) s.dust.compression = 0;
     else s.dust.compression = Math.min(s.dust.compression, 10);
   }
@@ -145,23 +150,27 @@ export function buyReactorsMax(s: GameState, step: number, budgetFrac: number): 
 function resetStarLayer(s: GameState): void {
   s.star.plasma = ZERO;
   s.star.totalPlasma = ZERO;
-  s.star.elements = s.star.elements.map(() => ZERO);
-  // Sternen-Gedächtnis (Singularitäts-Perk 9): L1 schützt alle Upgrades, L2 auch Reaktoren.
-  // Meilenstein 10 Supernovae: Upgrades 1–6 überleben auch ohne Perk.
+  // Sternen-Gedächtnis (Singularitäts-Perk 9): L1 schützt Reaktoren (die sonst NIRGENDS anders
+  // persistieren), L2/L3 lassen einen Teil des Fusionsmaterials (He/C/O/Si — nicht H, das läuft
+  // immer frisch an, nicht Fe, das gehört der Nova) die Supernova überstehen. Bewusst NICHT mehr
+  // an den Plasma-Upgrades oder am Nebelgarten — die sind längst über die Meilenstein-Leitern
+  // (MS_NOVA_KEEP, MS_GALAXY[7]) erreichbar und machten den Perk redundant.
   const memory = s.sing.perks[8] ?? 0;
-  if (memory < 2) s.star.reactors = s.star.reactors.map(() => 0);
-  if (memory < 1) {
-    // Meilenstein-Leiter (pro Galaxie): je Schwelle wird ein Upgrade permanent, die letzte alle übrigen
-    const novae = s.stats.novaMs;
-    const keep = new Set<number>();
-    for (let k = 0; k < C.MS_NOVA_KEEP.length; k++) {
-      if (novae < C.MS_NOVA[k + 2]) break;
-      const id = C.MS_NOVA_KEEP[k];
-      if (id === -1) s.star.upgrades.forEach((_, u) => keep.add(u));
-      else keep.add(id);
-    }
-    s.star.upgrades = s.star.upgrades.map((u, i) => (keep.has(i) ? u : false));
+  const retain = C.PERK_STELLAR_ELEMENT_RETAIN[Math.min(memory, C.PERK_STELLAR_ELEMENT_RETAIN.length - 1)];
+  s.star.elements = s.star.elements.map((e, i) =>
+    i >= 1 && i < C.ELEMENT_COUNT - 1 && retain > 0 ? e.mul(retain) : ZERO);
+  if (memory < 1) s.star.reactors = s.star.reactors.map(() => 0);
+  // Meilenstein-Leiter (pro Galaxie, effektiv): je Schwelle wird ein Upgrade permanent, die
+  // letzte alle übrigen
+  const novae = effectiveNovaMs(s);
+  const keep = new Set<number>();
+  for (let k = 0; k < C.MS_NOVA_KEEP.length; k++) {
+    if (novae < C.MS_NOVA[k + 2]) break;
+    const id = C.MS_NOVA_KEEP[k];
+    if (id === -1) s.star.upgrades.forEach((_, u) => keep.add(u));
+    else keep.add(id);
   }
+  s.star.upgrades = s.star.upgrades.map((u, i) => (keep.has(i) ? u : false));
   // Roguelite: Zündungs-Meilensteine & Klassen-Picks gelten pro Supernova-Run.
   // Galaxie-Meilenstein (6 Coalescences) macht sie permanent. VOR resetDustLayer
   // nullen, damit auch die Kompressions-Persistenz (ignMs ≥ 25) mitfällt.
@@ -274,8 +283,8 @@ function resetNovaLayer(s: GameState): void {
   s.nova.totalShards = ZERO;
   // Galaxie-Meilensteine bestimmen, was die Coalescence überlebt (effektiv, s. coalescenceBonusMult):
   const coal = effectiveCoalescences(s);
-  // M8 (oder Sternen-Gedächtnis L3): Nebelgarten bleibt
-  if (coal < C.MS_GALAXY[7] && (s.sing.perks[8] ?? 0) < 3) {
+  // M8: Nebelgarten bleibt
+  if (coal < C.MS_GALAXY[7]) {
     s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
     s.nova.cellsBought = 0;
   }
@@ -287,7 +296,10 @@ function resetNovaLayer(s: GameState): void {
     s.stats.novaMs = 0;
     s.nova.autoIgnite.on = false;  // Meilenstein weg → Schalter aus, bis neu freigespielt
   }
-  s.nova.remnants = [0, 0, 0];
+  // Meilenstein 4 Kollapse: Remnants überleben (Coalescence UND Collapse) — sonst kann die
+  // Spezial-Meilenstein-Leiter (remnantTier, ab 2 Kollapsen) nie über einen einzelnen
+  // Galaxie-Run hinaus wachsen, da sie direkt an s.nova.remnants hängt.
+  if (s.stats.collapses < C.MS_COLLAPSE[3]) s.nova.remnants = [0, 0, 0];
   s.nova.count = 0;
   s.nova.pulsarPhase = 0;
   resetStarLayer(s);
@@ -328,7 +340,7 @@ function resetGalaxyLayer(s: GameState): void {
   s.galaxy.dm = ZERO;
   s.galaxy.totalDM = ZERO;
   // Meilenstein 5 Kollapse: Keystone-Nodes (Astenden) überleben
-  const keepKeystones = s.stats.collapses >= C.MS_COLLAPSE[3];
+  const keepKeystones = s.stats.collapses >= C.MS_COLLAPSE[4];
   s.galaxy.nodes = s.galaxy.nodes.map((owned, i) =>
     keepKeystones && (i === 14 || i === 29 || i === 44) ? owned : false);
   s.galaxy.count = 0;

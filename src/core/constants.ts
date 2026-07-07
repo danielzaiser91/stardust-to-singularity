@@ -122,9 +122,13 @@ export const PERK_COST_GROWTH = [3, 4, 5, 6, 8, 10, 12, 15, 20];
 // (2500 Entropie) nicht. Zwei Konstanten-Fixes an Perk 1 (Hawking) wurden geprüft und verworfen
 // (Diagnose in BALANCE.md) — beide halfen nicht bzw. schadeten. Braucht eine echte Design-
 // Entscheidung, kein Constants-Tweak. Siehe BALANCE.md „Endgame-Kalibrierung" + todo.md.
-// Perk 9 „Sternen-Gedächtnis": L1 Plasma-Upgrades überleben Supernova,
-// L2 Reaktoren überleben Supernova, L3 Nebelzellen überleben Coalescence
+// Perk 9 „Sternen-Gedächtnis": L1 Reaktoren überleben Supernova/Coalescence/Collapse (sonst
+// NIRGENDS anders persistierbar); L2/L3 lassen einen Teil des Fusionsmaterials (He/C/O/Si)
+// eine Supernova überstehen. Absichtlich NICHT mehr an Plasma-Upgrades/Nebelgarten — die sind
+// über die Meilenstein-Leitern (MS_NOVA_KEEP, MS_GALAXY[7]) ohnehin erreichbar und machten den
+// Perk redundant (2026-07-07).
 export const STELLAR_MEMORY_MAX = 3;
+export const PERK_STELLAR_ELEMENT_RETAIN = [0, 0, 0.10, 0.25];  // Index = Perk-Level
 export const FEED_ACCRETION_EXP = 2;         // global mult = (1+log10(1+fed))^exp
 // Konsum bei Gewinn: JEDER Ressourcen-Gewinn (Dust/Plasma/Shards/DM) wird nach Singularitäts-
 // Unlock sofort gesplittet — die Hälfte bleibt Spielwährung, die andere Hälfte nährt die Leere
@@ -163,8 +167,9 @@ export const MS_GALAXY = [1, 2, 3, 5, 6, 9, 10, 12];
 // Sekunde am ×20-Clamp — Auto ist damit exakt so stark wie optimaler manueller Spam.
 export const AUTO_IGNITE_RATE = Math.log(PLASMA_CLAMP_MULT + 1) / PLASMA_CLAMP_MULT;
 export const AUTO_NOVA_RATE = 0.01;
-// Kollaps-Meilensteine: Perks · Spezial-MS Supernova · Spezial-MS Staub · Keystones bleiben
-export const MS_COLLAPSE = [1, 2, 3, 5];
+// Kollaps-Meilensteine: Perks · Spezial-MS Supernova · Spezial-MS Staub · Remnants bleiben ·
+// Keystones bleiben
+export const MS_COLLAPSE = [1, 2, 3, 4, 5];
 // ── Spezial-Meilensteine ─────────────────────────────────────────────────────
 // Supernova (ab 2 Kollapsen): je 10 Remnants EINES Typs steigt dessen Effekt eine Stufe.
 // Staub (ab 3 Kollapsen): je 100 Käufe einer Generator-Stufe (im Run) Output ×3, stapelnd.

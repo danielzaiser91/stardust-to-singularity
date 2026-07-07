@@ -179,6 +179,176 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
       Tooltip ("X/45 Konstellations-Nodes freigeschaltet"). Live geprüft: Auf-/Zuklappen
       funktioniert, Indikator wird grün bei allen Nodes gekauft.
 
+## Erledigt (Stand 2026-07-07, zehnte Runde)
+
+- [x] ~~**Hawking-Strahlung: passives Plasma komplett entfernt** (war in Runde 5 nur hinter
+      Auto-Supernova gegated statt entfernt, wie ursprünglich gewünscht).~~ — Trickle-Block in
+      `tick.ts` entfernt, `perk.1d`-Text bereinigt. Die anderen zwei Hawking-Effekte
+      (H-Rate-Multiplikator, `plasmaGainMult`/`shardGainMult`-Boost) bleiben unverändert — nur
+      um den passiven Plasma-Zufluss ging es.
+
+- [x] ~~**Sternen-Gedächtnis (Perk 9): Boni waren redundant mit Meilensteinen.**~~ — L1
+      (Plasma-Upgrades überleben Supernova) war längst über die `MS_NOVA_KEEP`-Leiter erreichbar
+      (alle Upgrades permanent ab 50 Supernovae, dank Verschmelzungs-Bonus-Mult aus Runde 6
+      inzwischen schnell erreichbar), L3 (Nebelgarten übersteht Verschmelzung) war 1:1 identisch
+      mit `MS_GALAXY[7]`. Neu: L1 = Reaktoren überleben Supernova/Verschmelzung/Kollaps (der
+      einzige vorher schon einzigartige Effekt, jetzt eine Stufe früher) · L2/L3 = 10 %/25 % des
+      Fusionsmaterials (He/C/O/Si — nicht H, nicht Fe) übersteht eine Supernova (komplett neu,
+      keine Meilenstein-Entsprechung). Test `stellar memory perk protects...` entsprechend
+      umgeschrieben.
+
+- [x] ~~**Nebelgarten: einklappbare Sektion wie Challenges/Sternen-Upgrades/Konstellationen.**~~
+      — `s.ui.nebulaCollapsed` + generisches `collapse-head`-Muster. Grün, wenn alle 19
+      Nebel-Token gekauft sind.
+
+- [x] ~~**"Kollapse" → "Kollaps" (Deutsch).**~~ — zwei Fundstellen (`stat.collapses`,
+      `ms.u.col`) korrigiert; die drei bereits korrekten Singular-Stellen (Lore, Achievement,
+      altes `ms.col3`) blieben unangetastet.
+
+- [x] ~~**Spezial-Meilensteine: Level 1 erreicht → grüner Text + Häkchen statt normalem
+      Icon.**~~ — beide Spezial-Meilenstein-Boxen (Staub-Generatoren in `DustPanel`, Remnant-
+      Stufen in `StarPanel`) nutzen jetzt exakt das `ms-row`/`ms-icon`/`.done`-Muster der
+      generischen `milestoneSection()` (○ → ✓, Text wird grün) — keine neue CSS nötig, nur
+      Wiederverwendung.
+
+- [x] ~~**Bug: Verschmelzen-Warnung erschien trotz deaktivierter Bestätigung / trotz
+      Verschmelzungs-Vorerfahrung.**~~ — echter Bug gefunden: der "nur beim ersten Mal warnen"-
+      Check für Verschmelzen nutzte `s.stats.coalescences === 0`, aber genau dieser Zähler wird
+      seit Runde 6 bei JEDEM Kollaps auf 0 zurückgesetzt (Ausgleichs-Bonus-System) — nach jedem
+      Kollaps sah die erste Verschmelzung danach wieder wie die "allererste" aus. Fix: Check
+      läuft jetzt gegen `s.stats.lifetimeDM` (resettet nie, ist nur > 0 nach mindestens einer
+      erfolgreichen Verschmelzung, jemals).
+
+- [x] ~~**Neue Automation: Plasma-Upgrades automatisch kaufen, ab 2. Kollaps.**~~ — neues
+      `s.star.autoUpgrades`, in `tick.ts` gegated hinter `MS_COLLAPSE[1]`. Kompakter "Auto"-
+      Toggle direkt im "Plasma-Upgrades"-Klapp-Header (neue `.seg-btn.sm`-CSS-Variante für
+      Inline-Buttons in Überschriften). Live geprüft: kauft zuverlässig alle bezahlbaren
+      Upgrades, Klick auf den Toggle klappt die Sektion NICHT versehentlich zu (`btn()`s
+      eingebautes `stopPropagation` funktioniert korrekt — ein per Koordinaten simulierter Klick
+      des Testwerkzeugs hatte kurzzeitig etwas anderes vermuten lassen, ein direkter `.click()`
+      bestätigte: kein echter Bug).
+
+- [x] ~~**Neuer 4-Kollaps-Meilenstein: Supernova-Überreste überleben Verschmelzung UND
+      Kollaps.**~~ — `MS_COLLAPSE` von `[1,2,3,5]` auf `[1,2,3,4,5]` erweitert (Keystones-Check
+      dadurch von Index 3 auf Index 4 verschoben). Ohne diesen Meilenstein wurden `nova.remnants`
+      bei JEDER Verschmelzung auf `[0,0,0]` zurückgesetzt — die Spezial-Meilenstein-Leiter für
+      Remnants (ab 2 Kollapsen, je 10 eines Typs) konnte dadurch nie über einen einzelnen
+      Galaxie-Run hinaus wachsen. Neuer i18n-Key `ms.col3` (alter `ms.col3` → `ms.col4`).
+
+- [x] ~~**Auto-Toggles (Auto-Zündung, Auto-Supernova): unsichtbar, bis die Freischaltbedingung
+      je erreicht wurde.**~~ — konkreter, vom User gemeldeter Bug: `autoNovaBtn` in `StarPanel`
+      hatte GAR KEIN Sichtbarkeits-Gating (nur Dim/Aktiv-Klassen) — wer Auto-Supernova nie
+      freigeschaltet hatte, sah trotzdem einen deaktivierten Knopf. Neue Lifetime-Flags
+      `stats.autoIgniteSeen`/`autoNovaSeen` (einmal wahr, für immer wahr, gesetzt in `tick.ts`),
+      ersetzen das vorherige `s.nova.unlocked`-Kriterium bei `autoBtn` (das nur lose mit der
+      echten Freischaltung korrelierte) und werden neu bei `autoNovaBtn` angewendet. Danach
+      bleibt der Knopf sichtbar, zeigt aber wieder den Dim-Zustand, falls die Bedingung durch
+      einen späteren Reset (z. B. Kollaps) erneut unterschritten wird — genau wie gewünscht.
+
+  tsc/vitest (46/46)/Build grün für die gesamte Runde. 10-Tage-Aktiv-Sim als Balance-Spotcheck
+  gelaufen (siehe Ergebnis unten, falls dokumentiert).
+
+## Erledigt (Stand 2026-07-07, elfte Runde)
+
+- [x] ~~**Kritischer Bug: Dust bleibt dauerhaft bei 0 hängen (User-Save angehängt).**~~ — Save
+      geladen und mit dem echten Core durchgetickt (gleiche Methodik wie beim Zeitdilatations-Bug):
+      `dustPerSecond` war astronomisch hoch (gesund), aber `dust.amount` blieb exakt `0`, egal wie
+      viele Ticks. Root Cause gefunden: `feedSplit()` (Runde 9, neuer Void-Split-Mechanismus)
+      berechnete den Spielanteil als `gain.sub(gain.mul(FRAC))` — bei tetrationsgroßen Zahlen
+      (`"eeX"`-Notation, hier `ee16.74`) sind `gain` und `gain × 0,5` intern UNUNTERSCHEIDBAR
+      (Kapazität der Mantisse reicht bei dieser Größenordnung nicht mehr aus), die Subtraktion
+      löscht sich komplett aus → exakt 0, bei JEDEM Tick, für immer. Betraf potenziell auch
+      Plasma/Scherben/DM sobald sie dieselbe Größenordnung erreichen. Fix: direkte Multiplikation
+      `gain.mul(1 - FRAC)` statt Subtraktion zweier fast identischer Werte — reine
+      Mantissen-Skalierung, an jeder Größenordnung sicher. Neuer Regressionstest
+      (`feedSplit credits a nonzero amount even at tetrational magnitudes`) reproduziert exakt
+      diesen Fall. Mit dem echten User-Save über 500 Ticks nachverifiziert: Dust/Plasma/Scherben/
+      DM/`sing.fed` wachsen jetzt alle wieder normal.
+
+- [x] ~~**Auto-Supernova erzeugt immer Schwarze Löcher statt des gewählten Remnants + Scherben-
+      Vorschau springt vor dem Deckel auf 0 (Video angehängt).**~~ — zwei Bugs, eine Ursache:
+      der Auto-Trickle löste bei 100 % Akkumulation einen ECHTEN `supernovaReset()` aus (Fe/
+      Elemente/Plasma komplett gewischt) UND nutzte dafür `lastRemnantChoice()` — eine Heuristik
+      (häufigster bisheriger Typ), NICHT `s.ui.nextRemnant` (die tatsächliche Spieler-Auswahl,
+      die der manuelle Knopf nutzt). Bei schnellem Trickle (Auto-Supernova feuert oft/Sekunde)
+      wischte das ständig Fe — sah aus wie "Scherben-Gewinn resettet sich selbst", war aber Fe.
+      Fix nach demselben Muster wie Auto-Zündung (die den Dust-Layer NIE resettet): Auto-
+      Supernova löst bei 100 % keinen Reset mehr aus, zählt nur noch Meilenstein-Zähler
+      (`supernovae`, `novaMs`) UND `nova.remnants[s.ui.nextRemnant]` hoch — Fe/Elemente/Plasma
+      bleiben unangetastet, wachsen kontinuierlich weiter (Deckel wirkt weiterhin über die
+      bestehende `shardClampMult`-Formel, jetzt aber ohne Wisch-Unterbrechung). Manuelles
+      Auslösen bleibt ein echter Reset. Test entsprechend neu geschrieben + erweitert.
+
+- [x] ~~**Pulsar-Spezialmeilenstein zeigt endlos weiter wachsende Dauer, auch nachdem der
+      Pulsar längst permanent aktiv ist (kein Cooldown mehr übrig).**~~ — `remnantParams().
+      pulsarDur` wuchs unbegrenzt mit der Remnant-Stufe weiter, obwohl ab Erreichen des vollen
+      60-s-Zyklus (Stufe 5, 50 Pulsare) keine zusätzliche Dauer mehr etwas bewirkt (Burst ist ab
+      da ohnehin permanent aktiv). Jetzt hart an `C.REMNANT_PULSAR_PERIOD` gedeckelt — Anzeige
+      suggeriert keinen nicht-existenten weiteren Nutzen mehr. Test erweitert (Stufe 10 → weiterhin
+      60 s statt roher 110 s).
+
+- [x] ~~**Sauerstoff-Boost-Text umbricht zweizeilig und lässt alle Element-Reihen in der Höhe
+      springen.**~~ — `.el-row .sub` bekommt jetzt eine feste `min-height` für zwei Zeilen
+      (`2.4em`), unabhängig von der tatsächlichen Textlänge — betrifft alle sechs Element-Reihen
+      gleichermaßen, nicht nur Sauerstoff, damit auch künftige (ggf. längere) Texte in beiden
+      Sprachen keine Höhen-Sprünge mehr verursachen.
+
+- [x] ~~**Galaxie-Reset-Bonus-Tooltip umformulieren + denselben Ausgleichs-Bonus auf die zwei
+      Ebenen darunter anwenden.**~~ — Tooltip-Text nennt jetzt die REGEL statt nur die rohe
+      Kollaps-Zahl ("wächst um +1 pro Kollaps, aktuell {n}" statt "aus {n} Collapse(s)").
+      Zusätzlich: neue `effectiveIgnMs()`/`effectiveNovaMs()` in `formulas.ts` (derselbe
+      `coalescenceBonusMult()`, jetzt auch auf die Zündungs- und Supernova-Meilenstein-Zähler
+      angewendet) — ersetzen den rohen `stats.ignMs`/`stats.novaMs` überall im Gating
+      (`autoIgniteUnlocked`, Kompressions-Persistenz, Plasma-Upgrade-Leiter, Max-Button-
+      Freischaltungen) UND in der Anzeige (Meilenstein-Listen inkl. neuer Aufschlüsselungs-
+      Tooltips, Achievement-Checks) — exakt dasselbe Muster wie `effectiveCoalescences` aus
+      Runde 6, nur zwei Ebenen weiter unten angewendet. Live geprüft: `novaMs=4` bei 2 Kollapsen
+      (Bonus ×3) zeigt korrekt "12× supernovae" statt roher "4×".
+
+  Kritischer Fund dieser Runde: die `feedSplit()`-Katastrophe (Auslöschung bei tetrationsgroßen
+  Zahlen) war ein waschechter, durch ein reales User-Save reproduzierter Bug aus Runde 9 — hätte
+  ohne den angehängten Save vermutlich noch lange unentdeckt geblieben, da normale Sims (10 Tage)
+  diese Größenordnung nicht erreichen. tsc/vitest (47/47)/Build grün. Save mit 500 Ticks
+  nachverifiziert. 5-Tage-Sim als abschließender Balance-Spotcheck gelaufen.
+
+## Erledigt (Stand 2026-07-07, zwölfte Runde — Performance)
+
+- [x] ~~**Supernova-Tab wird bei aktivem Auto-Nova mit vielen Remnants extrem laggy
+      (Screenshot: durchgängig weiß ausgebrannte Szene).**~~ — echter Speicher-Leak gefunden:
+      `rebuildRemnants()` in `supernova.ts` baute PRO REMNANT eine komplett neue Geometrie/
+      Material, beim Neutronenstern sogar eine eigene 128×128-CanvasTexture (`radialTexture()`,
+      pro Aufruf frisch gerendert, nie gecacht) — und `remnantGroup.clear()` beim nächsten
+      Rebuild gibt davon NICHTS frei (`.clear()` entfernt Kinder aus der Szene, disposed aber
+      nichts). Bei aktivem Auto-Supernova ändert sich der Remnant-Count laufend → jeder Rebuild
+      häufte ungenutzte GPU-Texturen/Geometrien weiter auf, nie freigegeben. Fix: Geometrien/
+      Materialien/Texturen jetzt EINMAL im Konstruktor gebaut und über alle Remnant-Instanzen
+      geteilt (`rebuildRemnants()` erzeugt nur noch leichte Mesh/Sprite/Group-Hüllen, nichts
+      Einzigartiges mehr zu disposen). Zusätzlich pro Typ auf `MAX_RENDERED_PER_TYPE = 24`
+      gedeckelt — ab da verschmelzen die additiv geblendeten Glows ohnehin optisch zu einem
+      gesättigten Klumpen (exakt das Bild im gemeldeten Screenshot), mehr Objekte ändern am
+      Ergebnis nichts mehr, kosten aber linear mehr Speicher/CPU. Live mit 500 Remnants pro Typ
+      (1500 gesamt) geprüft: Szene bleibt klar erkennbar statt ausgebrannt, keine Konsolenfehler.
+
+- [x] ~~**Warum ~1,5 GB Speicherverbrauch + hohe CPU-Last?**~~ — Engine/andere Szenen
+      durchsucht: `engine.ts` (Composer, fester Burst-Partikel-Pool, ein Starfield) sowie
+      Dust-/Star-/Galaxy-Szene sind sauber (feste Objekt-Anzahl, einmalig gebaut, keine
+      Pro-Frame-Allokationen in `update()`) — der Supernova-Remnant-Leak oben war der einzige
+      gefundene echte Leak und vermutlich der Hauptverursacher (wächst unbegrenzt über eine
+      lange Session mit aktivem Auto-Nova, genau wie gemeldet).
+
+- [x] ~~**~2 % CPU im Hintergrund-Tab, auch wenn nichts sichtbar ist.**~~ — `requestAnimationFrame`
+      pausiert im Hintergrund-Tab zuverlässig (bereits diese Session bestätigt), ABER die
+      Hintergrundmusik (`<audio loop>` + `AudioContext`-Graph in `audio/engine.ts`) läuft
+      bewusst über Tab-Wechsel hinweg weiter — das ist der Hauptverursacher der gemeldeten
+      Dauerlast, da Audio-Dekodierung/-Mixing auf einem eigenen, von rAF unabhängigen Thread
+      läuft. Fix: `visibilitychange`-Handler in `AudioEngine` pausiert bei ausgeblendetem Tab
+      sowohl die `<audio>`-Elemente als auch den `AudioContext` (`.suspend()`) und setzt beides
+      beim Zurückkehren fort. Zusätzlich: der 2-Sekunden-Hint-Check-Timer in `main.ts` überspringt
+      seine Arbeit jetzt ebenfalls bei `document.hidden` (kleinerer, aber kostenloser Zusatzfix).
+
+  tsc/vitest (47/47)/Build grün. Live geprüft: 1500 Remnants rendern sichtbar undegradiert statt
+  ausgebrannt; `visibilitychange`-Handler wirft keine Fehler.
+
 ## Offen
 
 - [ ] **Challenges neu balancieren — aktuell viel zu leicht durch Automationen.** Sobald

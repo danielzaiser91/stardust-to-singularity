@@ -370,8 +370,11 @@ export function remnantParams(s: GameState): { neutronBase: number; pulsarPer: n
   return {
     neutronBase: C.REMNANT_NEUTRON_FUSION + C.SPECIAL_NEUTRON_BONUS * remnantTier(s, 0),
     pulsarPer: C.REMNANT_PULSAR_PER + C.SPECIAL_PULSAR_BONUS * remnantTier(s, 1),
-    // Dauer wächst mit: Stufe 5 (50 Pulsare) erreicht den 60-s-Zyklus → permanent aktiv
-    pulsarDur: C.REMNANT_PULSAR_DURATION + C.SPECIAL_PULSAR_DUR * remnantTier(s, 1),
+    // Dauer wächst mit: Stufe 5 (50 Pulsare) erreicht den 60-s-Zyklus → permanent aktiv.
+    // Hart am Zyklus gedeckelt — mehr Dauer als der Zyklus selbst hat keinen Effekt mehr
+    // (pulsarPhase < pulsarDur ist ab da immer wahr), die Anzeige soll das nicht suggerieren.
+    pulsarDur: Math.min(C.REMNANT_PULSAR_PERIOD,
+      C.REMNANT_PULSAR_DURATION + C.SPECIAL_PULSAR_DUR * remnantTier(s, 1)),
     bhPer: C.REMNANT_BH_SHARDS + C.SPECIAL_BH_BONUS * remnantTier(s, 2),
   };
 }
@@ -391,6 +394,15 @@ export function coalescenceBonusMult(s: GameState): number {
  *  UND in der Anzeige, da der rohe Zähler pro Collapse auf 0 fällt. */
 export function effectiveCoalescences(s: GameState): number {
   return s.stats.coalescences * coalescenceBonusMult(s);
+}
+/** Derselbe Galaxie-Reset-Bonus gilt auch für die zwei Ebenen darunter: ignMs/novaMs resetten
+ *  sogar noch häufiger als coalescences (jede Ignition bzw. jede Coalescence-Runde), profitieren
+ *  aber vom selben, nur an Kollapsen hängenden Ausgleichs-Multiplikator. */
+export function effectiveIgnMs(s: GameState): number {
+  return s.stats.ignMs * coalescenceBonusMult(s);
+}
+export function effectiveNovaMs(s: GameState): number {
+  return s.stats.novaMs * coalescenceBonusMult(s);
 }
 
 /** Scherben-Clamp-Multiplikator: Schwarze Löcher heben den Deckel selbst an (statt nur den
@@ -518,5 +530,5 @@ export function feedContribution(gain: Decimal, weight: number): Decimal {
   return log10p1(gain).mul(weight);
 }
 export function autoIgniteUnlocked(s: GameState): boolean {
-  return s.stats.novaMs >= C.MS_NOVA[1];   // Meilenstein: ab der 2. Supernova (dieser Galaxie)
+  return effectiveNovaMs(s) >= C.MS_NOVA[1];   // Meilenstein: ab der 2. (effektiven) Supernova
 }

@@ -51,6 +51,21 @@ export class AudioEngine {
     on('feed', () => this.sweep(300, 60, 0.6));
     on('nebula-placed', () => this.blip(700, 0.12, 0.12, 'sine'));
     on('node-bought', () => this.arp([587, 740], 0.4));
+
+    // Musik läuft über <audio loop> + AudioContext — rAF pausiert im Hintergrund-Tab komplett,
+    // aber Web Audio NICHT (spielt bewusst über Tab-Wechsel hinweg weiter) → laufende Musik ist
+    // die Hauptquelle der gemeldeten Hintergrund-CPU-Last. Bei ausgeblendetem Tab explizit
+    // pausieren/suspendieren, sonst dekodiert/mischt der Audio-Thread ungehört weiter.
+    document.addEventListener('visibilitychange', () => {
+      if (!this.ctx) return;
+      if (document.hidden) {
+        void this.ctx.suspend();
+        for (const slot of this.slots) if (slot.track) slot.el.pause();
+      } else {
+        void this.ctx.resume();
+        for (const slot of this.slots) if (slot.track) void slot.el.play().catch(() => {});
+      }
+    });
   }
 
   private init(): void {

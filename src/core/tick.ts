@@ -2,7 +2,7 @@ import { Decimal } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
 import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, autoIgniteUnlocked, type Mults } from './formulas';
-import { supernovaReset, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax, feedSplit } from './actions';
+import { buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax, buyPlasmaUpgrade, feedSplit } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
 import { checkLore } from './lore';
@@ -14,6 +14,11 @@ import { checkLore } from './lore';
 export function tick(s: GameState, dt: number): Mults {
   const m = computeMults(s);
   const gdt = dt * m.speed;   // Spielzeit (Produktion); Realzeit-Timer nutzen dt
+
+  // — "Je erreicht"-Merker für Auto-Toggles (UI: sichtbar bleiben, auch wenn ein späterer
+  // Reset die Freischaltbedingung wieder unterschreitet) —
+  if (autoIgniteUnlocked(s)) s.stats.autoIgniteSeen = true;
+  if (m.autoNovaUnlocked) s.stats.autoNovaSeen = true;
 
   // — Statistiken (Realzeit — Balance-Ziele messen echte Zeit) —
   s.stats.played += dt;
@@ -80,14 +85,6 @@ export function tick(s: GameState, dt: number): Mults {
     s.dust.amount = s.dust.amount.mul(Math.pow(1 - C.CH7_DECAY, gdt));
   }
 
-  // — Hawking Radiation (Perk 2): passives Plasma — erst ab Auto-Supernova (10. Coalescence),
-  // sonst würde der Trickle das Zündungs-Pacing schon vor jeder Automation aushebeln —
-  if (s.sing.perks[1] > 0 && s.star.unlocked && m.autoNovaUnlocked) {
-    const hl = s.sing.perks[1];
-    const gained = s.stats.bestPlasma.mul(0.001 * hl * gdt);
-    s.star.plasma = s.star.plasma.add(feedSplit(s, C.FEED_WEIGHT_PLASMA, gained));
-  }
-
   // — Autobuyer: vier getrennte Automationen (je eigenes Plasma-Upgrade) —
   if (s.star.upgrades[4]) for (let t = 0; t < Math.min(4, top); t++) autoBuyGen(s, m, t);
   if (s.star.upgrades[8]) for (let t = 4; t < Math.min(8, top); t++) autoBuyGen(s, m, t);
@@ -97,6 +94,11 @@ export function tick(s: GameState, dt: number): Mults {
       if (s.star.reactors[r] === 0) buyReactor(s, r);
       buyReactorsMax(s, r, C.AUTOBUY_BUDGET_FRAC);
     }
+  }
+  // Auto-Plasma-Upgrades (ab 2. Kollaps): kauft jedes noch fehlende, bezahlbare Plasma-Upgrade —
+  // eigener Toggle, kein gekauftes Upgrade wie die anderen vier Automationen.
+  if (s.stats.collapses >= C.MS_COLLAPSE[1] && s.star.autoUpgrades) {
+    for (let u = 0; u < C.PLASMA_UPGRADE_COSTS.length; u++) buyPlasmaUpgrade(s, u);
   }
   // Auto-Zündung: kontinuierlicher Trickle des aktuellen Zündungs-Gewinns, pro Tick berechnet,
   // OHNE Dust-Reset (kein Flackern). Rate = ln(20)/19 ≈ 15,8 %/s = kontinuierliches Äquivalent
@@ -119,8 +121,12 @@ export function tick(s: GameState, dt: number): Mults {
       }
     }
   }
-  // Auto-Supernova: gleicher Trickle auf Scherben. Das Reset-Event bei 100 % hält alle
-  // Pacing-Mechanismen intakt (Fe-Leiter, Aufladezeit → Gewinn kollabiert und lädt neu).
+  // Auto-Supernova: gleicher Trickle wie Auto-Zündung — OHNE Star-Reset (kein Flackern, Fe/
+  // Elemente/Plasma bleiben unangetastet). Bei 100 % Akkumulation zählt nur der GEWÄHLTE
+  // Remnant-Typ (s.ui.nextRemnant — vorher fälschlich eine Heuristik, die den zuletzt HÄUFIGSTEN
+  // Typ wiederholte, unabhängig von der Spieler-Auswahl) + Meilenstein-Zähler hoch, ohne echten
+  // Reset. Der alte harte Reset wischte bei schnellem Trickle ständig Fe/Elemente — sah aus wie
+  // „Scherben-Gewinn springt vor dem Deckel auf 0". Manuelles Auslösen bleibt ein echter Reset.
   if (s.galaxy.autoNova.on && m.autoNovaUnlocked && s.nova.challenge === -1) {
     const gain = shardGain(s, m);
     if (gain.gt(0)) {
@@ -132,8 +138,10 @@ export function tick(s: GameState, dt: number): Mults {
       s.stats.lifetimeShards = s.stats.lifetimeShards.add(pay);
       s.galaxy.autoNova.acc += frac;
       if (s.galaxy.autoNova.acc >= 1) {
-        s.galaxy.autoNova.acc = 0;
-        supernovaReset(s, lastRemnantChoice(s));
+        s.galaxy.autoNova.acc -= 1;
+        s.stats.supernovae++;
+        s.stats.novaMs++;
+        s.nova.remnants[s.ui.nextRemnant]++;
       }
     }
   }
@@ -151,11 +159,4 @@ function autoBuyGen(s: GameState, m: Mults, tier: number): void {
   // bevor teurere Stufen drankommen — sichtbarer Staub bliebe dauerhaft bei 0.
   const n = genMaxAfford(s, m, tier, C.AUTOBUY_BUDGET_FRAC);
   if (n > 0 && s.dust.amount.gte(genCost(s, m, tier, n))) buyGenerator(s, m, tier, n);
-}
-
-function lastRemnantChoice(s: GameState): 0 | 1 | 2 {
-  const r = s.nova.remnants;
-  if (r[2] >= r[0] && r[2] >= r[1]) return 2;
-  if (r[1] >= r[0]) return 1;
-  return 0;
 }

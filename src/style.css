@@ -146,6 +146,9 @@ button.denied { animation: buy-denied 0.3s ease; border-color: var(--danger); }
 .el-name { font-weight: 700; }
 .el-0 { color: #a8dadc; } .el-1 { color: #ffd166; } .el-2 { color: #b591f0; }
 .el-3 { color: #4ef0d8; } .el-4 { color: #f58bc8; } .el-5 { color: #ff6b5e; }
+/* Boost-Text (z. B. Sauerstoff) kann auf 2 Zeilen umbrechen — feste Höhe reserviert, sonst
+   springen alle Element-Reihen sichtbar in der Höhe, sobald diese eine Zeile umbricht. */
+.el-row .sub { min-height: 2.4em; line-height: 1.2; }
 
 /* ── Upgrade-Grid ── */
 .up-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -203,6 +206,7 @@ button.denied { animation: buy-denied 0.3s ease; border-color: var(--danger); }
 .seg { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
 .seg-btn { flex: 1; min-width: 90px; font-size: 0.8rem; }
 .seg-btn.active { background: rgba(100, 216, 255, 0.22); border-color: var(--cyan); box-shadow: 0 0 10px rgba(100, 216, 255, 0.3); }
+.seg-btn.sm { flex: 0 0 auto; min-width: 0; font-size: 0.68rem; padding: 3px 10px; margin-left: 4px; }
 
 /* ── Hex-Grid ── */
 .pill-class.cls0 .pill-icon { color: #ff8a8a; }

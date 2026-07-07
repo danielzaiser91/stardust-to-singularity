@@ -12,6 +12,10 @@ import { on } from '../../events';
  * kleine Schwarze Löcher) orbitieren im Trümmerfeld.
  */
 const CELL_COLORS = ['', '#ff4d8d', '#4dc3ff', '#5b2a86'];  // emission, reflection, dark
+// Rendering deckeln statt jeden Remnant einzeln zu zeichnen: ab hier verschmelzen die additiv
+// geblendeten Glows optisch ohnehin zu einem gesättigten Klumpen (siehe gemeldeter Screenshot) —
+// mehr Objekte ändern das Bild nicht mehr, kosten aber linear mehr Speicher/CPU pro Frame.
+const MAX_RENDERED_PER_TYPE = 24;
 
 export class SupernovaScene implements LayerScene {
   group = new THREE.Group();
@@ -22,8 +26,30 @@ export class SupernovaScene implements LayerScene {
   private remnantGroup = new THREE.Group();
   private pulsarCones: THREE.Group[] = [];
   private textures: Record<number, THREE.Texture> = {};
+  // Geometrien/Materialien EINMAL gebaut und über alle Remnant-Instanzen geteilt — vorher baute
+  // rebuildRemnants() pro Remnant (inkl. eigener CanvasTexture fürs Neutronenstern-Glow) komplett
+  // neue Objekte, und `remnantGroup.clear()` gibt sie nie frei (kein dispose) → echter Leak bei
+  // aktivem Auto-Supernova, das den Remnant-Count laufend ändert. Realer Bug, 2026-07-07.
+  private neutronGeo = new THREE.SphereGeometry(1.1, 16, 16);
+  private neutronMat = new THREE.MeshBasicMaterial({ color: 0xeef6ff });
+  private neutronGlowMat!: THREE.SpriteMaterial;
+  private pulsarGeo = new THREE.SphereGeometry(1.0, 16, 16);
+  private pulsarMat = new THREE.MeshBasicMaterial({ color: 0xd8f3ff });
+  private coneGeo = new THREE.ConeGeometry(2.2, 16, 16, 1, true);
+  private coneMat = new THREE.MeshBasicMaterial({
+    color: 0x66eaff, transparent: true, opacity: 0.28,
+    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+  });
+  private bhGeo = new THREE.SphereGeometry(1.3, 20, 20);
+  private bhMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  private diskGeo = new THREE.TorusGeometry(2.4, 0.35, 8, 40);
+  private diskMat = new THREE.MeshBasicMaterial({ color: 0xffa64d, blending: THREE.AdditiveBlending, depthWrite: false });
 
   constructor() {
+    this.neutronGlowMat = new THREE.SpriteMaterial({
+      map: radialTexture('#ffffff', '#aaccff', 'rgba(120,150,255,0)'),
+      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+    });
     for (const t of [1, 2, 3]) {
       this.textures[t] = radialTexture(
         t === 3 ? 'rgba(60,20,90,0.95)' : '#ffffff',
@@ -97,9 +123,10 @@ export class SupernovaScene implements LayerScene {
       if (this.shockT >= 4) this.shock.visible = false;
     }
 
-    // — Remnants synchronisieren —
-    const want = s.nova.remnants[0] + s.nova.remnants[1] + s.nova.remnants[2];
-    if (this.remnantGroup.children.length !== want) this.rebuildRemnants(s);
+    // — Remnants synchronisieren (pro Typ gedeckelt, s. MAX_RENDERED_PER_TYPE) —
+    const capped = s.nova.remnants.map(c => Math.min(c, MAX_RENDERED_PER_TYPE));
+    const want = capped[0] + capped[1] + capped[2];
+    if (this.remnantGroup.children.length !== want) this.rebuildRemnants(capped);
     const n = this.remnantGroup.children.length;
     this.remnantGroup.children.forEach((o, i) => {
       const a = time * 0.12 + (i / Math.max(1, n)) * Math.PI * 2;
@@ -108,30 +135,24 @@ export class SupernovaScene implements LayerScene {
     for (const cone of this.pulsarCones) cone.rotation.y += dt * 2.4;
   }
 
-  private rebuildRemnants(s: GameState): void {
+  /** Baut nur leichte Mesh/Sprite/Group-Hüllen — Geometrien & Materialien sind geteilte
+   *  Instanz-Felder (s. Konstruktor), hier NIE neu alloziert. `clear()` genügt beim Rebuild,
+   *  weil dabei nichts Einzigartiges (keine eigene Textur/Geometrie) verloren geht. */
+  private rebuildRemnants(counts: number[]): void {
     this.remnantGroup.clear();
     this.pulsarCones = [];
     const make = (type: number) => {
       const g = new THREE.Group();
       if (type === 0) {  // Neutronenstern
-        g.add(new THREE.Mesh(new THREE.SphereGeometry(1.1, 16, 16), new THREE.MeshBasicMaterial({ color: 0xeef6ff })));
-        const glow = new THREE.Sprite(new THREE.SpriteMaterial({
-          map: radialTexture('#ffffff', '#aaccff', 'rgba(120,150,255,0)'),
-          transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
-        }));
+        g.add(new THREE.Mesh(this.neutronGeo, this.neutronMat));
+        const glow = new THREE.Sprite(this.neutronGlowMat);
         glow.scale.setScalar(7);
         g.add(glow);
       } else if (type === 1) {  // Pulsar mit rotierenden Lichtkegeln
-        g.add(new THREE.Mesh(new THREE.SphereGeometry(1.0, 16, 16), new THREE.MeshBasicMaterial({ color: 0xd8f3ff })));
+        g.add(new THREE.Mesh(this.pulsarGeo, this.pulsarMat));
         const cones = new THREE.Group();
         for (const dir of [1, -1]) {
-          const cone = new THREE.Mesh(
-            new THREE.ConeGeometry(2.2, 16, 16, 1, true),
-            new THREE.MeshBasicMaterial({
-              color: 0x66eaff, transparent: true, opacity: 0.28,
-              blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
-            }),
-          );
+          const cone = new THREE.Mesh(this.coneGeo, this.coneMat);
           cone.position.y = dir * 8;
           cone.rotation.z = dir > 0 ? Math.PI : 0;
           cones.add(cone);
@@ -140,16 +161,13 @@ export class SupernovaScene implements LayerScene {
         this.pulsarCones.push(cones);
         g.add(cones);
       } else {  // kleines Schwarzes Loch
-        g.add(new THREE.Mesh(new THREE.SphereGeometry(1.3, 20, 20), new THREE.MeshBasicMaterial({ color: 0x000000 })));
-        const disk = new THREE.Mesh(
-          new THREE.TorusGeometry(2.4, 0.35, 8, 40),
-          new THREE.MeshBasicMaterial({ color: 0xffa64d, blending: THREE.AdditiveBlending, depthWrite: false }),
-        );
+        g.add(new THREE.Mesh(this.bhGeo, this.bhMat));
+        const disk = new THREE.Mesh(this.diskGeo, this.diskMat);
         disk.rotation.x = Math.PI / 2.4;
         g.add(disk);
       }
       this.remnantGroup.add(g);
     };
-    for (let t = 0; t < 3; t++) for (let i = 0; i < s.nova.remnants[t]; i++) make(t);
+    for (let t = 0; t < 3; t++) for (let i = 0; i < counts[t]; i++) make(t);
   }
 }

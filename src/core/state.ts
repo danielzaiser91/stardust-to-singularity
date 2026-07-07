@@ -48,6 +48,10 @@ export interface GameState {
      *  (Remnant-Wahlen seit Coalescence ≡ nova.remnants — kein eigener Zähler nötig.) */
     classPicks: [number, number, number];
     gtypePicks: [number, number, number];
+    /** Einmal wahr, für immer wahr — Auto-Toggles sollen sichtbar bleiben, sobald ihre
+     *  Freischaltbedingung je erreicht wurde, auch wenn ein späterer Reset sie wieder sperrt. */
+    autoIgniteSeen: boolean;
+    autoNovaSeen: boolean;
   };
   dust: {
     amount: Decimal;
@@ -64,6 +68,8 @@ export interface GameState {
     elements: Decimal[];          // H He C O Si Fe
     reactors: number[];           // 5 Fusionsstufen
     upgrades: boolean[];          // 12
+    /** Freischaltung: Kollaps-Meilenstein MS_COLLAPSE[1] (2. Kollaps) */
+    autoUpgrades: boolean;
   };
   nova: {
     unlocked: boolean;
@@ -112,6 +118,7 @@ export interface GameState {
     challengesCollapsed: boolean;
     upgradesCollapsed: boolean;
     constellationsCollapsed: boolean;
+    nebulaCollapsed: boolean;
   };
 }
 
@@ -131,6 +138,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       lifetimeShards: ZERO, lifetimeDM: ZERO,
       ignMs: 0, novaMs: 0,
       classPicks: [0, 0, 0], gtypePicks: [0, 0, 0],
+      autoIgniteSeen: false, autoNovaSeen: false,
     },
     dust: {
       amount: D(10),
@@ -146,6 +154,7 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       elements: Array.from({ length: C.ELEMENT_COUNT }, () => ZERO),
       reactors: Array.from({ length: C.FUSION_STEPS }, () => 0),
       upgrades: Array.from({ length: C.PLASMA_UPGRADE_COSTS.length }, () => false),
+      autoUpgrades: false,
     },
     nova: {
       unlocked: false,
@@ -179,6 +188,6 @@ export function initialState(seed = Date.now() >>> 0): GameState {
     achievements: Array.from({ length: 67 }, () => false),
     loreSeen: Array.from({ length: 32 }, () => false),
     pending: { lore: [], ach: [] },
-    ui: { scene: 0, helpSeen: false, hintsSeen: [], nextClass: 1, nextRemnant: 0, nextGtype: 0, challengesCollapsed: false, upgradesCollapsed: false, constellationsCollapsed: false },
+    ui: { scene: 0, helpSeen: false, hintsSeen: [], nextClass: 1, nextRemnant: 0, nextGtype: 0, challengesCollapsed: false, upgradesCollapsed: false, constellationsCollapsed: false, nebulaCollapsed: false },
   };
 }
