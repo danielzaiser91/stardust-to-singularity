@@ -498,3 +498,56 @@ button.denied { animation: buy-denied 0.3s ease; border-color: var(--danger); }
   .gen-name { font-size: 0.84rem; }
   .seg-btn { min-width: 72px; font-size: 0.74rem; }
 }
+
+/* ── Abspann: erste (und jede weitere) "Werde ein neues Universum" ── */
+.ending-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.ending-overlay > * { pointer-events: auto; }
+.confetti-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.confetti-piece {
+  position: absolute; top: -20px; width: 8px; height: 14px; opacity: 0.9; border-radius: 2px;
+  animation: confetti-fall linear forwards;
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) translateX(var(--drift, 0px)) rotate(var(--rot, 360deg)); opacity: 0.5; }
+}
+.ending-text {
+  max-width: 640px; padding: 0 32px; text-align: center;
+  font-size: 1.4rem; line-height: 1.6; font-weight: 600; color: var(--text);
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.8), 0 0 30px rgba(100, 216, 255, 0.25);
+  opacity: 0; transform: translateY(10px) scale(0.98);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.ending-text.show { opacity: 1; transform: translateY(0) scale(1); }
+.ending-skip {
+  position: absolute; top: 20px; right: 20px;
+  background: rgba(10, 14, 30, 0.6); border: 1px solid var(--panel-border); border-radius: 8px;
+  color: var(--text-dim); font-size: 0.8rem; padding: 8px 14px; cursor: pointer;
+}
+.ending-skip:hover { color: var(--text); border-color: var(--cyan); }
+.ending-modal {
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px;
+  padding: 28px 32px; max-width: 460px; text-align: center; backdrop-filter: blur(10px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(100, 216, 255, 0.15);
+  animation: ending-modal-in 0.5s ease;
+}
+@keyframes ending-modal-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+.ending-modal h3 { margin-top: 0; font-size: 1.3rem; letter-spacing: 0.04em; }
+.ending-modal p { font-size: 0.92rem; line-height: 1.6; color: var(--text); }
+.ending-links { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+.ending-links a {
+  display: block; text-decoration: none; text-align: center;
+  font-family: inherit; color: var(--text); cursor: pointer;
+  border: 1px solid var(--panel-border); border-radius: 9px;
+  background: rgba(40, 50, 96, 0.55); padding: 9px 12px; font-size: 0.86rem;
+  transition: transform 0.08s, box-shadow 0.15s, background 0.15s;
+}
+.ending-links a:hover { background: rgba(64, 82, 148, 0.7); box-shadow: 0 0 12px rgba(100, 216, 255, 0.25); }
+.ending-links a:active { transform: scale(0.96); }

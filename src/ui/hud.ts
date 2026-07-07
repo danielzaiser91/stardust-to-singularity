@@ -243,6 +243,11 @@ export class Hud {
   relabel(): void {
     for (const tab of this.tabs) tab.btn.textContent = t(`tab.${tab.id}`);
   }
+
+  /** Abspann-Kamerafahrt: die komplette normale UI ausblenden, Szene bleibt sichtbar dahinter. */
+  setUiVisible(visible: boolean): void {
+    this.root.style.display = visible ? '' : 'none';
+  }
 }
 
 const ACH_RES_KEYS = new Set(['dust', 'plasma', 'shards']);

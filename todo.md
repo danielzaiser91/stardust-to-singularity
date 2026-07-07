@@ -448,6 +448,35 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
 
   tsc/vitest (51/51)/Build grün.
 
+## Erledigt (Stand 2026-07-07, achtzehnte Runde)
+
+- [x] ~~**Kinematischer Abspann bei der ersten "Werde ein neues Universum".**~~ — komplett neue
+      Sequenz statt des bisherigen Sofort-Wechsels: UI blendet aus (`Hud.setUiVisible`), die
+      Kamera übernimmt automatisch (`Engine.setCinematic` — Nutzersteuerung aus, `autoRotate`
+      beschleunigt, sanftes Rein-/Rauszoomen um die jeweilige Ebenen-Distanz; startet auf der
+      Schwarzes-Loch-Szene, wechselt synchron zur vierten Zeile auf die Galaxie-Szene), CSS-
+      Konfetti (`.confetti-piece`, reine CSS-Keyframe-Animation, kein 3D-Overhead) burst zweimal
+      (Start + Dank-Dialog). Neun Zeilen (`end.line0`–`8`, DE+EN) ziehen im ~7,5-Sekunden-Takt
+      überblendend vorbei, nachempfunden dem tatsächlichen Spielverlauf (Staub → Fusion →
+      Supernova → Nebel → Galaxie → Konstellationen → Singularität → Kollaps → neues Universum),
+      letzte Zeile ist ein Callback auf den Spieltitel selbst ("Staub zu Singularität — und
+      wieder zurück"). Gesamtdauer ~65–75 s, passend zur Vorgabe "eine Minute oder zwei". Danach
+      ein Dank-Dialog (`end.title`/`end.body`) mit GitHub-Link — der Discord-Link ist im Code
+      bereits verdrahtet (`src/social.ts`, `DISCORD_URL`), erscheint aber erst, sobald dort eine
+      echte URL steht (siehe `DISCORD_SETUP.md`, neu erstellt: Schritt-für-Schritt-Anleitung für
+      den User, Server + Kanäle + Einladungslink + Eintragen der URL). Jederzeit überspringbar
+      (Skip-Knopf oben rechts während der Zeilen, danach übernimmt der Dank-Dialog selbst diese
+      Rolle). Läuft NUR beim allerersten Abschluss (`s.sing.universes === 0` vor dem Reset
+      geprüft) — jeder weitere NG+-Zyklus bleibt der schnelle Direktwechsel wie bisher, ein
+      Abspann ist ein einmaliger Moment, kein wiederholtes Ritual. Live end-to-end durchgespielt
+      (Trigger → Zeilen →
+      Szenenwechsel → Dank-Dialog inkl. korrekt fehlendem Discord-Button → Continue → UI/Kamera
+      sauber wiederhergestellt → Tab-Wechsel) sowie der Wiederholungsfall (2. NG+ = alter
+      Sofort-Wechsel, kein Abspann) verifiziert.
+
+  tsc/vitest (51/51)/Build grün (53 Module statt 51 — zwei neue Dateien: `social.ts`,
+  `ui/ending.ts`).
+
 ## Offen
 
 - [ ] **Challenges neu balancieren — aktuell viel zu leicht durch Automationen.** Sobald

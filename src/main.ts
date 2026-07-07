@@ -71,7 +71,7 @@ function buildTabs(): void {
   hud.addTab('star', new StarPanel(st, hud), s => s.star.unlocked, 1);
   hud.addTab('nova', new NovaPanel(st, hud), s => s.nova.unlocked, 2);
   hud.addTab('galaxy', new GalaxyPanel(st, hud), s => s.galaxy.unlocked, 3);
-  hud.addTab('sing', new SingPanel(st, hud), s => s.sing.unlocked, 4);
+  hud.addTab('sing', new SingPanel(st, hud, engine), s => s.sing.unlocked, 4);
   hud.addTab('ach', new AchPanel(), () => true);
   hud.addTab('journal', new JournalPanel(), s => s.loreSeen.some(Boolean));
   hud.addTab('settings', settingsPanel, () => true);

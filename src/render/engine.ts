@@ -41,6 +41,7 @@ export class Engine {
 
   private forceLow = false;
   private frameEMA = 0.016;
+  private cinematic = false;
 
   constructor(canvas: HTMLCanvasElement, s: GameState) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
@@ -110,6 +111,16 @@ export class Engine {
     this.activeLayer = id;
   }
 
+  /** Abspann-Kamerafahrt: Nutzer-Steuerung aus, automatische Rotation beschleunigt, Kamera
+   *  atmet sanft rein/raus statt starr auf der normalen Ebenen-Distanz zu stehen. `setLayer()`
+   *  bleibt die einzige Stelle, die Ebenen wechselt — hier nur die Zielszene vorgeben. */
+  setCinematic(active: boolean, layerId?: number): void {
+    this.cinematic = active;
+    this.controls.enabled = !active;
+    this.controls.autoRotateSpeed = active ? 1.0 : 0.35;
+    if (active && layerId !== undefined) this.setLayer(layerId);
+  }
+
   applyQuality(s: GameState): void {
     const t = activeTier(s, this.forceLow);
     if (t.name === this.tier.name) return;
@@ -140,10 +151,15 @@ export class Engine {
       this.forceLow = true;
       this.applyQuality(s);
     }
-    this.setLayer(s.ui.scene);
+    if (!this.cinematic) this.setLayer(s.ui.scene);
     const layer = this.layers.get(this.activeLayer);
     layer?.update(s, m, dt, this.time);
 
+    // Abspann: Kamera „atmet" um die normale Ebenen-Distanz herum, statt starr zu stehen
+    if (this.cinematic) {
+      const base = layer?.camDist ?? 120;
+      this.targetDist = base * 1.3 + Math.sin(this.time * 0.15) * base * 0.25;
+    }
     // Kamera sanft zur Ziel-Distanz ziehen (Ebenen-Übergang)
     const dist = this.camera.position.length();
     if (Math.abs(dist - this.targetDist) > 0.5) {

@@ -13,6 +13,8 @@ import { exportSave, importSave, saveGame, hardReset } from '../storage';
 import { attachTip } from './tooltip';
 import { spawnFloaty } from './floaty';
 import { ACH_COUNT } from '../core/achievements';
+import { playEndingSequence } from './ending';
+import type { Engine } from '../render/engine';
 
 type St = () => GameState;
 const M = (s: GameState) => F.computeMults(s);
@@ -1263,7 +1265,7 @@ export class SingPanel implements Panel {
   private coalBonusBox: HTMLElement;
   private coalBonusInfo = el('div', 'sub center');
 
-  constructor(private st: St, private hud: Hud) {
+  constructor(private st: St, private hud: Hud, private engine: Engine) {
     this.coalBonusBox = el('div', 'reset-box sing');
     this.coalBonusBox.append(el('h3', '', t('sing.coalBonusTitle')), this.coalBonusInfo);
     attachTip(this.coalBonusBox, () => ({ title: t('sing.coalBonusTitle'), body: t('sing.coalBonusTip') }));
@@ -1308,9 +1310,19 @@ export class SingPanel implements Panel {
     this.endBtn = btn('reset-btn end', t('sing.endgame'), () => {
       const s = this.st();
       this.hud.confirm(t('sing.endgame'), t('sing.endgameConfirm'), () => {
+        // Abspann nur bei der ALLERERSTEN Aszension (vor dem Reset erfassen — newUniverse()
+        // zählt s.sing.universes selbst hoch) — ein Abspann ist ein einmaliger Moment, jeder
+        // weitere NG+-Zyklus bleibt der schnelle Direktwechsel wie bisher.
+        const firstAscension = s.sing.universes === 0;
         if (A.newUniverse(s)) {
           emit('universe');
-          if (s.settings.autoTab) this.hud.selectTab('dust');
+          if (firstAscension) {
+            playEndingSequence(this.hud, this.engine, () => {
+              if (s.settings.autoTab) this.hud.selectTab('dust');
+            });
+          } else if (s.settings.autoTab) {
+            this.hud.selectTab('dust');
+          }
         }
       });
     });
