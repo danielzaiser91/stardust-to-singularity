@@ -133,6 +133,52 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
       spürbar langsam, aber immerhin fertig durchlaufbar (vorher musste ich zwei 30-Tage-Läufe
       diese Session manuell abbrechen).
 
+## Erledigt (Stand 2026-07-07, neunte Runde)
+
+- [x] ~~**Tooltip-Meta-Text "Kein Knopf mehr nötig" — Spieler sollen sowas nicht lesen.**~~ —
+      erledigt: `sing.dilateTip` (DE+EN) erklärte den Umbau selbst statt die Spielwelt zu
+      beschreiben. Umformuliert auf rein diegetischen Text ("Ein dauerhafter Bonus, der mit
+      jeder Fütterung des Schwarzen Lochs weiter wächst.").
+
+- [x] ~~**"Füttere die Leere" komplett neu: kein Knopf/Toggle mehr, sofortiger Konsum bei
+      jedem Gewinn statt periodischem Voll-Wischen.**~~ — die in Runde 5 *bewusst
+      abgeschwächte* Variante (Trickle-zu-Voll-Wisch, siehe Runde-5-Eintrag oben) wurde jetzt
+      durch die ursprünglich skizzierte, stärkere Variante ersetzt: **JEDER** Ressourcen-Gewinn
+      (Dust/Plasma/Scherben/DM) wird nach Singularitäts-Unlock sofort 50/50 gesplittet — die
+      Hälfte bleibt Spielwährung, die andere Hälfte nährt `sing.fed` (log-gewichtet nach
+      Ressourcenstufe: dust=1, plasma=10, shards=100, dm=1000 — dieselbe Gewichtung wie das alte
+      `feedMass()`). Neuer `feedSplit()`-Helper in `actions.ts`, angewendet an ALLEN 9 Gewinn-
+      Stellen (Klick, Sonnensegel, Zündung, Auto-Zündung, Hawking-Trickle, Supernova, Auto-
+      Supernova, Verschmelzung — Entropie/Kollaps bleibt ungesplittet, ist keine der vier
+      "gefütterten" Ressourcen). Wichtig: `dust.total`/`star.totalPlasma`/`nova.totalShards`/
+      `galaxy.totalDM` und die Lifetime-Stats bekommen weiterhin den VOLLEN, ungesplitteten
+      Gewinn — nur der tatsächlich gutgeschriebene Spielstand wird halbiert. Das hält Ignite-/
+      Supernova-/Coalesce-/Collapse-Anforderungen (die auf `total*` basieren) und alle Kaskaden-
+      Passiveffekte (die auf Lifetime-Stats basieren) unverändert von diesem Umbau. Knopf
+      (`feedBlackHole`), Toggle (`autoFeed`-State) und die alte Tick-Trickle-Logik komplett
+      entfernt; `SingPanel` zeigt jetzt eine reine Info-Box ("THE VOID"/"DIE LEERE") nach dem
+      Muster von Zeitdilatation/Galaxie-Reset-Bonus. Bot (`sim/bot.ts`) verlor die jetzt
+      hinfällige manuelle Fütter-Logik (Cooldown-Map entfernt).
+      **Erklärt vermutlich den gemeldeten Bug** "Scherben fallen kurz nach einer Supernova auf
+      0": die alte Trickle-Logik wischte bei 100 % Akkumulation ALLE vier Ressourcen (inkl.
+      Scherben) auf 0 — wenn der Akkumulator kurz nach einer Supernova-Auszahlung kippte, sah es
+      so aus, als würden frisch gewonnene Scherben sofort wieder verschwinden. Mit der neuen
+      Logik gibt es kein Voll-Wischen mehr, nur noch den 50/50-Split bei jedem einzelnen Gewinn.
+      tsc/vitest (46/46) grün, Build grün, live im Preview verifiziert (Info-Box rendert korrekt
+      ohne Buttons, Zeitdilatation weiterhin korrekt gedeckelt bei ×50).
+      ⚠ Balance-Risiko: dauerhafte 50%-Halbierung des Spielstands (nicht der Fortschritts-Basis)
+      nach Singularitäts-Unlock ist eine spürbare Verschärfung ggü. Runde 5 — betrifft direkt das
+      bereits offene "Endgame-Kalibrierung"-Problem (siehe `constants.ts` Zeile ~121 und
+      BALANCE.md). Sim-Spotcheck (10 Tage, aktiv) lief zur Verifikation; falls sich das Problem
+      verschärft, braucht es eine eigene Balance-Passage (nicht Teil dieser Änderung).
+
+- [x] ~~**Konstellationen: einklappbare Sektion wie Challenges/Sternen-Upgrades.**~~ — erledigt:
+      neues `s.ui.constellationsCollapsed`, `collapse-head`/`collapse-indicator`/
+      `collapse-chevron`-Muster (schon generisch aus Runde 6) auf `GalaxyPanel`s Konstellations-
+      Baum angewendet. Grüner Punkt, wenn alle 45 Nodes gekauft sind, sonst gelb mit Hover-
+      Tooltip ("X/45 Konstellations-Nodes freigeschaltet"). Live geprüft: Auf-/Zuklappen
+      funktioniert, Indikator wird grün bei allen Nodes gekauft.
+
 ## Offen
 
 - [ ] **Challenges neu balancieren — aktuell viel zu leicht durch Automationen.** Sobald

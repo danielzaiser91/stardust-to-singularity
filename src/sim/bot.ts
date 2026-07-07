@@ -13,8 +13,6 @@ export type Profile = 'active' | 'idle';
 import type { Decimal } from '../core/decimal';
 /** Plasma-Stand beim letzten Challenge-Versuch (Backoff-Heuristik des Bots) */
 const challengeAttempts = new WeakMap<GameState, Decimal[]>();
-/** Spielzeit der letzten Schwarzloch-Fütterung (Cooldown) */
-const lastFeed = new WeakMap<GameState, number>();
 
 export interface Milestone { name: string; at: number; }  // at = gespielte Sekunden
 
@@ -140,16 +138,6 @@ export function botStep(s: GameState, profile: Profile, mults: Mults): void {
   if (profile === 'idle') {
     s.galaxy.autoNova.on = m.autoNovaUnlocked;
     s.nova.autoIgnite.on = autoIgniteUnlocked(s);
-  }
-
-  // — Schwarzes Loch füttern: höchstens alle 2 h und erst nachdem Nodes/Zellen gekauft
-  //   wurden (sonst sabotiert der Bot seine eigene Engine — Nodes kosten das DM, das er verfüttert) —
-  if (s.sing.unlocked && (s.galaxy.dm.gte(100) || s.nova.shards.gte(1e4))) {
-    const last = lastFeed.get(s) ?? -1e9;
-    if (s.stats.played - last > 7200) {
-      lastFeed.set(s, s.stats.played);
-      A.feedBlackHole(s);
-    }
   }
 
   // — Dust: Generatoren von oben nach unten max kaufen, dann Compression —

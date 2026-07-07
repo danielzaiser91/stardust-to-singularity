@@ -5,8 +5,17 @@ import {
   computeMults, genCost, genMaxAfford, compressionCost, clickAmount, maxTier,
   plasmaGain, canIgnite, shardGain, canSupernova, dmGain, canCoalesce,
   entropyGain, canCollapse, reactorCost, nebulaCellCost, nodeCost, nodeAvailable,
-  perkCost, feedMass, effectiveCoalescences, type Mults,
+  perkCost, feedContribution, effectiveCoalescences, type Mults,
 } from './formulas';
+
+/** Teilt einen Ressourcen-Gewinn: Hälfte bleibt Spielwährung, Hälfte nährt die Leere
+ *  (log-gewichtet nach Ressourcenstufe). Vor dem Singularitäts-Unlock unverändert. */
+export function feedSplit(s: GameState, weight: number, gain: Decimal): Decimal {
+  if (!s.sing.unlocked || gain.lte(0)) return gain;
+  const voidShare = gain.mul(C.FEED_SPLIT_FRAC);
+  s.sing.fed = s.sing.fed.add(feedContribution(voidShare, weight));
+  return gain.sub(voidShare);
+}
 
 /** Alle Spieler-Aktionen. Geben true zurück, wenn etwas passiert ist. */
 
@@ -47,11 +56,12 @@ export function buyCompressionMax(s: GameState, budgetFrac = 1): boolean {
 }
 export function click(s: GameState, m: Mults): Decimal {
   const gain = clickAmount(s, m);
-  s.dust.amount = s.dust.amount.add(gain);
+  const credited = feedSplit(s, C.FEED_WEIGHT_DUST, gain);
+  s.dust.amount = s.dust.amount.add(credited);
   s.dust.total = s.dust.total.add(gain);
   s.stats.totalDustEver = s.stats.totalDustEver.add(gain);
   s.stats.clicks++;
-  return gain;
+  return credited;
 }
 export function clickComet(s: GameState, m: Mults): boolean {
   if (!s.dust.comet.active) return false;
@@ -86,7 +96,8 @@ export function doIgnite(s: GameState, cls: StarClass): boolean {
     s.nova.challenge = -1;
   }
   s.star.unlocked = true;
-  s.star.plasma = s.star.plasma.add(gain);
+  const credited = feedSplit(s, C.FEED_WEIGHT_PLASMA, gain);
+  s.star.plasma = s.star.plasma.add(credited);
   s.star.totalPlasma = s.star.totalPlasma.add(gain);
   if (s.star.plasma.gt(s.stats.bestPlasma)) s.stats.bestPlasma = s.star.plasma;
   s.star.cls = cls;
@@ -179,7 +190,8 @@ export function doSupernova(s: GameState, remnant: 0 | 1 | 2): boolean {
   const gain = shardGain(s, m);
   if (gain.lte(0)) return false;   // kein Reset für +0 (z. B. Ladung noch bei 0)
   s.nova.unlocked = true;
-  s.nova.shards = s.nova.shards.add(gain);
+  const credited = feedSplit(s, C.FEED_WEIGHT_SHARDS, gain);
+  s.nova.shards = s.nova.shards.add(credited);
   s.nova.totalShards = s.nova.totalShards.add(gain);
   s.stats.lifetimeShards = s.stats.lifetimeShards.add(gain);
   supernovaReset(s, remnant);
@@ -288,7 +300,8 @@ export function doCoalesce(s: GameState, gtype: GalaxyType): boolean {
   const gain = dmGain(s, m);
   if (gain.lte(0)) return false;   // kein Reset für +0
   s.galaxy.unlocked = true;
-  s.galaxy.dm = s.galaxy.dm.add(gain);
+  const credited = feedSplit(s, C.FEED_WEIGHT_DM, gain);
+  s.galaxy.dm = s.galaxy.dm.add(credited);
   s.galaxy.totalDM = s.galaxy.totalDM.add(gain);
   s.stats.lifetimeDM = s.stats.lifetimeDM.add(gain);
   s.stats.gtypePicks[gtype]++;   // wirkt permanent & stapelnd (siehe computeMults) — kein „aktiver" Typ mehr
@@ -348,18 +361,6 @@ export function buyPerk(s: GameState, i: number): boolean {
   if (s.sing.entropy.lt(cost)) return false;
   s.sing.entropy = s.sing.entropy.sub(cost);
   s.sing.perks[i]++;
-  return true;
-}
-
-export function feedBlackHole(s: GameState): boolean {
-  if (!s.sing.unlocked) return false;
-  const mass = feedMass(s);
-  if (mass.lte(0)) return false;
-  s.sing.fed = s.sing.fed.add(mass);
-  s.dust.amount = ZERO;
-  s.star.plasma = ZERO;
-  s.nova.shards = ZERO;
-  s.galaxy.dm = ZERO;
   return true;
 }
 

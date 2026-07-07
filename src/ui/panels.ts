@@ -1014,6 +1014,9 @@ export class NovaPanel implements Panel {
 export class GalaxyPanel implements Panel {
   root = el('div');
   private nodeBtns: { b: HTMLButtonElement; cost: HTMLElement }[] = [];
+  private treeIndicator = el('span', 'collapse-indicator');
+  private treeChevron = el('span', 'collapse-chevron', '▾');
+  private treeContainer = el('div', 'tree');
   private colBar = bar('bar-sing');
   private colLabel = el('div', 'sub center');
   private colCap!: HTMLElement;
@@ -1022,8 +1025,23 @@ export class GalaxyPanel implements Panel {
   private colBtn!: HTMLButtonElement;
 
   constructor(private st: St, private hud: Hud) {
-    this.root.append(el('h3', '', t('galaxy.tree')));
-    const tree = el('div', 'tree');
+    const treeHead = el('h3', 'collapse-head');
+    treeHead.append(el('span', '', t('galaxy.tree')), this.treeIndicator, this.treeChevron);
+    treeHead.addEventListener('click', () => {
+      const s = this.st();
+      s.ui.constellationsCollapsed = !s.ui.constellationsCollapsed;
+      this.update(s, M(s));
+    });
+    attachTip(this.treeIndicator, () => {
+      const s = this.st();
+      const bought = s.galaxy.nodes.filter(Boolean).length;
+      const total = C.CONSTELLATION_NODES;
+      return {
+        title: t('galaxy.tree'),
+        body: bought >= total ? t('galaxy.treeIndicatorDone') : t('galaxy.treeIndicatorOpen', { n: bought, total }),
+      };
+    });
+    this.root.append(treeHead, this.treeContainer);
     for (let b = 0; b < 3; b++) {
       const col = el('div', 'tree-col');
       col.append(el('div', `branch-name branch-${b}`, t(`galaxy.branch${b}`)));
@@ -1042,9 +1060,8 @@ export class GalaxyPanel implements Panel {
         this.nodeBtns.push({ b: nb, cost });
         col.append(nb);
       }
-      tree.append(col);
+      this.treeContainer.append(col);
     }
-    this.root.append(tree);
 
     // Collapse-Box lebt HIER (Ebene darunter) — der Singularity-Tab existiert erst danach
     const collapseBox = el('div', 'reset-box sing');
@@ -1090,6 +1107,9 @@ export class GalaxyPanel implements Panel {
       setText(nb.cost, bought ? '✓' : `${fmt(F.nodeCost(i), sci)} ◈`);
       setDisabled(nb.b, bought || !avail || s.galaxy.dm.lt(F.nodeCost(i)));
     }
+    setVisible(this.treeContainer, !s.ui.constellationsCollapsed);
+    setClass(this.treeChevron, 'collapsed', s.ui.constellationsCollapsed);
+    setClass(this.treeIndicator, 'done', s.galaxy.nodes.every(Boolean));
     // Collapse
     const colReq = F.collapseReq(s);
     setBar(this.colBar, logFrac(s.galaxy.totalDM, colReq));
@@ -1158,8 +1178,7 @@ function nodeLabelBody(i: number): string {
 // ═══════════════ Ebene 4: Singularity ═══════════════
 export class SingPanel implements Panel {
   root = el('div');
-  private feedBtn: HTMLButtonElement;
-  private autoFeedBtn!: HTMLButtonElement;
+  private feedBox: HTMLElement;
   private feedInfo = el('div', 'sub center');
   private dilationBox!: HTMLElement;
   private dilateInfo = el('div', 'sub center');
@@ -1179,24 +1198,15 @@ export class SingPanel implements Panel {
 
     this.root.append(this.uniLabel);
 
-    this.feedBtn = btn('reset-btn feed', t('sing.feed'), () => {
-      const s = this.st();
-      if (A.feedBlackHole(s)) emit('feed');
-    });
-    this.autoFeedBtn = btn('seg-btn auto-btn', t('sing.autoFeed'), () => {
-      const s = this.st();
-      s.sing.autoFeed.on = !s.sing.autoFeed.on;
-      this.update(s, M(s));
-    });
-    attachTip(this.autoFeedBtn, () => ({ title: t('sing.autoFeed'), body: t('sing.autoFeedTip') }));
+    this.feedBox = el('div', 'reset-box sing');
     const feedDesc = el('div', 'sub');
     feedDesc.innerHTML = t('sing.feedDesc', {
       d: resTag('dust', t('dust.name')), p: resTag('plasma', t('star.plasma')),
       s: resTag('shards', t('nova.shards')), m: resTag('dm', t('galaxy.dm')),
     });
-    const feedRow = el('div', 'ignite-row');
-    feedRow.append(this.feedBtn, this.autoFeedBtn);
-    this.root.append(feedDesc, feedRow, this.feedInfo);
+    this.feedBox.append(el('h3', '', t('sing.feedTitle')), feedDesc, this.feedInfo);
+    attachTip(this.feedBox, () => ({ title: t('sing.feedTitle'), body: t('sing.feedTip') }));
+    this.root.append(this.feedBox);
 
     this.dilationBox = el('div', 'reset-box sing');
     this.dilationBox.append(el('h3', '', t('sing.dilate')), this.dilateInfo);
@@ -1241,12 +1251,8 @@ export class SingPanel implements Panel {
     setText(this.uniLabel, s.sing.universes > 0 ? t('sing.universes', { v: String(s.sing.universes + 1) }) : '');
     setHTML(this.coalBonusInfo, t('sing.coalBonusInfo', { v: numTag(fmtMult(F.coalescenceBonusMult(s))) }));
 
-    const mass = F.feedMass(s);
-    setDisabled(this.feedBtn, mass.lte(0) || !s.sing.unlocked);
-    setDisabled(this.autoFeedBtn, !s.sing.unlocked);
-    setClass(this.autoFeedBtn, 'active', s.sing.unlocked && s.sing.autoFeed.on);
     const acc = F.accretionMult(s);
-    setHTML(this.feedInfo, `${t('sing.fed', { v: numTag(fmt(s.sing.fed, sci)) })} · ${t('sing.accretion', { v: numTag(fmt(acc, sci)) })} · ${t('sing.feedNext', { v: numTag(fmt(mass, sci)) })}`);
+    setHTML(this.feedInfo, `${t('sing.fed', { v: numTag(fmt(s.sing.fed, sci)) })} · ${t('sing.accretion', { v: numTag(fmt(acc, sci)) })}`);
 
     setHTML(this.dilateInfo, t('sing.dilateInfo', { v: numTag(fmtMult(F.dilationMult(s))) }));
 

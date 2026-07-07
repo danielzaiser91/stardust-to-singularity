@@ -126,6 +126,16 @@ export const PERK_COST_GROWTH = [3, 4, 5, 6, 8, 10, 12, 15, 20];
 // L2 Reaktoren überleben Supernova, L3 Nebelzellen überleben Coalescence
 export const STELLAR_MEMORY_MAX = 3;
 export const FEED_ACCRETION_EXP = 2;         // global mult = (1+log10(1+fed))^exp
+// Konsum bei Gewinn: JEDER Ressourcen-Gewinn (Dust/Plasma/Shards/DM) wird nach Singularitäts-
+// Unlock sofort gesplittet — die Hälfte bleibt Spielwährung, die andere Hälfte nährt die Leere
+// (log-gewichtet nach Ressourcenstufe: höhere Stufen zählen überproportional stärker, wie
+// zuvor bei feedMass). Ersetzt den alten periodischen Voll-Wipe (verursachte den Bug, dass
+// Scherben kurz nach einer Supernova auf 0 fielen, wenn der Wipe-Akkumulator gerade kippte).
+export const FEED_SPLIT_FRAC = 0.5;
+export const FEED_WEIGHT_DUST = 1;
+export const FEED_WEIGHT_PLASMA = 10;
+export const FEED_WEIGHT_SHARDS = 100;
+export const FEED_WEIGHT_DM = 1000;
 // Zeitdilation: kein aktivierbarer Button mehr, sondern ein DAUERHAFTER Speed-Bonus, der als
 // Bruchteil des Akkretions-Bonus (Füttere-die-Leere) mitwächst — kein eigenes Timing/Cooldown.
 export const DILATION_ACCRETION_FRAC = 0.1;
@@ -153,12 +163,6 @@ export const MS_GALAXY = [1, 2, 3, 5, 6, 9, 10, 12];
 // Sekunde am ×20-Clamp — Auto ist damit exakt so stark wie optimaler manueller Spam.
 export const AUTO_IGNITE_RATE = Math.log(PLASMA_CLAMP_MULT + 1) / PLASMA_CLAMP_MULT;
 export const AUTO_NOVA_RATE = 0.01;
-// Füttere-die-Leere: gleiches Trickle-Muster wie Auto-Zündung/Auto-Supernova — zahlt die
-// AKTUELLE Masse (aus feedMass, wächst weiter, bis wirklich gewischt wird) anteilig pro Tick
-// in `fed` ein; bei 100 % Akkumulation ein echter Feed (Ressourcen auf 0). 1/120 = ein
-// vollständiger Zyklus alle ~2 Minuten — bewusst seltener als die anderen Auto-Mechaniken,
-// da Füttern eine größere, seltenere Entscheidung sein soll.
-export const AUTO_FEED_RATE = 1 / 120;
 // Kollaps-Meilensteine: Perks · Spezial-MS Supernova · Spezial-MS Staub · Keystones bleiben
 export const MS_COLLAPSE = [1, 2, 3, 5];
 // ── Spezial-Meilensteine ─────────────────────────────────────────────────────

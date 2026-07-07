@@ -1,8 +1,8 @@
-import { Decimal, ZERO } from './decimal';
+import { Decimal } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
-import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, autoIgniteUnlocked, feedMass, type Mults } from './formulas';
-import { supernovaReset, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax } from './actions';
+import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, autoIgniteUnlocked, type Mults } from './formulas';
+import { supernovaReset, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax, feedSplit } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
 import { checkLore } from './lore';
@@ -62,7 +62,7 @@ export function tick(s: GameState, dt: number): Mults {
   const g0 = s.dust.gens[0];
   if (g0.amount.gt(0)) {
     const gained = g0.amount.mul(tierMult(s, m, 0)).mul(m.dustMult).mul(gdt);
-    s.dust.amount = s.dust.amount.add(gained);
+    s.dust.amount = s.dust.amount.add(feedSplit(s, C.FEED_WEIGHT_DUST, gained));
     s.dust.total = s.dust.total.add(gained);
     s.stats.totalDustEver = s.stats.totalDustEver.add(gained);
   }
@@ -70,7 +70,7 @@ export function tick(s: GameState, dt: number): Mults {
   // — Sonnensegel (Upgrade 13): passiver Staub in Klick-Kraft-Höhe —
   if (s.star.upgrades[12]) {
     const passive = clickAmount(s, m).mul(C.SOLAR_SAIL_CLICKS * gdt);
-    s.dust.amount = s.dust.amount.add(passive);
+    s.dust.amount = s.dust.amount.add(feedSplit(s, C.FEED_WEIGHT_DUST, passive));
     s.dust.total = s.dust.total.add(passive);
     s.stats.totalDustEver = s.stats.totalDustEver.add(passive);
   }
@@ -84,7 +84,8 @@ export function tick(s: GameState, dt: number): Mults {
   // sonst würde der Trickle das Zündungs-Pacing schon vor jeder Automation aushebeln —
   if (s.sing.perks[1] > 0 && s.star.unlocked && m.autoNovaUnlocked) {
     const hl = s.sing.perks[1];
-    s.star.plasma = s.star.plasma.add(s.stats.bestPlasma.mul(0.001 * hl * gdt));
+    const gained = s.stats.bestPlasma.mul(0.001 * hl * gdt);
+    s.star.plasma = s.star.plasma.add(feedSplit(s, C.FEED_WEIGHT_PLASMA, gained));
   }
 
   // — Autobuyer: vier getrennte Automationen (je eigenes Plasma-Upgrade) —
@@ -106,7 +107,7 @@ export function tick(s: GameState, dt: number): Mults {
     if (gain.gt(0)) {
       const frac = C.AUTO_IGNITE_RATE * gdt;
       const pay = gain.mul(frac);
-      s.star.plasma = s.star.plasma.add(pay);
+      s.star.plasma = s.star.plasma.add(feedSplit(s, C.FEED_WEIGHT_PLASMA, pay));
       s.star.totalPlasma = s.star.totalPlasma.add(pay);
       if (s.star.plasma.gt(s.stats.bestPlasma)) s.stats.bestPlasma = s.star.plasma;
       s.nova.autoIgnite.acc += frac;
@@ -126,31 +127,13 @@ export function tick(s: GameState, dt: number): Mults {
       const frac = C.AUTO_NOVA_RATE * gdt;
       const pay = gain.mul(frac);
       s.nova.unlocked = true;
-      s.nova.shards = s.nova.shards.add(pay);
+      s.nova.shards = s.nova.shards.add(feedSplit(s, C.FEED_WEIGHT_SHARDS, pay));
       s.nova.totalShards = s.nova.totalShards.add(pay);
       s.stats.lifetimeShards = s.stats.lifetimeShards.add(pay);
       s.galaxy.autoNova.acc += frac;
       if (s.galaxy.autoNova.acc >= 1) {
         s.galaxy.autoNova.acc = 0;
         supernovaReset(s, lastRemnantChoice(s));
-      }
-    }
-  }
-  // Füttere die Leere (Auto): gleiches Trickle-Muster — zahlt die AKTUELLE feedMass (wächst mit
-  // dem Bestand weiter) anteilig pro Tick in `fed` ein; bei 100 % Akkumulation ein echter Feed
-  // (Ressourcen auf 0, wie der manuelle Button).
-  if (s.sing.unlocked && s.sing.autoFeed.on) {
-    const mass = feedMass(s);
-    if (mass.gt(0)) {
-      const frac = C.AUTO_FEED_RATE * gdt;
-      s.sing.fed = s.sing.fed.add(mass.mul(frac));
-      s.sing.autoFeed.acc += frac;
-      if (s.sing.autoFeed.acc >= 1) {
-        s.sing.autoFeed.acc -= 1;
-        s.dust.amount = ZERO;
-        s.star.plasma = ZERO;
-        s.nova.shards = ZERO;
-        s.galaxy.dm = ZERO;
       }
     }
   }

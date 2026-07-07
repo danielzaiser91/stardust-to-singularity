@@ -93,8 +93,7 @@ export interface GameState {
     entropy: Decimal;
     totalEntropy: Decimal;
     perks: number[];              // 8 Perk-Level
-    fed: Decimal;                 // Gesamtmasse im Schwarzen Loch
-    autoFeed: { on: boolean; acc: number };
+    fed: Decimal;                 // Gesamtmasse im Schwarzen Loch (passiv, aus dem Gewinn-Split gespeist)
     universes: number;            // NG+ Zähler
     collapsesU: number;           // Kollapse in DIESEM Universum (Basis der quadratischen Leiter)
     endgame: boolean;
@@ -112,6 +111,7 @@ export interface GameState {
     nextGtype: GalaxyType;     // Auswahl für nächste Coalescence
     challengesCollapsed: boolean;
     upgradesCollapsed: boolean;
+    constellationsCollapsed: boolean;
   };
 }
 
@@ -172,7 +172,6 @@ export function initialState(seed = Date.now() >>> 0): GameState {
       entropy: ZERO, totalEntropy: ZERO,
       perks: Array.from({ length: C.PERK_COUNT }, () => 0),
       fed: ZERO,
-      autoFeed: { on: false, acc: 0 },
       universes: 0,
       collapsesU: 0,
       endgame: false,
@@ -180,6 +179,6 @@ export function initialState(seed = Date.now() >>> 0): GameState {
     achievements: Array.from({ length: 67 }, () => false),
     loreSeen: Array.from({ length: 32 }, () => false),
     pending: { lore: [], ach: [] },
-    ui: { scene: 0, helpSeen: false, hintsSeen: [], nextClass: 1, nextRemnant: 0, nextGtype: 0, challengesCollapsed: false, upgradesCollapsed: false },
+    ui: { scene: 0, helpSeen: false, hintsSeen: [], nextClass: 1, nextRemnant: 0, nextGtype: 0, challengesCollapsed: false, upgradesCollapsed: false, constellationsCollapsed: false },
   };
 }

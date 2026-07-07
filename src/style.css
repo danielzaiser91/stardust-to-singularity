@@ -188,8 +188,6 @@ button.denied { animation: buy-denied 0.3s ease; border-color: var(--danger); }
 .reset-btn.nova { background: linear-gradient(135deg, #8b1e5488, #ff64a888); text-shadow: 0 0 14px #ff64a888; }
 .reset-btn.gal { background: linear-gradient(135deg, #4c1e8b88, #a78bfa88); text-shadow: 0 0 14px #a78bfa88; }
 .reset-btn.sing, .reset-btn.end { background: linear-gradient(135deg, #333a, #999a); text-shadow: 0 0 14px #fffa; }
-.reset-btn.feed { background: linear-gradient(135deg, #40101088, #a0404088); }
-.reset-btn.dilate { background: linear-gradient(135deg, #10304088, #40a0c088); }
 
 /* ── Fortschrittsbalken ── */
 .bar { height: 10px; border-radius: 5px; background: rgba(0, 0, 0, 0.45); overflow: hidden; }

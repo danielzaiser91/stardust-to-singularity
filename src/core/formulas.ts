@@ -512,12 +512,10 @@ export function nodeAvailable(s: GameState, i: number): boolean {
 export function perkCost(s: GameState, i: number): Decimal {
   return D(C.PERK_BASE_COST[i]).mul(Decimal.pow(C.PERK_COST_GROWTH[i], s.sing.perks[i]));
 }
-/** Masse-Beitrag beim Füttern des Schwarzen Lochs */
-export function feedMass(s: GameState): Decimal {
-  return log10p1(s.dust.amount)
-    .add(log10p1(s.star.plasma).mul(10))
-    .add(log10p1(s.nova.shards).mul(100))
-    .add(log10p1(s.galaxy.dm).mul(1000));
+/** Log-gewichteter Beitrag EINES Gewinn-Events zur Void-Fütterung (dust=1, plasma=10,
+ *  shards=100, dm=1000 — höhere Ressourcenstufen nähren die Leere überproportional stärker). */
+export function feedContribution(gain: Decimal, weight: number): Decimal {
+  return log10p1(gain).mul(weight);
 }
 export function autoIgniteUnlocked(s: GameState): boolean {
   return s.stats.novaMs >= C.MS_NOVA[1];   // Meilenstein: ab der 2. Supernova (dieser Galaxie)
