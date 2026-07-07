@@ -1,5 +1,5 @@
 import type { GameState } from './state';
-import type { Mults } from './formulas';
+import { effectiveCoalescences, type Mults } from './formulas';
 import { D } from './decimal';
 import * as C from './constants';
 
@@ -38,8 +38,8 @@ export const ACHIEVEMENT_CHECKS: Check[] = [
   s => s.nova.completedTier.filter(t => t >= 1).length >= 1,
   s => s.nova.completedTier.filter(t => t >= 1).length >= 4,
   s => s.nova.completedTier.every(t => t >= 1),
-  // 52–53: Coalescences
-  s => s.stats.coalescences >= 1, s => s.stats.coalescences >= 3,
+  // 52–53: Coalescences (effektiv — Galaxie-Reset-Bonus zählt mit)
+  s => effectiveCoalescences(s) >= 1, s => effectiveCoalescences(s) >= 3,
   // 54–56: Konstellations-Nodes
   s => s.galaxy.nodes.filter(Boolean).length >= 5,
   s => [14, 29, 44].some(k => s.galaxy.nodes[k]),
@@ -56,7 +56,7 @@ export const ACHIEVEMENT_CHECKS: Check[] = [
   // 63–66: die jeweils LETZTE Meilenstein-Stufe jeder Ebene
   s => s.stats.ignMs >= last(C.MS_IGNITION),
   s => s.stats.novaMs >= last(C.MS_NOVA),
-  s => s.stats.coalescences >= last(C.MS_GALAXY),
+  s => effectiveCoalescences(s) >= last(C.MS_GALAXY),
   s => s.stats.collapses >= last(C.MS_COLLAPSE),
 ];
 

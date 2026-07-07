@@ -213,6 +213,32 @@ export class Hud {
     this.modalHost.append(back);
   }
 
+  private offlineProgBack: HTMLElement | null = null;
+  private offlineProgFill: HTMLElement | null = null;
+  /** Zeigt einen Fortschrittsdialog über der (bereits laufenden) Spielszene, solange
+   *  `simulateOfflineGen()` in Chunks durchläuft — sonst starrt der Spieler bei langer
+   *  Abwesenheit auf einen eingefrorenen Bildschirm ohne jede Rückmeldung. */
+  showOfflineProgress(): void {
+    const back = el('div', 'modal-back');
+    const box = el('div', 'modal offline-progress');
+    box.append(el('h3', '', t('offline.progressTitle')), el('p', '', t('offline.progressDesc')));
+    const barWrap = el('div', 'bar bar-offline');
+    this.offlineProgFill = el('div', 'bar-fill');
+    barWrap.append(this.offlineProgFill);
+    box.append(barWrap);
+    back.append(box);
+    this.modalHost.append(back);
+    this.offlineProgBack = back;
+  }
+  updateOfflineProgress(frac: number): void {
+    if (this.offlineProgFill) this.offlineProgFill.style.width = `${Math.min(100, Math.max(0, frac * 100)).toFixed(1)}%`;
+  }
+  hideOfflineProgress(): void {
+    this.offlineProgBack?.remove();
+    this.offlineProgBack = null;
+    this.offlineProgFill = null;
+  }
+
   /** Sprache gewechselt → statische Texte neu setzen */
   relabel(): void {
     for (const tab of this.tabs) tab.btn.textContent = t(`tab.${tab.id}`);

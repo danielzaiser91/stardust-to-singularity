@@ -5,7 +5,7 @@ import {
   computeMults, genCost, genMaxAfford, compressionCost, clickAmount, maxTier,
   plasmaGain, canIgnite, shardGain, canSupernova, dmGain, canCoalesce,
   entropyGain, canCollapse, reactorCost, nebulaCellCost, nodeCost, nodeAvailable,
-  perkCost, feedMass, type Mults,
+  perkCost, feedMass, effectiveCoalescences, type Mults,
 } from './formulas';
 
 /** Alle Spieler-Aktionen. Geben true zurück, wenn etwas passiert ist. */
@@ -154,7 +154,7 @@ function resetStarLayer(s: GameState): void {
   // Roguelite: Zündungs-Meilensteine & Klassen-Picks gelten pro Supernova-Run.
   // Galaxie-Meilenstein (6 Coalescences) macht sie permanent. VOR resetDustLayer
   // nullen, damit auch die Kompressions-Persistenz (ignMs ≥ 25) mitfällt.
-  if (s.stats.coalescences < C.MS_GALAXY[4]) {
+  if (effectiveCoalescences(s) < C.MS_GALAXY[4]) {
     s.stats.ignMs = 0;
     s.stats.classPicks = [0, 0, 0];
   }
@@ -239,8 +239,8 @@ export function enterChallenge(s: GameState, i: number, tier: 1 | 2 = 1): boolea
   if (s.stats.supernovae < C.CH_UNLOCK_NOVAE(i)) return false;
   if (s.nova.challenge !== -1) return false;
   if (tier === 2) {
-    // Hard: erst ab Galaxie-Meilenstein (5 Coalescences) UND erst nachdem Normal bereits geschafft ist
-    if (s.stats.coalescences < C.MS_GALAXY[3]) return false;
+    // Hard: erst ab Galaxie-Meilenstein (5 Verschmelzungen, effektiv) UND erst nachdem Normal bereits geschafft ist
+    if (effectiveCoalescences(s) < C.MS_GALAXY[3]) return false;
     if (s.nova.completedTier[i] < 1) return false;
   }
   s.nova.challenge = i;
@@ -260,8 +260,8 @@ export function exitChallenge(s: GameState): boolean {
 function resetNovaLayer(s: GameState): void {
   s.nova.shards = ZERO;
   s.nova.totalShards = ZERO;
-  // Galaxie-Meilensteine bestimmen, was die Coalescence überlebt:
-  const coal = s.stats.coalescences;
+  // Galaxie-Meilensteine bestimmen, was die Coalescence überlebt (effektiv, s. coalescenceBonusMult):
+  const coal = effectiveCoalescences(s);
   // M8 (oder Sternen-Gedächtnis L3): Nebelgarten bleibt
   if (coal < C.MS_GALAXY[7] && (s.sing.perks[8] ?? 0) < 3) {
     s.nova.cells = s.nova.cells.map(() => 0 as NebulaCell);
@@ -321,7 +321,8 @@ function resetGalaxyLayer(s: GameState): void {
   s.galaxy.count = 0;
   s.stats.gtypePicks = [0, 0, 0];  // Invariante: Summe == galaxy.count
   s.galaxy.autoNova = { on: false, at: D(1), acc: 0 };
-  resetNovaLayer(s);
+  resetNovaLayer(s);   // liest effectiveCoalescences() VOR dem Reset — Persistenz-Checks nutzen den alten Stand
+  s.stats.coalescences = 0;   // frische Verschmelzungs-Leiter je Galaxie; coalescenceBonusMult() gleicht das aus
 }
 
 export function doCollapse(s: GameState): boolean {
@@ -362,13 +363,6 @@ export function feedBlackHole(s: GameState): boolean {
   return true;
 }
 
-export function activateDilation(s: GameState): boolean {
-  if (!s.sing.unlocked || s.sing.dilation.active || s.sing.dilation.cd > 0) return false;
-  s.sing.dilation.active = true;
-  s.sing.dilation.left = C.DILATION_TIME;
-  return true;
-}
-
 export function newUniverse(s: GameState): boolean {
   if (s.sing.totalEntropy.lt(C.ENDGAME_ENTROPY)) return false;
   s.sing.universes++;
@@ -376,7 +370,6 @@ export function newUniverse(s: GameState): boolean {
   s.sing.entropy = ZERO;
   s.sing.fed = ZERO;
   s.sing.collapsesU = 0;  // NG+ startet die Kollaps-Leiter frisch
-  s.sing.dilation = { active: false, left: 0, cd: 0 };
   resetGalaxyLayer(s);
   return true;
 }

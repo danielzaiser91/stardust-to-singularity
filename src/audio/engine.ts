@@ -51,7 +51,6 @@ export class AudioEngine {
     on('feed', () => this.sweep(300, 60, 0.6));
     on('nebula-placed', () => this.blip(700, 0.12, 0.12, 'sine'));
     on('node-bought', () => this.arp([587, 740], 0.4));
-    on('dilate', () => this.sweep(200, 800, 0.8));
   }
 
   private init(): void {

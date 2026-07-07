@@ -1,7 +1,7 @@
-import { Decimal } from './decimal';
+import { Decimal, ZERO } from './decimal';
 import * as C from './constants';
 import type { GameState } from './state';
-import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, autoIgniteUnlocked, type Mults } from './formulas';
+import { computeMults, tierMult, maxTier, plasmaGain, shardGain, genMaxAfford, genCost, clickAmount, autoIgniteUnlocked, feedMass, type Mults } from './formulas';
 import { supernovaReset, buyGenerator, buyCompressionMax, buyReactor, buyReactorsMax } from './actions';
 import { rngNext } from './rng';
 import { checkAchievements } from './achievements';
@@ -22,7 +22,7 @@ export function tick(s: GameState, dt: number): Mults {
   s.stats.galaxyTime += dt;
   s.stats.singTime += dt;
 
-  // — Realzeit-Timer: Komet, Dilation, Pulsar —
+  // — Realzeit-Timer: Komet, Pulsar —
   if (s.dust.comet.active) {
     s.dust.comet.ttl -= dt;
     if (s.dust.comet.ttl <= 0) s.dust.comet.active = false;
@@ -32,12 +32,6 @@ export function tick(s: GameState, dt: number): Mults {
     if (r.value < m.cometChance * dt) { s.dust.comet.active = true; s.dust.comet.ttl = C.COMET_TTL; }
   }
   if (s.dust.comet.boost > 0) s.dust.comet.boost = Math.max(0, s.dust.comet.boost - dt);
-  if (s.sing.dilation.active) {
-    s.sing.dilation.left -= dt;
-    if (s.sing.dilation.left <= 0) { s.sing.dilation.active = false; s.sing.dilation.cd = C.DILATION_CD; }
-  } else if (s.sing.dilation.cd > 0) {
-    s.sing.dilation.cd = Math.max(0, s.sing.dilation.cd - dt);
-  }
   if (s.nova.remnants[1] > 0) s.nova.pulsarPhase = (s.nova.pulsarPhase + dt) % m.pulsarPeriod;
 
   // — Stern: H-Produktion + Fusionskette —
@@ -139,6 +133,24 @@ export function tick(s: GameState, dt: number): Mults {
       if (s.galaxy.autoNova.acc >= 1) {
         s.galaxy.autoNova.acc = 0;
         supernovaReset(s, lastRemnantChoice(s));
+      }
+    }
+  }
+  // Füttere die Leere (Auto): gleiches Trickle-Muster — zahlt die AKTUELLE feedMass (wächst mit
+  // dem Bestand weiter) anteilig pro Tick in `fed` ein; bei 100 % Akkumulation ein echter Feed
+  // (Ressourcen auf 0, wie der manuelle Button).
+  if (s.sing.unlocked && s.sing.autoFeed.on) {
+    const mass = feedMass(s);
+    if (mass.gt(0)) {
+      const frac = C.AUTO_FEED_RATE * gdt;
+      s.sing.fed = s.sing.fed.add(mass.mul(frac));
+      s.sing.autoFeed.acc += frac;
+      if (s.sing.autoFeed.acc >= 1) {
+        s.sing.autoFeed.acc -= 1;
+        s.dust.amount = ZERO;
+        s.star.plasma = ZERO;
+        s.nova.shards = ZERO;
+        s.galaxy.dm = ZERO;
       }
     }
   }

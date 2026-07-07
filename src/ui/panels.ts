@@ -40,7 +40,7 @@ function logFrac(cur: Decimal, req: Decimal | number): number {
 function chNextTier(s: GameState, c: number): 1 | 2 | null {
   const ctier = s.nova.completedTier[c];
   if (ctier >= 2) return null;
-  if (ctier >= 1) return s.stats.coalescences >= C.MS_GALAXY[3] ? 2 : null;
+  if (ctier >= 1) return F.effectiveCoalescences(s) >= C.MS_GALAXY[3] ? 2 : null;
   return 1;
 }
 /** Für den Klapp-Indikator: nur freigeschaltete Challenges zählen — gesperrte Hart-Stufen
@@ -62,45 +62,56 @@ const CAP_TOTAL_RES: Record<'ignite' | 'nova' | 'coalesce' | 'collapse', 'plasma
   ignite: 'plasma', nova: 'shards', coalesce: 'dm', collapse: 'entropy',
 };
 
-/** Zeile für Reset-Vorschauen: Gewinn/Anforderung links, Deckel-Wert dauerhaft sichtbar rechts —
- *  spart den Hover fürs Tooltip. Nur eine Spalte, solange die Ebene ihren Auto-Trickle laufen hat
- *  (der resettet ohnehin laufend selbst, der Deckel wäre dort nur Ballast). */
-function resetRow(label: HTMLElement): { row: HTMLElement; capEl: HTMLElement } {
+/** Zeile für Reset-Vorschauen: Gewinn/Anforderung links (visuell betont via `.reset-gain` —
+ *  das ist die eigentlich wichtige Zahl), Deckel-Wert dauerhaft sichtbar rechts, "noch X bis
+ *  zum Deckel" permanent als dritte Zeile darunter — kein Hover mehr nötig, um das zu sehen.
+ *  Ganze `row` ist der Tooltip-Hover-Bereich (Erklärung, was der Deckel bedeutet). Cap-Spalte
+ *  + Bedarfszeile verschwinden (zurück auf die reine Gewinn-Zeile), solange der Auto-Trickle
+ *  der Ebene läuft — der resettet ohnehin laufend selbst, beides wäre dort nur Ballast. */
+function resetRow(label: HTMLElement): { wrap: HTMLElement; row: HTMLElement; capEl: HTMLElement; needEl: HTMLElement } {
+  label.classList.add('reset-gain');
   const capEl = el('span', 'sub reset-cap');
   const row = el('div', 'reset-row');
   row.append(label, capEl);
-  return { row, capEl };
+  const needEl = el('div', 'sub center reset-need');
+  const wrap = el('div', 'reset-wrap');
+  wrap.append(row, needEl);
+  return { wrap, row, capEl, needEl };
+}
+/** Text „noch X bis zum Deckel" — geteilt zwischen der permanenten Zeile und (früher) dem Tooltip. */
+function capNeedText(
+  s: GameState, m: F.Mults, layer: 'ignite' | 'nova' | 'coalesce' | 'collapse',
+  unitKey: string, resKind?: 'dust' | 'shards' | 'dm',
+): string {
+  const need = F.currencyForCap(s, m, layer);
+  if (!need) return '';
+  const sci = s.settings.sciNotation;
+  const target = fmt(need.target, sci);
+  const c = resKind ? resTag(resKind, target) : `${numTag(target)} ${t(unitKey)}`;
+  return t('cap.need', { c, v: numTag(fmt(need.current, sci)) });
 }
 function setCapDisplay(
-  capEl: HTMLElement, row: HTMLElement, s: GameState, total: Decimal, mult: number,
-  layer: 'ignite' | 'nova' | 'coalesce' | 'collapse', autoOn: boolean,
+  capEl: HTMLElement, row: HTMLElement, needEl: HTMLElement, s: GameState, m: F.Mults,
+  total: Decimal, mult: number, layer: 'ignite' | 'nova' | 'coalesce' | 'collapse',
+  unitKey: string, resKind: 'dust' | 'shards' | 'dm' | undefined, isCapped: boolean, autoOn: boolean,
 ): void {
+  const showCap = !autoOn;
   setHTML(capEl, t('cap.inline', { v: resTag(CAP_TOTAL_RES[layer], fmt(F.gainCapBound(total, mult), s.settings.sciNotation)) }));
-  setVisible(capEl, !autoOn);
-  setClass(row, 'has-cap', !autoOn);
+  setVisible(capEl, showCap);
+  setClass(row, 'has-cap', showCap);
+  const needText = showCap && !isCapped ? capNeedText(s, m, layer, unitKey, resKind) : '';
+  setReserve(needEl, needText !== '');
+  if (needText) setHTML(needEl, needText);
 }
-
-/** Gemeinsamer Gain-Deckel-Tooltip: Erklärung · erreichbares Maximum · Währung bis zum Deckel. */
-function capTipBody(
-  s: GameState, m: F.Mults, total: Decimal, clampMult: number, isCapped: boolean,
-  layer: 'ignite' | 'nova' | 'coalesce' | 'collapse', unitKey: string, resKind?: 'dust' | 'shards' | 'dm',
-  autoOn = false,
-): { title: string; body: string } {
-  const sci = s.settings.sciNotation;
-  // Die konkrete Zahl (mit Ressourcen-Icon) sagt schon alles — kein zusätzliches "×N deiner
-  // Summe" nötig, das dieselbe Info nur abstrakter wiederholt.
-  const max = t('cap.max', { v: resTag(CAP_TOTAL_RES[layer], fmt(F.gainCapBound(total, clampMult), sci)) });
+/** Gemeinsamer Gain-Deckel-Tooltip: reine Erklärung — die Zahlen (Deckel, Bedarf) stehen jetzt
+ *  permanent in der Zeile selbst, nicht mehr nur im Hover. `charge` (< 1) erklärt, warum die
+ *  Gewinn-Vorschau auch ohne neue Ressourcen langsam steigt — reine Aufladezeit seit dem
+ *  letzten Reset, kein Bug. */
+function capTipBody(isCapped: boolean, autoOn: boolean, charge = 1): { title: string; body: string } {
   // "Jetzt resetten!" ist irreführend, solange der Auto-Trickle des Layers ohnehin laufend resettet.
   const bodyKey = isCapped ? (autoOn ? 'cap.bodyAuto' : 'cap.body') : 'cap.hint';
-  let body = `${t(bodyKey)}\n${max}`;
-  if (!isCapped) {
-    const need = F.currencyForCap(s, m, layer);
-    if (need) {
-      const target = fmt(need.target, sci);
-      const c = resKind ? resTag(resKind, target) : `${numTag(target)} ${t(unitKey)}`;
-      body += `\n${t('cap.need', { c, v: numTag(fmt(need.current, sci)) })}`;
-    }
-  }
+  let body = t(bodyKey);
+  if (charge < 1) body += `\n${t('cap.charge', { v: numTag(String(Math.round(charge * 100))) })}`;
   return { title: (isCapped ? '⚠ ' : '') + t('cap.title'), body };
 }
 
@@ -124,6 +135,7 @@ export class DustPanel implements Panel {
   private igniteLabel = el('div', 'sub center');
   private igniteCap!: HTMLElement;
   private igniteRow!: HTMLElement;
+  private igniteNeed!: HTMLElement;
   private igniteBtn: HTMLButtonElement;
   private autoBtn!: HTMLButtonElement;
   private classSeg: HTMLElement;
@@ -227,12 +239,13 @@ export class DustPanel implements Panel {
     const igniteRow = resetRow(this.igniteLabel);
     this.igniteRow = igniteRow.row;
     this.igniteCap = igniteRow.capEl;
-    this.igniteBox.append(this.igniteBar.wrap, this.igniteRow);
-    attachTip(this.igniteLabel, () => {
+    this.igniteNeed = igniteRow.needEl;
+    this.igniteBox.append(this.igniteBar.wrap, igniteRow.wrap);
+    attachTip(this.igniteRow, () => {
       const s = this.st();
       const m = M(s);
       const capped = F.isGainCapped(F.plasmaGain(s, m), s.star.totalPlasma, C.PLASMA_CLAMP_MULT);
-      return capTipBody(s, m, s.star.totalPlasma, C.PLASMA_CLAMP_MULT, capped, 'ignite', 'dust.name', 'dust', s.nova.autoIgnite.on);
+      return capTipBody(capped, s.nova.autoIgnite.on);
     });
     this.classSeg = el('div', 'seg');
     for (let c = 0; c < 3; c++) {
@@ -332,7 +345,7 @@ export class DustPanel implements Panel {
       setClass(r.row, 'row-reserved', reserved);
       if (!visible) continue;
       setText(r.owned, `${fmtInt(g.amount)} (${fmtInt(D(g.bought))})`);
-      const prod = g.amount.mul(F.tierMult(s, m, i)).mul(i === 0 ? m.dustMult : D(1));
+      const prod = g.amount.mul(F.tierMult(s, m, i)).mul(i === 0 ? m.dustMult : D(1)).mul(m.speed);
       setText(r.rate, `+${fmt(prod, sci)}${t('unit.perSec')} ${i === 0 ? t('dust.name') : t(`gen.${i - 1}`)}`);
       setText(r.c1, fmt(F.genCost(s, m, i, 1), sci));
       const capped = g.bought >= MAX_COUNTER;
@@ -357,9 +370,10 @@ export class DustPanel implements Panel {
         setHTML(this.igniteLabel, t('star.igniteReq', { v: fmt(req, true) }));
         setDisabled(this.igniteBtn, true);
       }
-      setClass(this.igniteLabel, 'capped',
-        F.canIgnite(s) && F.isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT));
-      setCapDisplay(this.igniteCap, this.igniteRow, s, s.star.totalPlasma, C.PLASMA_CLAMP_MULT, 'ignite', s.nova.autoIgnite.on);
+      const igniteCapped = F.canIgnite(s) && F.isGainCapped(gain, s.star.totalPlasma, C.PLASMA_CLAMP_MULT);
+      setClass(this.igniteLabel, 'capped', igniteCapped);
+      setCapDisplay(this.igniteCap, this.igniteRow, this.igniteNeed, s, m, s.star.totalPlasma,
+        C.PLASMA_CLAMP_MULT, 'ignite', 'dust.name', 'dust', igniteCapped, s.nova.autoIgnite.on);
       setReserve(this.classSeg, s.stats.ignMs >= C.MS_IGNITION[1]);
       this.classBtns.forEach((b, c) => setClass(b, 'active', s.ui.nextClass === c));
       setReserve(this.autoBtn, s.nova.unlocked);
@@ -388,12 +402,17 @@ export class StarPanel implements Panel {
     b: HTMLButtonElement; bm: HTMLButtonElement; lvl: HTMLElement; cost: HTMLElement; capBadge: HTMLElement;
   }[] = [];
   private upBtns: HTMLButtonElement[] = [];
+  private upIndicator = el('span', 'collapse-indicator');
+  private upChevron = el('span', 'collapse-chevron', '▾');
+  private upContainer = el('div', 'up-container');
   private novaBox: HTMLElement;
   private novaBar = bar('bar-nova');
   private novaLabel = el('div', 'sub center');
   private novaCap!: HTMLElement;
   private novaRow!: HTMLElement;
+  private novaNeed!: HTMLElement;
   private novaBtn: HTMLButtonElement;
+  private autoNovaBtn!: HTMLButtonElement;
   private remSeg: HTMLElement;
   private remBtns: HTMLButtonElement[] = [];
   private classNote = el('div', 'sub center');
@@ -455,22 +474,39 @@ export class StarPanel implements Panel {
       this.upBtns.push(b);
       (isAuto ? gridAuto : gridNormal).append(b);
     }
-    this.root.append(el('h3', '', t('star.upgrades')), gridNormal);
-    this.root.append(el('h3', '', t('star.autoUps')), gridAuto);
+    const upHead = el('h3', 'collapse-head');
+    upHead.append(el('span', '', t('star.upgrades')), this.upIndicator, this.upChevron);
+    upHead.addEventListener('click', () => {
+      const s = this.st();
+      s.ui.upgradesCollapsed = !s.ui.upgradesCollapsed;
+      this.update(s, M(s));
+    });
+    attachTip(this.upIndicator, () => {
+      const s = this.st();
+      const bought = s.star.upgrades.filter(Boolean).length;
+      const total = C.PLASMA_UPGRADE_COSTS.length;
+      return {
+        title: t('star.upgrades'),
+        body: bought >= total ? t('star.upIndicatorDone') : t('star.upIndicatorOpen', { n: bought, total }),
+      };
+    });
+    this.root.append(upHead, this.upContainer);
+    this.upContainer.append(gridNormal, el('h3', '', t('star.autoUps')), gridAuto);
 
     // Supernova-Box
     this.novaBox = el('div', 'reset-box nova');
     const novaRow = resetRow(this.novaLabel);
     this.novaRow = novaRow.row;
     this.novaCap = novaRow.capEl;
-    this.novaBox.append(el('h3', '', t('nova.name')), this.novaBar.wrap, this.novaRow,
+    this.novaNeed = novaRow.needEl;
+    this.novaBox.append(el('h3', '', t('nova.name')), this.novaBar.wrap, novaRow.wrap,
       el('div', 'sub center', t('nova.remnant')));
-    attachTip(this.novaLabel, () => {
+    attachTip(this.novaRow, () => {
       const s = this.st();
       const m = M(s);
       const clampMult = F.shardClampMult(s);
       const capped = F.isGainCapped(F.shardGain(s, m), s.nova.totalShards, clampMult);
-      return capTipBody(s, m, s.nova.totalShards, clampMult, capped, 'nova', 'el.5', undefined, s.galaxy.autoNova.on);
+      return capTipBody(capped, s.galaxy.autoNova.on, F.chargeFrac(s, 'nova'));
     });
     this.remSeg = el('div', 'seg');
     for (let r = 0; r < 3; r++) {
@@ -507,7 +543,26 @@ export class StarPanel implements Panel {
       if (s.stats.supernovae === 0) this.hud.confirm(t('nova.go'), t('nova.confirm'), doIt);
       else doIt();
     });
-    this.novaBox.append(this.remSeg, this.novaBtn);
+    // Auto-Supernova direkt neben dem Auslösen-Button (Toggle; gesperrt bis Meilenstein) —
+    // gleiches Muster wie Auto-Zündung neben ZÜNDEN in DustPanel.
+    this.autoNovaBtn = btn('seg-btn auto-btn', t('galaxy.autoNova'), () => {
+      const s = this.st();
+      if (!M(s).autoNovaUnlocked) return;
+      s.galaxy.autoNova.on = !s.galaxy.autoNova.on;
+      this.update(s, M(s));
+    });
+    attachTip(this.autoNovaBtn, () => {
+      const s = this.st();
+      return {
+        title: t('galaxy.autoNova'),
+        body: M(s).autoNovaUnlocked
+          ? t('galaxy.autoNovaTip', { r: numTag(`${C.AUTO_NOVA_RATE * 100}%`) })
+          : t('galaxy.autoNovaLock'),
+      };
+    });
+    const novaRow2 = el('div', 'ignite-row');
+    novaRow2.append(this.novaBtn, this.autoNovaBtn);
+    this.novaBox.append(this.remSeg, novaRow2);
     this.root.append(this.novaBox);
 
     this.ms = milestoneSection(
@@ -538,7 +593,7 @@ export class StarPanel implements Panel {
 
   update(s: GameState, m: F.Mults): void {
     const sci = s.settings.sciNotation;
-    setText(this.classNote, `${t('star.class')}: ${t(`star.class${s.star.cls}`)} · H: +${fmt(m.hRate, sci)}${t('unit.perSec')}`);
+    setText(this.classNote, `${t('star.class')}: ${t(`star.class${s.star.cls}`)} · H: +${fmt(m.hRate.mul(m.speed), sci)}${t('unit.perSec')}`);
     for (let e = 0; e < C.ELEMENT_COUNT; e++) {
       const r = this.elRows[e];
       setText(r.stock, fmt(s.star.elements[e], sci));
@@ -569,6 +624,9 @@ export class StarPanel implements Panel {
       setClass(this.upBtns[u], 'bought', s.star.upgrades[u]);
       setDisabled(this.upBtns[u], s.star.upgrades[u] || s.star.plasma.lt(C.PLASMA_UPGRADE_COSTS[u]));
     }
+    setVisible(this.upContainer, !s.ui.upgradesCollapsed);
+    setClass(this.upChevron, 'collapsed', s.ui.upgradesCollapsed);
+    setClass(this.upIndicator, 'done', s.star.upgrades.every(Boolean));
     const fe = s.star.elements[5];
     setVisible(this.novaBox, fe.gt(0) || s.nova.unlocked);
     const nReq = F.novaReq(s);
@@ -581,8 +639,14 @@ export class StarPanel implements Panel {
       setHTML(this.novaLabel, t('nova.req', { v: fmt(nReq, true) }));
       setDisabled(this.novaBtn, true);
     }
-    setClass(this.novaLabel, 'capped', F.canSupernova(s) && F.isGainCapped(gain, s.nova.totalShards, F.shardClampMult(s)));
-    setCapDisplay(this.novaCap, this.novaRow, s, s.nova.totalShards, F.shardClampMult(s), 'nova', s.galaxy.autoNova.on);
+    const novaClampMult = F.shardClampMult(s);
+    const novaCapped = F.canSupernova(s) && F.isGainCapped(gain, s.nova.totalShards, novaClampMult);
+    setClass(this.novaLabel, 'capped', novaCapped);
+    setCapDisplay(this.novaCap, this.novaRow, this.novaNeed, s, m, s.nova.totalShards,
+      novaClampMult, 'nova', 'el.5', undefined, novaCapped, s.galaxy.autoNova.on);
+    const autoNovaOk = m.autoNovaUnlocked;
+    setClass(this.autoNovaBtn, 'dim', !autoNovaOk);
+    setClass(this.autoNovaBtn, 'active', autoNovaOk && s.galaxy.autoNova.on);
     this.remBtns.forEach((b, r) => {
       setClass(b, 'active', s.ui.nextRemnant === r);
       setText(b, `${t(`nova.rem${r}`)} (${s.nova.remnants[r]})`);
@@ -622,13 +686,14 @@ export class NovaPanel implements Panel {
     restrictLine: HTMLElement; goalLine: HTMLElement; rewardLine: HTMLElement; rewardValue: HTMLElement;
     startBtn: HTMLButtonElement;
   }[] = [];
-  private chIndicator = el('span', 'ch-indicator');
-  private chChevron = el('span', 'ch-chevron', '▾');
+  private chIndicator = el('span', 'collapse-indicator');
+  private chChevron = el('span', 'collapse-chevron', '▾');
   private chContainer = el('div', 'ch-container');
   private coalBar = bar('bar-gal');
   private coalLabel = el('div', 'sub center');
   private coalCap!: HTMLElement;
   private coalRow!: HTMLElement;
+  private coalNeed!: HTMLElement;
   private coalBtn!: HTMLButtonElement;
   private gtBtns: HTMLButtonElement[] = [];
 
@@ -644,7 +709,7 @@ export class NovaPanel implements Panel {
         body: (b === 1 ? resTag('dust', t('nova.cell1d')) : b === 2 ? resTag('plasma', t('nova.cell2d'))
           : t('nova.cell3d', { v: numTag(`×${fmtMult(C.NEBULA_DARK_BONUS)}`) }))
           + (b === 2
-            ? `\n${this.st().stats.coalescences >= C.MS_GALAXY[1]
+            ? `\n${F.effectiveCoalescences(this.st()) >= C.MS_GALAXY[1]
               ? t('nova.reFeOn', { v: numTag(`×${fmtMult(C.NEBULA_REFLECTION_MULT)}`), n: C.MS_GALAXY[1] })
               : t('nova.reFeLocked', { v: numTag(`×${fmtMult(C.NEBULA_REFLECTION_MULT)}`), n: C.MS_GALAXY[1] })}`
             : ''),
@@ -700,7 +765,7 @@ export class NovaPanel implements Panel {
         }
         const darks = F.HEX_NEIGHBORS[i].filter(n => s.nova.cells[n] === 3).length;
         const v = numTag(`×${fmtMult(F.nebulaCellMult(s, i, m.nebulaNodeMult))}`);
-        const feOn = s.stats.coalescences >= C.MS_GALAXY[1];
+        const feOn = F.effectiveCoalescences(s) >= C.MS_GALAXY[1];
         return {
           title: t(`nova.cell${type}`),
           body: `${t(type === 1 ? 'nova.hexEmTip' : feOn ? 'nova.hexReTipFe' : 'nova.hexReTip', { v })}\n${t('nova.hexDarks', { n: darks })}`
@@ -723,7 +788,7 @@ export class NovaPanel implements Panel {
     attachTip(this.gardenTotal, () => ({ title: t('nova.nebula'), body: t('nova.gardenTotalTip', { b: numTag(`×${fmtMult(C.NEBULA_DARK_BONUS)}`) }) }));
     this.root.append(ctl, grid, this.gardenTotal);
 
-    const chHead = el('h3', 'ch-section-head');
+    const chHead = el('h3', 'collapse-head');
     chHead.append(el('span', '', t('nova.challenges')), this.chIndicator, this.chChevron);
     chHead.addEventListener('click', () => {
       const s = this.st();
@@ -779,12 +844,13 @@ export class NovaPanel implements Panel {
     const coalRow = resetRow(this.coalLabel);
     this.coalRow = coalRow.row;
     this.coalCap = coalRow.capEl;
-    coalesceBox.append(this.coalBar.wrap, this.coalRow, el('div', 'sub center', t('galaxy.type')));
-    attachTip(this.coalLabel, () => {
+    this.coalNeed = coalRow.needEl;
+    coalesceBox.append(this.coalBar.wrap, coalRow.wrap, el('div', 'sub center', t('galaxy.type')));
+    attachTip(this.coalRow, () => {
       const s = this.st();
       const m = M(s);
       const capped = F.isGainCapped(F.dmGain(s, m), s.galaxy.totalDM);
-      return capTipBody(s, m, s.galaxy.totalDM, C.GAIN_CLAMP_MULT, capped, 'coalesce', 'nova.shards', 'shards');
+      return capTipBody(capped, false, F.chargeFrac(s, 'coalesce'));
     });
     const gtSeg = el('div', 'seg');
     for (let g = 0; g < 3; g++) {
@@ -820,7 +886,10 @@ export class NovaPanel implements Panel {
 
     this.ms = milestoneSection(
       [t('ms.gal0'), t('ms.gal1'), t('ms.gal2'), t('ms.galHard'), t('ms.gal3'), t('ms.gal4'), t('ms.gal5'), t('ms.gal6')],
-      C.MS_GALAXY, 'ms.u.gal', s => s.stats.coalescences);
+      C.MS_GALAXY, 'ms.u.gal', s => F.effectiveCoalescences(s),
+      { st: this.st, text: s => t('ms.galBreakdown', {
+        raw: s.stats.coalescences, mult: numTag(fmtMult(F.coalescenceBonusMult(s))), n: s.stats.collapses,
+      }) });
     this.root.append(this.ms.root);
     this.syncBrush();
   }
@@ -855,8 +924,8 @@ export class NovaPanel implements Panel {
       setText(b, type === 0 && usable ? '+' : '');
       setClass(b, 'dim', !usable);
     }
-    setText(this.gardenTotal, t(s.stats.coalescences >= C.MS_GALAXY[1] ? 'nova.gardenTotalFe' : 'nova.gardenTotal', {
-      d: fmt(m.nebulaDustMult, sci), p: fmt(m.nebulaPlasmaMult, sci),
+    setHTML(this.gardenTotal, t(F.effectiveCoalescences(s) >= C.MS_GALAXY[1] ? 'nova.gardenTotalFe' : 'nova.gardenTotal', {
+      d: resTag('dust', `×${fmt(m.nebulaDustMult, sci)}`), p: resTag('plasma', `×${fmt(m.nebulaPlasmaMult, sci)}`),
     }));
 
     setVisible(this.chContainer, !s.ui.challengesCollapsed);
@@ -928,8 +997,10 @@ export class NovaPanel implements Panel {
       setHTML(this.coalLabel, t('galaxy.req', { v: fmt(coalReq, true) }));
       setDisabled(this.coalBtn, true);
     }
-    setClass(this.coalLabel, 'capped', F.canCoalesce(s) && F.isGainCapped(dmG, s.galaxy.totalDM));
-    setCapDisplay(this.coalCap, this.coalRow, s, s.galaxy.totalDM, C.GAIN_CLAMP_MULT, 'coalesce', false);
+    const coalCapped = F.canCoalesce(s) && F.isGainCapped(dmG, s.galaxy.totalDM);
+    setClass(this.coalLabel, 'capped', coalCapped);
+    setCapDisplay(this.coalCap, this.coalRow, this.coalNeed, s, m, s.galaxy.totalDM,
+      C.GAIN_CLAMP_MULT, 'coalesce', 'nova.shards', 'shards', coalCapped, false);
     this.gtBtns.forEach((b, g) => {
       setClass(b, 'active', s.ui.nextGtype === g);
       setText(b, `${t(`galaxy.t${g}`)} (${s.stats.gtypePicks[g]})`);
@@ -943,13 +1014,11 @@ export class NovaPanel implements Panel {
 export class GalaxyPanel implements Panel {
   root = el('div');
   private nodeBtns: { b: HTMLButtonElement; cost: HTMLElement }[] = [];
-  private autoRow: HTMLElement;
-  private autoChk: HTMLInputElement;
-  private autoLockNote = el('div', 'sub center');
   private colBar = bar('bar-sing');
   private colLabel = el('div', 'sub center');
   private colCap!: HTMLElement;
   private colRow!: HTMLElement;
+  private colNeed!: HTMLElement;
   private colBtn!: HTMLButtonElement;
 
   constructor(private st: St, private hud: Hud) {
@@ -977,30 +1046,18 @@ export class GalaxyPanel implements Panel {
     }
     this.root.append(tree);
 
-    this.autoRow = el('div', 'row auto-row');
-    this.autoChk = el('input') as HTMLInputElement;
-    this.autoChk.type = 'checkbox';
-    this.autoChk.addEventListener('change', () => { this.st().galaxy.autoNova.on = this.autoChk.checked; });
-    const label = el('label', '', t('galaxy.autoNova'));
-    label.prepend(this.autoChk);
-    attachTip(label, () => ({
-      title: t('galaxy.autoNova'),
-      body: t('galaxy.autoNovaTip', { r: numTag(`${C.AUTO_NOVA_RATE * 100}%`) }),
-    }));
-    this.autoRow.append(label);
-    this.root.append(this.autoRow, this.autoLockNote);
-
     // Collapse-Box lebt HIER (Ebene darunter) — der Singularity-Tab existiert erst danach
     const collapseBox = el('div', 'reset-box sing');
     const colRow = resetRow(this.colLabel);
     this.colRow = colRow.row;
     this.colCap = colRow.capEl;
-    collapseBox.append(this.colBar.wrap, this.colRow);
-    attachTip(this.colLabel, () => {
+    this.colNeed = colRow.needEl;
+    collapseBox.append(this.colBar.wrap, colRow.wrap);
+    attachTip(this.colRow, () => {
       const s = this.st();
       const m = M(s);
       const capped = F.isGainCapped(F.entropyGain(s, m), s.sing.totalEntropy);
-      return capTipBody(s, m, s.sing.totalEntropy, C.GAIN_CLAMP_MULT, capped, 'collapse', 'galaxy.dm', 'dm');
+      return capTipBody(capped, false, F.chargeFrac(s, 'collapse'));
     });
     this.colBtn = btn('reset-btn sing', t('sing.go'), () => {
       const s = this.st();
@@ -1033,12 +1090,6 @@ export class GalaxyPanel implements Panel {
       setText(nb.cost, bought ? '✓' : `${fmt(F.nodeCost(i), sci)} ◈`);
       setDisabled(nb.b, bought || !avail || s.galaxy.dm.lt(F.nodeCost(i)));
     }
-    const unlocked = m.autoNovaUnlocked;
-    setVisible(this.autoRow, unlocked);
-    setVisible(this.autoLockNote, !unlocked);
-    setText(this.autoLockNote, t('galaxy.autoNovaLock'));
-    if (this.autoChk.checked !== s.galaxy.autoNova.on) this.autoChk.checked = s.galaxy.autoNova.on;
-
     // Collapse
     const colReq = F.collapseReq(s);
     setBar(this.colBar, logFrac(s.galaxy.totalDM, colReq));
@@ -1050,20 +1101,28 @@ export class GalaxyPanel implements Panel {
       setHTML(this.colLabel, t('sing.req', { v: fmt(colReq, true) }));
       setDisabled(this.colBtn, true);
     }
-    setClass(this.colLabel, 'capped', F.canCollapse(s) && F.isGainCapped(entG, s.sing.totalEntropy));
-    setCapDisplay(this.colCap, this.colRow, s, s.sing.totalEntropy, C.GAIN_CLAMP_MULT, 'collapse', false);
+    const colCapped = F.canCollapse(s) && F.isGainCapped(entG, s.sing.totalEntropy);
+    setClass(this.colLabel, 'capped', colCapped);
+    setCapDisplay(this.colCap, this.colRow, this.colNeed, s, m, s.sing.totalEntropy,
+      C.GAIN_CLAMP_MULT, 'collapse', 'galaxy.dm', 'dm', colCapped, false);
 
     this.ms.update(s);
   }
 }
 
 /** Meilenstein-Liste einer Ebene: ○/✓ je Schwelle, grau bis erreicht */
-function milestoneSection(labels: string[], thresholds: number[], unitKey: string, count: (s: GameState) => number) {
+function milestoneSection(
+  labels: string[], thresholds: number[], unitKey: string, count: (s: GameState) => number,
+  breakdown?: { st: St; text: (s: GameState) => string },
+) {
   const root = el('div', 'ms-box');
   const head = el('h3', '', t('ms.title'));
   const countEl = el('span', 'ms-count', '');
   head.append(countEl);
   root.append(head);
+  if (breakdown) {
+    attachTip(countEl, () => ({ title: t('ms.title'), body: breakdown.text(breakdown.st()) }));
+  }
   const rows = thresholds.map((at, i) => {
     const row = el('div', 'ms-row');
     const icon = el('span', 'ms-icon', '○');
@@ -1100,34 +1159,49 @@ function nodeLabelBody(i: number): string {
 export class SingPanel implements Panel {
   root = el('div');
   private feedBtn: HTMLButtonElement;
+  private autoFeedBtn!: HTMLButtonElement;
   private feedInfo = el('div', 'sub center');
-  private dilateBtn: HTMLButtonElement;
+  private dilationBox!: HTMLElement;
   private dilateInfo = el('div', 'sub center');
   private perkBtns: { b: HTMLButtonElement; lvl: HTMLElement; cost: HTMLElement }[] = [];
   private endBox: HTMLElement;
   private endBar = bar('bar-end');
   private endBtn: HTMLButtonElement;
   private uniLabel = el('div', 'sub center');
+  private coalBonusBox: HTMLElement;
+  private coalBonusInfo = el('div', 'sub center');
 
   constructor(private st: St, private hud: Hud) {
+    this.coalBonusBox = el('div', 'reset-box sing');
+    this.coalBonusBox.append(el('h3', '', t('sing.coalBonusTitle')), this.coalBonusInfo);
+    attachTip(this.coalBonusBox, () => ({ title: t('sing.coalBonusTitle'), body: t('sing.coalBonusTip') }));
+    this.root.append(this.coalBonusBox);
+
     this.root.append(this.uniLabel);
 
     this.feedBtn = btn('reset-btn feed', t('sing.feed'), () => {
       const s = this.st();
       if (A.feedBlackHole(s)) emit('feed');
     });
+    this.autoFeedBtn = btn('seg-btn auto-btn', t('sing.autoFeed'), () => {
+      const s = this.st();
+      s.sing.autoFeed.on = !s.sing.autoFeed.on;
+      this.update(s, M(s));
+    });
+    attachTip(this.autoFeedBtn, () => ({ title: t('sing.autoFeed'), body: t('sing.autoFeedTip') }));
     const feedDesc = el('div', 'sub');
     feedDesc.innerHTML = t('sing.feedDesc', {
       d: resTag('dust', t('dust.name')), p: resTag('plasma', t('star.plasma')),
       s: resTag('shards', t('nova.shards')), m: resTag('dm', t('galaxy.dm')),
     });
-    this.root.append(feedDesc, this.feedBtn, this.feedInfo);
+    const feedRow = el('div', 'ignite-row');
+    feedRow.append(this.feedBtn, this.autoFeedBtn);
+    this.root.append(feedDesc, feedRow, this.feedInfo);
 
-    this.dilateBtn = btn('reset-btn dilate', t('sing.dilate'), () => {
-      const s = this.st();
-      if (A.activateDilation(s)) emit('dilate');
-    });
-    this.root.append(this.dilateBtn, this.dilateInfo);
+    this.dilationBox = el('div', 'reset-box sing');
+    this.dilationBox.append(el('h3', '', t('sing.dilate')), this.dilateInfo);
+    attachTip(this.dilationBox, () => ({ title: t('sing.dilate'), body: t('sing.dilateTip') }));
+    this.root.append(this.dilationBox);
 
     this.root.append(el('h3', '', t('sing.perks')));
     for (let p = 0; p < C.PERK_COUNT; p++) {
@@ -1165,16 +1239,16 @@ export class SingPanel implements Panel {
     const sci = s.settings.sciNotation;
     void m;
     setText(this.uniLabel, s.sing.universes > 0 ? t('sing.universes', { v: String(s.sing.universes + 1) }) : '');
+    setHTML(this.coalBonusInfo, t('sing.coalBonusInfo', { v: numTag(fmtMult(F.coalescenceBonusMult(s))) }));
 
     const mass = F.feedMass(s);
     setDisabled(this.feedBtn, mass.lte(0) || !s.sing.unlocked);
-    const acc = s.sing.fed.gt(0) ? s.sing.fed.add(1).log10().add(1).pow(C.FEED_ACCRETION_EXP) : D(1);
+    setDisabled(this.autoFeedBtn, !s.sing.unlocked);
+    setClass(this.autoFeedBtn, 'active', s.sing.unlocked && s.sing.autoFeed.on);
+    const acc = F.accretionMult(s);
     setHTML(this.feedInfo, `${t('sing.fed', { v: numTag(fmt(s.sing.fed, sci)) })} · ${t('sing.accretion', { v: numTag(fmt(acc, sci)) })} · ${t('sing.feedNext', { v: numTag(fmt(mass, sci)) })}`);
 
-    const d = s.sing.dilation;
-    setDisabled(this.dilateBtn, d.active || d.cd > 0 || !s.sing.unlocked);
-    setHTML(this.dilateInfo, d.active ? `${numTag(`×${C.DILATION_MULT}`)} — ${fmtTime(d.left)}`
-      : d.cd > 0 ? t('sing.dilateCd', { v: numTag(fmtTime(d.cd)) }) : t('sing.dilateDesc', { v: numTag(`×${C.DILATION_MULT}`) }));
+    setHTML(this.dilateInfo, t('sing.dilateInfo', { v: numTag(fmtMult(F.dilationMult(s))) }));
 
     for (let p = 0; p < C.PERK_COUNT; p++) {
       const pb = this.perkBtns[p];

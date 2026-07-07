@@ -2,6 +2,14 @@ import { Decimal, D, ZERO, ONE, affordGeometric, costGeometric, softpow, capAffo
 import * as C from './constants';
 import type { GameState } from './state';
 
+// computeMults() läuft potenziell Millionen Mal (Sim/lange Sessions) und baut mit D(10)/D(2)
+// & Co. jedes Mal denselben kleinen Decimal neu — als Konstante gecacht spart das die
+// wiederholte Allokation im heißesten Pfad des Spiels (siehe BALANCE.md „Sim-Performance").
+const TEN = D(10);
+const TWO = D(2);
+const ACH_MULT_D = D(C.ACH_MULT);
+const PERK_HAWKING_H_D = D(C.PERK_HAWKING_H);
+
 // ── Hex-Grid (19 Zellen, Radius 2, axiale Koordinaten) ──────────────────────
 export const HEX_COORDS: [number, number][] = (() => {
   const out: [number, number][] = [];
@@ -76,6 +84,18 @@ export interface Mults {
 
 const log10p1 = (d: Decimal) => Decimal.max(d, 0).add(1).log10();
 
+/** Akkretions-Bonus aus "Füttere die Leere": global mult = (1+log10(1+fed))^exp. */
+export function accretionMult(s: GameState): Decimal {
+  return s.sing.fed.gt(0) ? log10p1(s.sing.fed).add(1).pow(C.FEED_ACCRETION_EXP) : ONE;
+}
+/** Zeitdilation: dauerhafter Speed-Bonus als Bruchteil des Akkretions-Bonus — kein Button,
+ *  kein Timer/Cooldown mehr. Ohne Fütterung (accretion=1) kein Bonus. `.toNumber()` ist hier
+ *  sicher: log10(fed) müsste ~1e154 erreichen, bevor das Quadrat einen Double überläuft. */
+export function dilationMult(s: GameState): number {
+  const excess = accretionMult(s).sub(1).toNumber();
+  return Number.isFinite(excess) ? 1 + C.DILATION_ACCRETION_FRAC * excess : 1;
+}
+
 /**
  * Effektiver Multiplikator einer Nebula-Zelle: Basis (×3 Emission / ×2 Reflection),
  * jeder dunkle Nachbar VERDOPPELT ihn (×2, wie im Spieltext versprochen). Sicher,
@@ -133,23 +153,23 @@ export function computeMults(s: GameState): Mults {
 
   // — Achievements —
   const achCount = s.achievements.reduce((a, b) => a + (b ? 1 : 0), 0);
-  const achMult = D(C.ACH_MULT).pow(achCount);
+  const achMult = ACH_MULT_D.pow(achCount);
 
   // — Singularity: Perks, Akkretion, NG+ —
-  const accretion = s.sing.fed.gt(0) ? log10p1(s.sing.fed).add(1).pow(C.FEED_ACCRETION_EXP) : ONE;
-  const perkDust = D(10).pow(perks[0]);                     // Event Horizon
-  const prestigeMult = D(2).pow(perks[4]);                  // Ergosphere
+  const accretion = accretionMult(s);
+  const perkDust = TEN.pow(perks[0]);                       // Event Horizon
+  const prestigeMult = TWO.pow(perks[4]);                   // Ergosphere
   const perkSpeed = 1 + 0.25 * perks[2];                    // Frame Drag
   const perkFusion = 1 + 0.5 * perks[3];                    // Spaghettification
-  const perkClick = D(10).pow(perks[5]);                    // Photon Sphere
+  const perkClick = TEN.pow(perks[5]);                      // Photon Sphere
   const perkDM = D(1 + perks[6]);                           // Deep Gravity
   const perkHawking = perks[1];                             // (in tick verwendet)
   void perkHawking;
-  const ngMult = D(10).pow(s.sing.universes);
-  const ngPrestige = D(2).pow(s.sing.universes);
+  const ngMult = TEN.pow(s.sing.universes);
+  const ngPrestige = TWO.pow(s.sing.universes);
 
   // — Dilation & Pulsar —
-  const dilation = s.sing.dilation.active ? C.DILATION_MULT : 1;
+  const dilation = dilationMult(s);
   const pulsarPeriod = C.REMNANT_PULSAR_PERIOD * nPulsarPeriod;
   const rp = remnantParams(s);
   const pulsarActive = s.nova.remnants[1] > 0 && s.nova.pulsarPhase < rp.pulsarDur;
@@ -211,7 +231,7 @@ export function computeMults(s: GameState): Mults {
         .mul(dmAll).mul(entropyAll)
         // Hawking-Strahlung: GEOMETRISCHER Motor der Singularitäts-Phase — jeder Kollaps
         // finanziert Level, die den nächsten Kollaps tragen (sonst polynomieller Kriechgang)
-        .mul(D(C.PERK_HAWKING_H).pow(perks[1]))
+        .mul(PERK_HAWKING_H_D.pow(perks[1]))
     : ZERO;
 
   let fusionMult = nFusion * perkFusion
@@ -254,9 +274,9 @@ export function computeMults(s: GameState): Mults {
     offlineMult: nOffline * gtOffline,
     nebulaDustMult,
     nebulaPlasmaMult,
-    feNebulaMult: s.stats.coalescences >= C.MS_GALAXY[1] ? nebulaPlasmaMult : ONE,
+    feNebulaMult: effectiveCoalescences(s) >= C.MS_GALAXY[1] ? nebulaPlasmaMult : ONE,
     nebulaNodeMult: nNebula,
-    autoNovaUnlocked: s.stats.coalescences >= C.MS_GALAXY[6],  // 10. Coalescence
+    autoNovaUnlocked: effectiveCoalescences(s) >= C.MS_GALAXY[6],  // 10. (effektive) Verschmelzung
   };
 }
 
@@ -292,9 +312,11 @@ export function tierMult(s: GameState, m: Mults, tier: number): Decimal {
   }
   return mult;
 }
-/** Dust/s (für UI, Klick und Sim) */
+/** Dust/s in Echtzeit (für UI & Klick) — tierMult/dustMult sind Pro-Spielsekunde-Raten,
+ *  `m.speed` skaliert Spielzeit zu Echtzeit (s. gdt in tick.ts); ohne diesen Faktor würde der
+ *  Time-Ast (Spielgeschwindigkeit-Nodes) hier unsichtbar bleiben, obwohl er real wirkt. */
 export function dustPerSecond(s: GameState, m: Mults): Decimal {
-  return s.dust.gens[0].amount.mul(tierMult(s, m, 0)).mul(m.dustMult);
+  return s.dust.gens[0].amount.mul(tierMult(s, m, 0)).mul(m.dustMult).mul(m.speed);
 }
 export function compressionCost(s: GameState): Decimal {
   return D(C.COMPRESSION_BASE).mul(Decimal.pow(C.COMPRESSION_GROWTH, s.dust.compression));
@@ -358,11 +380,34 @@ export function gainCapBound(total: Decimal, mult: number = C.GAIN_CLAMP_MULT): 
   return total.mul(mult).add(C.GAIN_CLAMP_FLOOR).floor();
 }
 
+/** Galaxie-Reset-Bonus: jeder Collapse setzt stats.coalescences zurück, hebt aber diesen
+ *  Multiplikator dauerhaft um +1 an (×1 vor dem ersten Collapse, ×2 danach, ×3 nach dem
+ *  zweiten, ...) — gleicht den Reset für Verschmelzungs-Meilensteine aus. */
+export function coalescenceBonusMult(s: GameState): number {
+  return 1 + s.stats.collapses * C.COALESCENCE_BONUS_PER_COLLAPSE;
+}
+/** Effektive Verschmelzungszahl — ersetzt den rohen `stats.coalescences` überall im Gating
+ *  UND in der Anzeige, da der rohe Zähler pro Collapse auf 0 fällt. */
+export function effectiveCoalescences(s: GameState): number {
+  return s.stats.coalescences * coalescenceBonusMult(s);
+}
+
 /** Scherben-Clamp-Multiplikator: Schwarze Löcher heben den Deckel selbst an (statt nur den
  *  Rohwert vor dem Clamp zu boosten, was oberhalb des Deckels wirkungslos verpufft). */
 export function shardClampMult(s: GameState): number {
   const rp = remnantParams(s);
   return C.GAIN_CLAMP_MULT + rp.bhPer * s.nova.remnants[2];
+}
+
+/** Aufladefortschritt (0..1) seit dem letzten Reset dieser Ebene — verhindert Reset-Spam:
+ *  der Gewinn erreicht sein volles Potential erst nach `*_MIN_TIME` Echtzeit. Ignite hat
+ *  keine Aufladezeit (immer voll). Wächst rein mit der Zeit, NICHT mit neuen Ressourcen —
+ *  das ist der Grund, warum die Gewinn-Vorschau auch ohne frische Ressourcen langsam steigt. */
+export function chargeFrac(s: GameState, layer: 'ignite' | 'nova' | 'coalesce' | 'collapse'): number {
+  if (layer === 'ignite') return 1;
+  if (layer === 'nova') return Math.min(1, s.stats.novaTime / C.NOVA_MIN_TIME);
+  if (layer === 'coalesce') return Math.min(1, s.stats.galaxyTime / C.GALAXY_MIN_TIME);
+  return Math.min(1, s.stats.singTime / C.COLLAPSE_MIN_TIME);
 }
 
 /**
@@ -385,20 +430,21 @@ export function currencyForCap(
     const target = D(C.IGNITION_REQ).mul(ratio);
     return s.dust.total.gte(target) ? null : { target, current: s.dust.total };
   }
-  let current: Decimal, req: Decimal, exp: number, mult: Decimal, charge: number, cap: Decimal;
+  let current: Decimal, req: Decimal, exp: number, mult: Decimal, cap: Decimal;
   if (layer === 'nova') {
     current = s.star.elements[5]; req = novaReq(s); exp = C.SHARD_EXP;
-    mult = m.shardGainMult; charge = Math.min(1, s.stats.novaTime / C.NOVA_MIN_TIME);
+    mult = m.shardGainMult;
     cap = gainCapBound(s.nova.totalShards, shardClampMult(s));
   } else if (layer === 'coalesce') {
     current = s.nova.totalShards; req = coalesceReq(s); exp = C.DM_EXP;
-    mult = m.dmGainMult; charge = Math.min(1, s.stats.galaxyTime / C.GALAXY_MIN_TIME);
+    mult = m.dmGainMult;
     cap = gainCapBound(s.galaxy.totalDM);
   } else {
     current = s.galaxy.totalDM; req = collapseReq(s); exp = C.ENTROPY_EXP;
-    mult = m.entropyGainMult; charge = Math.min(1, s.stats.singTime / C.COLLAPSE_MIN_TIME);
+    mult = m.entropyGainMult;
     cap = gainCapBound(s.sing.totalEntropy);
   }
+  const charge = chargeFrac(s, layer);
   if (current.lt(req) || charge <= 0 || mult.lte(0)) return null;
   // (currency/req)^exp * mult * charge = cap → currency = req * (cap/(mult*charge))^(1/exp)
   const target = req.mul(cap.div(mult.mul(charge)).pow(1 / exp));
@@ -414,7 +460,7 @@ export function shardGain(s: GameState, m: Mults): Decimal {
   const fe = s.star.elements[5];
   const req = novaReq(s);
   if (fe.lt(req)) return ZERO;
-  const charge = Math.min(1, s.stats.novaTime / C.NOVA_MIN_TIME);
+  const charge = chargeFrac(s, 'nova');
   // kein Softcap nötig: der ×4-Clamp begrenzt hart, Overkill soll sich lohnen
   const raw = fe.div(req).pow(C.SHARD_EXP).mul(m.shardGainMult).mul(charge);
   return clampGain(raw, s.nova.totalShards, shardClampMult(s));
@@ -428,7 +474,7 @@ export function coalesceReq(s: GameState): Decimal {
 export function dmGain(s: GameState, m: Mults): Decimal {
   const req = coalesceReq(s);
   if (s.nova.totalShards.lt(req)) return ZERO;
-  const charge = Math.min(1, s.stats.galaxyTime / C.GALAXY_MIN_TIME);
+  const charge = chargeFrac(s, 'coalesce');
   const raw = s.nova.totalShards.div(req).pow(C.DM_EXP).mul(m.dmGainMult).mul(charge);
   return clampGain(raw, s.galaxy.totalDM);
 }
@@ -443,7 +489,7 @@ export function collapseReq(s: GameState): Decimal {
 export function entropyGain(s: GameState, m: Mults): Decimal {
   const req = collapseReq(s);
   if (s.galaxy.totalDM.lt(req)) return ZERO;
-  const charge = Math.min(1, s.stats.singTime / C.COLLAPSE_MIN_TIME);
+  const charge = chargeFrac(s, 'collapse');
   const raw = s.galaxy.totalDM.div(req).pow(C.ENTROPY_EXP).mul(m.entropyGainMult).mul(charge);
   return clampGain(raw, s.sing.totalEntropy);
 }

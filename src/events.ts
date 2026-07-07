@@ -3,7 +3,7 @@ export type GameEvent =
   | 'click' | 'buy' | 'comet-caught' | 'comet-spawn'
   | 'gen-bought' | 'gen-first'   // Generator-Kauf (data = Stufe); -first = allererster Kauf der Stufe
   | 'ignite' | 'supernova' | 'coalesce' | 'collapse' | 'universe'
-  | 'achievement' | 'lore' | 'feed' | 'dilate' | 'nebula-placed' | 'node-bought';
+  | 'achievement' | 'lore' | 'feed' | 'nebula-placed' | 'node-bought';
 
 type Handler = (data?: unknown) => void;
 const handlers = new Map<GameEvent, Set<Handler>>();

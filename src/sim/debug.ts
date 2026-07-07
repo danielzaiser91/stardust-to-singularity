@@ -8,8 +8,8 @@ const s = initialState(42);
 let lastNova = 0, lastGal = 0;
 const t0 = Date.now();
 while (s.stats.played < 3 * 86400 && Date.now() - t0 < 240000) {
-  tick(s, 1);
-  botStep(s, 'active');
+  const m0 = tick(s, 1);
+  botStep(s, 'active', m0);
   const day = s.stats.played / 86400;
   if (day < 1.5) continue;  // nur Tag 1,5–3 beobachten
   if (s.stats.supernovae !== lastNova) {

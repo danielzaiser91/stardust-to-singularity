@@ -4,7 +4,7 @@ import { tick } from '../core/tick';
 import {
   computeMults, plasmaGain, shardGain, dmGain, entropyGain, canIgnite,
   genMaxAfford, nodeAvailable, nodeCost, perkCost,
-  nebulaCellCost, maxTier, autoIgniteUnlocked, HEX_NEIGHBORS,
+  nebulaCellCost, maxTier, autoIgniteUnlocked, HEX_NEIGHBORS, type Mults,
 } from '../core/formulas';
 import * as A from '../core/actions';
 
@@ -23,8 +23,10 @@ export interface Milestone { name: string; at: number; }  // at = gespielte Seku
  * Wird 1×/Sim-Sekunde aufgerufen (nach tick). Misst die Balance-Referenz — ein
  * echter Spieler mit Guide ist etwas schneller, ein Casual etwas langsamer.
  */
-export function botStep(s: GameState, profile: Profile): void {
-  let m = computeMults(s);
+export function botStep(s: GameState, profile: Profile, mults: Mults): void {
+  // mults kommt von tick() (derselbe Zustand, gerade erst berechnet) — spart einen kompletten,
+  // teuren computeMults()-Durchlauf (45 Node- + 19 Zellen-Effekte) pro simulierter Sekunde.
+  let m = mults;
 
   // — Aktiv-Profil: 4 Klicks/s + Kometen sofort einsammeln —
   if (profile === 'active') {
@@ -32,12 +34,11 @@ export function botStep(s: GameState, profile: Profile): void {
     for (let i = 0; i < 4; i++) A.click(s, m);
   }
 
-  // — Singularity: Hawking (geometrischer Motor) zuerst, dann Rest; Fütterung s. u. —
+  // — Singularity: Hawking (geometrischer Motor) zuerst, dann Rest —
   if (s.sing.unlocked) {
     for (const p of [1, 0, 2, 3, 4, 5, 6, 7]) {
       while (s.sing.entropy.gte(perkCost(s, p))) A.buyPerk(s, p);
     }
-    A.activateDilation(s);
   }
 
   // — Collapse: lohnender Gain ODER lange genug gewartet —
@@ -198,8 +199,8 @@ export function simulate(s: GameState, profile: Profile, until: string, maxDays:
 
   let nextLog = 4320;  // erst fein (0,05 d), ab Tag 1 täglich
   while (s.stats.played < maxSec) {
-    tick(s, 1);
-    botStep(s, profile);
+    const m = tick(s, 1);
+    botStep(s, profile, m);
     if (s.stats.played >= nextLog) {
       nextLog += s.stats.played < 86400 ? 4320 : 86400;
       // eslint-disable-next-line no-console

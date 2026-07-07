@@ -15,8 +15,13 @@ export interface OfflineSummary {
   supernovae: number;
 }
 
-/** Offline-Progress = derselbe tick() in Chunks. Kein zweiter Codepfad. */
-export function simulateOffline(s: GameState, realSeconds: number): OfflineSummary {
+/** Offline-Progress = derselbe tick() in Chunks. Kein zweiter Codepfad.
+ *  Generator, damit ein Aufrufer (UI) zwischen Chunks an den Browser zurückgeben kann (Progress-
+ *  Anzeige, kein eingefrorener Tab) — `simulateOffline` unten treibt ihn synchron bis zum Ende
+ *  durch, für Tests/Sim, denen die Zwischenschritte egal sind. */
+export function* simulateOfflineGen(
+  s: GameState, realSeconds: number,
+): Generator<{ done: number; total: number }, OfflineSummary, void> {
   const m = computeMults(s);
   const capped = Math.min(realSeconds, OFFLINE_MAX_SECONDS);
   const seconds = capped * m.offlineMult;
@@ -30,6 +35,7 @@ export function simulateOffline(s: GameState, realSeconds: number): OfflineSumma
     const dt = Math.min(chunk, left);
     tick(s, dt);
     left -= dt;
+    yield { done: seconds - left, total: seconds };
   }
   return {
     seconds, realSeconds,
@@ -40,4 +46,12 @@ export function simulateOffline(s: GameState, realSeconds: number): OfflineSumma
     ignitions: s.stats.ignitions - before.ignitions,
     supernovae: s.stats.supernovae - before.supernovae,
   };
+}
+
+/** Treibt `simulateOfflineGen` synchron bis zum Ende durch — für Tests und Aufrufer ohne UI. */
+export function simulateOffline(s: GameState, realSeconds: number): OfflineSummary {
+  const gen = simulateOfflineGen(s, realSeconds);
+  let step = gen.next();
+  while (!step.done) step = gen.next();
+  return step.value;
 }

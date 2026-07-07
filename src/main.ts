@@ -3,7 +3,7 @@ import { initialState, type GameState } from './core/state';
 import { tick } from './core/tick';
 import { computeMults, type Mults } from './core/formulas';
 import * as A from './core/actions';
-import { simulateOffline } from './core/offline';
+import { simulateOfflineGen } from './core/offline';
 import { loadGame, saveGame, replaceSave } from './storage';
 import { setLang } from './i18n';
 import { Engine } from './render/engine';
@@ -86,13 +86,34 @@ const audio = new AudioEngine(st);
 import { startVersionCheck, showBanner } from './ui/updateBanner';
 startVersionCheck(() => saveGame(state));
 
-// ── Offline-Progress beim Start ──────────────────────────────────────────────
-if (state.savedAt > 0) {
-  const away = (Date.now() - state.savedAt) / 1000;
-  if (away > 60) {
-    const sum = simulateOffline(state, away);
-    if (sum.seconds > 60) hud.offlineDialog(sum, state.settings.sciNotation);
+// ── Offline-Progress: läuft als Generator in Chunks, damit der Tab bei langer Abwesenheit
+//    nicht einfriert. `offlineBusy` pausiert die normale Spiellogik in frame(), lässt die
+//    Szene aber weiter rendern — der Fortschrittsdialog läuft über diesem "Vorschau"-Hintergrund
+//    statt über einem eingefrorenen/blanken Bildschirm.
+let offlineBusy = false;
+async function runOfflineCatchup(realSeconds: number, dialogThreshold: number): Promise<void> {
+  offlineBusy = true;
+  hud.showOfflineProgress();
+  const gen = simulateOfflineGen(state, realSeconds);
+  let step = gen.next();
+  let budgetStart = performance.now();
+  while (!step.done) {
+    hud.updateOfflineProgress(step.value.done / step.value.total);
+    // Chunks laufen in ~12-ms-Häppchen, dann kurz zurück ans Event-Loop — hält den Tab
+    // reaktionsfähig. setTimeout statt rAF: rAF pausiert komplett in Hintergrund-/Minimiert-
+    // Tabs (z. B. Spiel wird in neuem Tab geöffnet, ohne ihn zu fokussieren), setTimeout läuft
+    // weiter (ggf. gedrosselt auf ~1/s), sodass der Fortschritt nie ganz einfriert.
+    if (performance.now() - budgetStart > 12) {
+      await new Promise<void>(r => setTimeout(r, 0));
+      budgetStart = performance.now();
+    }
+    step = gen.next();
   }
+  hud.hideOfflineProgress();
+  const sum = step.value;
+  if (sum.realSeconds > dialogThreshold) hud.offlineDialog(sum, state.settings.sciNotation);
+  last = performance.now();  // Sim-Dauer nicht als neues dt werten (sonst Spirale)
+  offlineBusy = false;
 }
 
 // ── Game Loop ────────────────────────────────────────────────────────────────
@@ -103,15 +124,20 @@ let mults: Mults = computeMults(state);
 
 function frame(now: number): void {
   requestAnimationFrame(frame);
+  if (offlineBusy) {
+    // Spiellogik pausiert — Szene bleibt als lebendiger Hintergrund hinter dem Fortschrittsdialog
+    const bgDt = Math.min(Math.max((now - last) / 1000, 0), 0.25) || 0.016;
+    last = now;
+    engine.update(state, mults, bgDt);
+    return;
+  }
   let dt = (now - last) / 1000;
   last = now;
   if (dt <= 0) return;
   if (dt > 10) {
     // längere Lücke (Tab pausiert) → Offline-Pfad statt Riesen-Tick
-    const sum = simulateOffline(state, dt);
-    if (sum.realSeconds > 300) hud.offlineDialog(sum, state.settings.sciNotation);
-    last = performance.now();  // Sim-Dauer nicht als neues dt werten (sonst Spirale)
-    dt = 0.001;
+    runOfflineCatchup(dt, 300);
+    return;
   } else if (dt > 0.25) {
     dt = 0.25;  // Frame-Spikes glätten
   }
@@ -139,6 +165,20 @@ function frame(now: number): void {
 }
 requestAnimationFrame(frame);
 
+// Ladebildschirm ausblenden — VOR dem Offline-Fortschritt, damit die Szene als Hintergrund
+// hinter dessen Dialog sichtbar ist (statt eines zweiten, undurchsichtigen Screens).
+const loading = document.getElementById('loading');
+if (loading) {
+  loading.style.opacity = '0';
+  setTimeout(() => loading.remove(), 900);
+}
+
+// ── Offline-Progress beim Start ──────────────────────────────────────────────
+if (state.savedAt > 0) {
+  const away = (Date.now() - state.savedAt) / 1000;
+  if (away > 60) runOfflineCatchup(away, 60);
+}
+
 // ── Onboarding-Hints (je einmal pro Session) ─────────────────────────────────
 import { canIgnite } from './core/formulas';
 import { t } from './i18n';
@@ -163,13 +203,6 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('beforeunload', () => saveGame(state));
 
-// Ladebildschirm ausblenden
-const loading = document.getElementById('loading');
-if (loading) {
-  loading.style.opacity = '0';
-  setTimeout(() => loading.remove(), 900);
-}
-
 // Dev-Konsole (nur im Dev-Build): dev.grant('dust.amount', '1e30')
 if (import.meta.env.DEV) {
   (window as unknown as Record<string, unknown>).dev = {
@@ -186,6 +219,8 @@ if (import.meta.env.DEV) {
     },
     /** Update-Banner manuell anzeigen (Test) */
     fakeUpdate: () => showBanner(() => saveGame(state)),
+    /** Offline-Fortschrittsdialog manuell auslösen (Test, ohne echt X Sekunden zu warten) */
+    offline: (seconds: number) => runOfflineCatchup(seconds, 0),
   };
 }
 

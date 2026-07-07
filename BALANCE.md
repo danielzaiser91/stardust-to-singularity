@@ -199,3 +199,47 @@ braucht eine Design-Entscheidung, keinen Constants-Tweak — Kandidaten:
 
 Offen in [todo.md](todo.md); braucht Nutzer-Entscheidung, welcher Hebel gezogen wird, bevor
 weiter am Constants-Sheet gedreht wird.
+
+## Sim-Performance (Stand 2026-07-07)
+
+Lange Sims (`--maxDays 30`+) waren so langsam, dass sie im Rahmen dieser Session zweimal manuell
+abgebrochen werden mussten. Untersucht per Node-CPU-Profiler (`node --cpu-prof`, WICHTIG: `npx tsx`
+startet 3+ verschachtelte `node`-Prozesse — `NODE_OPTIONS=--cpu-prof` profiled ALLE davon, mit
+Default-Dateinamen landet pro Prozess eine eigene `.cpuprofile`-Datei in `sim/reports/`; die
+GRÖSSTE Datei ist die des tatsächlichen Arbeits-Prozesses, nicht die des npx-Wrappers, der nur
+wartet und darum fast nur "idle" zeigt).
+
+**Befund:** >85 % der CPU-Zeit steckt in `break_eternity.js` selbst — v. a. Decimal-Objekt-
+Allokation (`fromValue_noAlloc`, der `Decimal`-Konstruktor, `_classCallCheck` — ein Babel-ES5-
+Transpile-Artefakt, das in BEIDEN mitgelieferten Builds (CJS `dist/break_eternity.js` und ESM
+`dist/break_eternity.esm.js`) steckt, also nicht durch Import-Pfad-Wechsel vermeidbar ist) plus die
+eigentlichen `mul`/`pow`/`add`/`normalize`-Operationen. `computeMults()` selbst braucht nur ~1 % —
+es ist reiner AUFRUFER-Volumen-Druck: Millionen Sim-Sekunden × viele Decimal-Operationen pro
+Sekunde (Node-Effekte, Nebel-Zellen, Perk-Multiplikatoren, Gen-Kosten, ...).
+
+**Zwei sichere, verlustfreie Fixes umgesetzt** (keine Verhaltensänderung, nur weniger Allokation):
+1. `simulate()` gab den von `tick()` bereits berechneten `Mults`-Rückgabewert bisher weg und ließ
+   `botStep()` ihn per eigenem `computeMults(s)`-Aufruf NOCHMAL berechnen — pro simulierter
+   Sekunde ein kompletter, teurer Durchlauf (45 Konstellations-Nodes + 19 Nebelzellen +
+   Achievement-Zählung) zu viel. `botStep()` nimmt `mults` jetzt als Parameter.
+2. `computeMults()` baute mit `D(10)`, `D(2)`, `D(C.ACH_MULT)`, `D(C.PERK_HAWKING_H)` bei JEDEM
+   Aufruf denselben kleinen Decimal neu — als Modul-Konstanten (`TEN`, `TWO`, `ACH_MULT_D`,
+   `PERK_HAWKING_H_D`) gecacht. Sicher, weil Decimal-Operationen im gesamten Codebase konsequent
+   immutable behandelt werden (Rückgabewerte werden reassigned, nie der Empfänger mutiert —
+   dieselbe Prämisse, auf der die schon vorhandene Wiederverwendung von `ZERO`/`ONE` beruht).
+
+**Gemessen** (3-Tage-Lauf, `--profile active`, identischer Seed, 259 200 Iterationen):
+122,2 s → 109,4 s nach Konstanten-Hoisting (zusätzlich zur schon eingerechneten Dedup-Ersparnis).
+Für kurze/mittlere Sims (bis ~10 Tage, der übliche Fall für iterative Balance-Checks) jetzt klar
+im Ein-bis-zwei-Minuten-Bereich. Ein 30-Tage-Lauf bleibt bei ~2400 Iterationen/s hochgerechnet
+trotzdem bei ~18 Minuten — spürbar besser als vorher (unvollendbar), aber nicht "schnell".
+
+**Nicht umgesetzt (zu invasiv für diese Runde):** die verbleibende Kernkosten (Decimal-Allokation
+selbst) lässt sich nur durch entweder (a) Patchen/Vendoring von `break_eternity.js` (Wartungslast,
+Dependency-Drift-Risiko) oder (b) eine größere Architektur-Änderung beheben — z. B. `botStep()`s
+mehrfache `computeMults()`-Neuberechnung nach Collapse/Coalesce/Supernova/Ignite (aktuell 4 weitere
+mögliche Aufrufe pro Sekunde, nötig weil nachfolgender Code wie `genMaxAfford` frische Mults
+braucht) wegoptimieren, oder für sehr lange, ereignisarme Sim-Strecken größere `dt`-Schritte
+verwenden (analog zum bereits bestehenden Offline-Progress-Chunking) — beides mit echtem Risiko,
+Bot-Entscheidungen und damit die Balance-Referenzwerte selbst zu verändern. Braucht eine bewusste
+Entscheidung, kein reiner Perf-Tweak mehr.

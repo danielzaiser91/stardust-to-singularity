@@ -106,6 +106,9 @@ export const NODE_COST = (i: number) => Math.max(1, Math.floor(Math.pow(1.55, i 
 export const GALAXY_TYPE_ALL = 1.25;         // Spiral: Gesamtproduktion ×1,25 je Wahl
 export const GALAXY_TYPE_OFFLINE = 2;        // Elliptisch: Offline-Fortschritt ×2 je Wahl
 export const GALAXY_TYPE_ACTIVE = 3;         // Irregulär: Klick-/Kometen-Kraft ×3 je Wahl
+// Collapse setzt stats.coalescences zurück (frische Galaxie, frische Verschmelzungs-Leiter) —
+// als Ausgleich zählt jede Verschmelzung danach ×COALESCENCE_BONUS_MULT (steigt +1 je Collapse).
+export const COALESCENCE_BONUS_PER_COLLAPSE = 1;
 
 // ── Ebene 4: Singularity ─────────────────────────────────────────────────────
 export const COLLAPSE_REQ = 300;             // total Dark Matter (Basis)
@@ -123,9 +126,9 @@ export const PERK_COST_GROWTH = [3, 4, 5, 6, 8, 10, 12, 15, 20];
 // L2 Reaktoren überleben Supernova, L3 Nebelzellen überleben Coalescence
 export const STELLAR_MEMORY_MAX = 3;
 export const FEED_ACCRETION_EXP = 2;         // global mult = (1+log10(1+fed))^exp
-export const DILATION_MULT = 4;
-export const DILATION_TIME = 300;
-export const DILATION_CD = 3600;
+// Zeitdilation: kein aktivierbarer Button mehr, sondern ein DAUERHAFTER Speed-Bonus, der als
+// Bruchteil des Akkretions-Bonus (Füttere-die-Leere) mitwächst — kein eigenes Timing/Cooldown.
+export const DILATION_ACCRETION_FRAC = 0.1;
 export const ENDGAME_ENTROPY = 2500;
 
 // ── Meilensteine (je Ebene; Index 0/1 = QoL, danach Persistenz) ─────────────
@@ -144,6 +147,12 @@ export const MS_GALAXY = [1, 2, 3, 5, 6, 9, 10, 12];
 // Sekunde am ×20-Clamp — Auto ist damit exakt so stark wie optimaler manueller Spam.
 export const AUTO_IGNITE_RATE = Math.log(PLASMA_CLAMP_MULT + 1) / PLASMA_CLAMP_MULT;
 export const AUTO_NOVA_RATE = 0.01;
+// Füttere-die-Leere: gleiches Trickle-Muster wie Auto-Zündung/Auto-Supernova — zahlt die
+// AKTUELLE Masse (aus feedMass, wächst weiter, bis wirklich gewischt wird) anteilig pro Tick
+// in `fed` ein; bei 100 % Akkumulation ein echter Feed (Ressourcen auf 0). 1/120 = ein
+// vollständiger Zyklus alle ~2 Minuten — bewusst seltener als die anderen Auto-Mechaniken,
+// da Füttern eine größere, seltenere Entscheidung sein soll.
+export const AUTO_FEED_RATE = 1 / 120;
 // Kollaps-Meilensteine: Perks · Spezial-MS Supernova · Spezial-MS Staub · Keystones bleiben
 export const MS_COLLAPSE = [1, 2, 3, 5];
 // ── Spezial-Meilensteine ─────────────────────────────────────────────────────
