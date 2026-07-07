@@ -404,6 +404,17 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
 
   tsc/vitest (49/49)/Build grün.
 
+## Erledigt (Stand 2026-07-07, sechzehnte Runde)
+
+- [x] ~~**Auto-Plasma-Upgrades fehlt in der Kollaps-Meilenstein-Belohnungsliste.**~~ — die
+      Automation (Runde 12) schaltet bei `MS_COLLAPSE[1]` (2. Kollaps) frei, exakt derselbe
+      Schwellenwert wie "Spezial-Meilensteine für die Supernova-Ebene" (`ms.col1`) — der Text
+      erwähnte aber nur Letzteres. `ms.col1` (DE+EN) um "· Plasma-Upgrades automatisch kaufen" /
+      "· auto-buy plasma upgrades" ergänzt. Live geprüft: Meilenstein-Zeile zeigt jetzt beide
+      Belohnungen bei 2× collapses.
+
+  tsc/vitest (49/49)/Build grün.
+
 ## Offen
 
 - [ ] **Challenges neu balancieren — aktuell viel zu leicht durch Automationen.** Sobald

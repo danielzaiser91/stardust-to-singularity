@@ -288,7 +288,7 @@ export const de: Record<string, string> = {
   'ms.gal6': 'Der Nebelgarten überlebt die Verschmelzung',
   'ms.gal7': 'Supernova-Überreste überleben die Verschmelzung',
   'ms.col0': 'Singularitäts-Perks',
-  'ms.col1': 'Spezial-Meilensteine für die Supernova-Ebene',
+  'ms.col1': 'Spezial-Meilensteine für die Supernova-Ebene · Plasma-Upgrades automatisch kaufen',
   'ms.col2': 'Spezial-Meilensteine für die Staub-Ebene',
   'ms.col3': 'Supernova-Überreste überleben Verschmelzung und Kollaps',
   'ms.col4': 'Keystone-Konstellationen überleben den Kollaps',

@@ -288,7 +288,7 @@ export const en: Record<string, string> = {
   'ms.gal6': 'The nebula garden survives coalescence',
   'ms.gal7': 'Supernova remnants survive coalescence',
   'ms.col0': 'Singularity perks',
-  'ms.col1': 'Special milestones for the supernova layer',
+  'ms.col1': 'Special milestones for the supernova layer · auto-buy plasma upgrades',
   'ms.col2': 'Special milestones for the dust layer',
   'ms.col3': 'Supernova remnants survive coalescence and collapse',
   'ms.col4': 'Keystone constellations survive collapse',
