@@ -5,7 +5,8 @@ import {
   computeMults, genCost, genMaxAfford, compressionCost, clickAmount, maxTier,
   plasmaGain, canIgnite, shardGain, canSupernova, dmGain, canCoalesce,
   entropyGain, canCollapse, reactorCost, nebulaCellCost, nodeCost, nodeAvailable,
-  perkCost, feedContribution, effectiveCoalescences, effectiveIgnMs, effectiveNovaMs, type Mults,
+  perkCost, feedContribution, effectiveCoalescences, effectiveIgnMs, effectiveNovaMs,
+  canNewUniverse, type Mults,
 } from './formulas';
 
 /** Teilt einen Ressourcen-Gewinn: Hälfte bleibt Spielwährung, Hälfte nährt die Leere
@@ -386,7 +387,7 @@ export function buyPerk(s: GameState, i: number): boolean {
 }
 
 export function newUniverse(s: GameState): boolean {
-  if (s.sing.totalEntropy.lt(C.ENDGAME_ENTROPY)) return false;
+  if (!canNewUniverse(s)) return false;
   s.sing.universes++;
   s.sing.endgame = true;
   s.sing.entropy = ZERO;

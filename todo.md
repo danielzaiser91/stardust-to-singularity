@@ -562,3 +562,40 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
       gebumpt, `release-notes.json`-Eintrag ergänzt. tsc/vitest (51/51)/Build grün; `DISCORD_URL`
       live per dynamischem Modul-Import im Preview-Browser verifiziert (Basis-Pfad ist
       `/stardust-to-singularity/`, nicht `/` — Vite dev-Server läuft mit `base` gesetzt).
+      Danach zwei Workflow-Bugs live entdeckt (erst per `workflow_run`, PAT hat kein
+      `workflow_dispatch`-Recht): mehrzeiliger Changelog sprengte `$GITHUB_OUTPUT` (Fix: Heredoc-
+      Syntax `changelog<<EOF`/`EOF` statt `echo key=value`), danach `git add "$MESSAGES_FILE"`
+      scheiterte auf dem Runner ebenfalls an `.gitignore`s `.github/`-Zeile (Fix: `-f`, wie schon
+      beim ersten Anlegen der Workflow-Datei selbst). Beide Fixes einzeln verifiziert über die
+      GitHub Actions API (Job-Logs gezogen, nicht nur "hat funktioniert" angenommen) — v0.4.4 lief
+      am Ende sauber durch (Post + Tracking-Commit beide grün).
+
+- [x] **__savegame3.txt generiert: State direkt vor dem ersten Universum.** User wollte den
+      Abspann testen, aber sein echtes Save ist längst bei `sing.universes: 4` (bestätigt an
+      `__savegame2.txt`) — der Abspann feuert laut Code-Gate (`panels.ts` `firstAscension =
+      s.sing.universes === 0`) absichtlich nur beim ALLERERSTEN Aufstieg, kein Bug. Save-String per
+      Skript aus dem echten Core-Code erzeugt (`initialState()` + Felder gesetzt + `serialize()` +
+      `Buffer.toString('base64')`, exakt der Pfad aus `storage.ts` `exportSave()`) statt von Hand
+      JSON zu basteln — vermeidet Schema-Drift. Roundtrip über `deserialize()` verifiziert, bevor
+      geschrieben wurde. `.secrets/` ist gitignored, also kein Commit nötig.
+
+- [x] **Kritischer Balance-Bug: "Werde ein neues Universum" war kostenlos beliebig oft spammbar.**
+      User: "the cost per universe doesnt increase, i can perma spam the button, it should require
+      actual entropie, and increase similar to previous layers". Root Cause: `newUniverse()` prüfte
+      `s.sing.totalEntropy` (Lifetime-Zähler, wächst nur, wird NIE zurückgesetzt) gegen eine
+      FIXE Schwelle (`ENDGAME_ENTROPY = 2500`) — einmal erreicht, für immer erfüllt, keinerlei
+      Eskalation. Fix nach dem Muster von Collapse/Coalesce (`collapseReq`/`coalesceReq`):
+      `newUniverseReq(s) = ENDGAME_ENTROPY × NEW_UNIVERSE_REQ_GROWTH^universes` (neue Konstante,
+      ×10 je Universum) gegen die GEBANKTE `s.sing.entropy` (dieselbe Währung, die auch für Perks
+      ausgegeben wird — dieselbe Ressourcen-Spannung wie in jeder anderen Ebene). `newUniverse()`
+      nutzt jetzt `canNewUniverse()` als Gate; Reset auf 0 beim Aufstieg bleibt (= die Entropie wird
+      "ausgegeben"). Fortschrittsbalken/Anforderungstext im Singularity-Panel liefen vorher auf
+      Lifetime-Total (zeigte nach dem ersten Universum dauerhaft "voll" an) — jetzt auf
+      `s.sing.entropy` vs. `newUniverseReq(s)`, genau wie bei der Collapse-Reihe. Zusätzlich neue
+      "NG+ Bonus"-Box unter dem Aufstiegs-Knopf (User: "bonus should be displayed in a special div
+      that appears below it, after the player has finished watching cutscene and final dialogue"),
+      sichtbar sobald `universes > 0`, zeigt die tatsächlichen laufenden Boni (×10 Produktion, ×2
+      Prestige-Gewinne je Universum). Neuer Regressionstest (`0 Entropie → kein Spam`, `Kosten nach
+      1. Universum > Basis-Kosten`). tsc/vitest (52/52)/Build grün; live im Preview durchgespielt
+      (Entropie granted, Cutscene ausgelöst, Skip getestet, NG+-Box nach Aufstieg mit ×10/×2
+      bestätigt, neue Anforderung 2.5e4 nach dem 1. Universum bestätigt).

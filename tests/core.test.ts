@@ -510,6 +510,23 @@ describe('tick & actions', () => {
     expect(s2.nova.remnants).toEqual([3, 2, 1]);
   });
 
+  it('newUniverse requires banked (not lifetime) entropy, and the cost escalates per universe', () => {
+    const s = initialState(1);
+    s.sing.unlocked = true;
+    s.sing.totalEntropy = D(C.ENDGAME_ENTROPY).mul(1000);   // hoch, aber irrelevant für die Gate
+    s.sing.entropy = D(0);
+    expect(actionsAll.newUniverse(s)).toBe(false);            // 0 gebankte Entropie → kein Spam möglich
+
+    s.sing.entropy = F.newUniverseReq(s);
+    expect(actionsAll.newUniverse(s)).toBe(true);
+    expect(s.sing.universes).toBe(1);
+    expect(s.sing.entropy.toNumber()).toBe(0);                // Entropie wird beim Aufstieg verbraucht
+
+    const reqAfterFirst = F.newUniverseReq(s);
+    expect(reqAfterFirst.gt(D(C.ENDGAME_ENTROPY))).toBe(true); // 2. Universum kostet mehr als das 1.
+    expect(actionsAll.newUniverse(s)).toBe(false);             // erneut 0 Entropie → kein sofortiger Re-Spam
+  });
+
   it('save migration v1→v2 seeds milestone counters from legacy stats', () => {
     const s = initialState(1);
     s.stats.ignitions = 42;

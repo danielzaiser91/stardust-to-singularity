@@ -149,7 +149,8 @@ export const DILATION_ACCRETION_FRAC = 0.1;
 // seine 100-%-Schwelle, was zu Reset-Dauerfeuer führt (jeder Frame ein neuer Supernova-Reset —
 // Fusionselemente zeigen dauerhaft 0, Bildschirm flackert). Realer Bug, 2026-07-07.
 export const DILATION_MAX_MULT = 50;
-export const ENDGAME_ENTROPY = 2500;
+export const ENDGAME_ENTROPY = 2500;          // Entropie-Anforderung fürs erste Universum
+export const NEW_UNIVERSE_REQ_GROWTH = 10;    // Anforderung ×10 je bereits durchlaufenem Universum
 
 // ── Meilensteine (je Ebene; Index 0/1 = QoL, danach Persistenz) ─────────────
 export const MS_IGNITION = [1, 5, 25];       // Max-Buttons · Sternklassen · Kompression bleibt

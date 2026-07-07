@@ -166,8 +166,8 @@ export function computeMults(s: GameState): Mults {
   const perkDM = D(1 + perks[6]);                           // Deep Gravity
   const perkHawking = perks[1];                             // (in tick verwendet)
   void perkHawking;
-  const ngMult = TEN.pow(s.sing.universes);
-  const ngPrestige = TWO.pow(s.sing.universes);
+  const ngMult = ngGlobalMult(s);
+  const ngPrestige = ngPrestigeMult(s);
 
   // — Dilation & Pulsar —
   const dilation = dilationMult(s);
@@ -512,6 +512,16 @@ export function entropyGain(s: GameState, m: Mults): Decimal {
   return clampGain(raw, s.sing.totalEntropy);
 }
 export function canCollapse(s: GameState): boolean { return s.galaxy.totalDM.gte(collapseReq(s)); }
+
+/** Eskalierende Anforderung fürs nächste Universum — banked Entropie statt Lifetime-Total,
+ *  sonst wäre die Schwelle nach dem ersten Erreichen für immer erfüllt (kostenloser NG+-Spam). */
+export function newUniverseReq(s: GameState): Decimal {
+  return D(C.ENDGAME_ENTROPY).mul(Decimal.pow(C.NEW_UNIVERSE_REQ_GROWTH, s.sing.universes));
+}
+export function canNewUniverse(s: GameState): boolean { return s.sing.entropy.gte(newUniverseReq(s)); }
+/** NG+-Boni: ×10 Gesamtproduktion, ×2 Prestige-Gewinne (Plasma/Shards/DM/Entropie) je Universum. */
+export function ngGlobalMult(s: GameState): Decimal { return TEN.pow(s.sing.universes); }
+export function ngPrestigeMult(s: GameState): Decimal { return TWO.pow(s.sing.universes); }
 
 // ── Kosten weiterer Systeme ──────────────────────────────────────────────────
 export function reactorCost(s: GameState, step: number): Decimal {

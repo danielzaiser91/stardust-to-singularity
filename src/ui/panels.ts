@@ -1261,6 +1261,9 @@ export class SingPanel implements Panel {
   private endBox: HTMLElement;
   private endBar = bar('bar-end');
   private endBtn: HTMLButtonElement;
+  private endReqLabel = el('div', 'sub center');
+  private ngBonusBox: HTMLElement;
+  private ngBonusInfo = el('div', 'sub center');
   private uniLabel = el('div', 'sub center');
   private coalBonusBox: HTMLElement;
   private coalBonusInfo = el('div', 'sub center');
@@ -1326,8 +1329,13 @@ export class SingPanel implements Panel {
         }
       });
     });
-    this.endBox.append(el('div', 'sub center', t('sing.endgameReq', { v: fmt(D(C.ENDGAME_ENTROPY), true) })), this.endBtn);
+    this.endBox.append(this.endReqLabel, this.endBtn);
     this.root.append(this.endBox);
+
+    this.ngBonusBox = el('div', 'reset-box sing');
+    this.ngBonusBox.append(el('h3', '', t('sing.ngBonusTitle')), this.ngBonusInfo);
+    attachTip(this.ngBonusBox, () => ({ title: t('sing.ngBonusTitle'), body: t('sing.ngBonusTip') }));
+    this.root.append(this.ngBonusBox);
   }
 
   update(s: GameState, m: F.Mults): void {
@@ -1349,9 +1357,16 @@ export class SingPanel implements Panel {
       setDisabled(pb.b, atMax || s.sing.entropy.lt(F.perkCost(s, p)));
     }
 
-    setVisible(this.endBox, s.sing.totalEntropy.gte(C.ENDGAME_ENTROPY / 5) || s.sing.endgame);
-    setBar(this.endBar, logFrac(s.sing.totalEntropy, C.ENDGAME_ENTROPY));
-    setDisabled(this.endBtn, s.sing.totalEntropy.lt(C.ENDGAME_ENTROPY));
+    const uniReq = F.newUniverseReq(s);
+    setVisible(this.endBox, s.sing.entropy.gte(uniReq.div(5)) || s.sing.endgame);
+    setBar(this.endBar, logFrac(s.sing.entropy, uniReq));
+    setText(this.endReqLabel, t('sing.endgameReq', { v: fmt(uniReq, true) }));
+    setDisabled(this.endBtn, !F.canNewUniverse(s));
+
+    setVisible(this.ngBonusBox, s.sing.universes > 0);
+    setHTML(this.ngBonusInfo, t('sing.ngBonusInfo', {
+      a: numTag(fmt(F.ngGlobalMult(s), sci)), b: numTag(fmt(F.ngPrestigeMult(s), sci)),
+    }));
   }
 }
 
