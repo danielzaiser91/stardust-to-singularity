@@ -35,7 +35,11 @@ jobs:
           if [ -z "${CHANGELOG:-}" ]; then
             CHANGELOG=$(git log -1 --pretty=format:"%s" 2>/dev/null || echo "New update deployed")
           fi
-          echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+          {
+            echo "changelog<<CHANGELOG_EOF"
+            echo "$CHANGELOG"
+            echo "CHANGELOG_EOF"
+          } >> $GITHUB_OUTPUT
           echo "title=🚀 Neues Update live!" >> $GITHUB_OUTPUT
 
       - name: Post or edit Discord message
