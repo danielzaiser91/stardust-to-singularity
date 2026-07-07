@@ -129,6 +129,12 @@ export const FEED_ACCRETION_EXP = 2;         // global mult = (1+log10(1+fed))^e
 // Zeitdilation: kein aktivierbarer Button mehr, sondern ein DAUERHAFTER Speed-Bonus, der als
 // Bruchteil des Akkretions-Bonus (Füttere-die-Leere) mitwächst — kein eigenes Timing/Cooldown.
 export const DILATION_ACCRETION_FRAC = 0.1;
+// Hart gedeckelt: der Akkretions-Bonus selbst ist UNBEGRENZT (wächst mit log(fed)^2 für immer),
+// ein daran gekoppelter Zeitfaktor darf das nicht sein — sonst wird gdt (Spielzeit/Tick) bei
+// hohem `fed` astronomisch groß und reißt jeden Sekunden-Akkumulator (z. B. Auto-Supernova) über
+// seine 100-%-Schwelle, was zu Reset-Dauerfeuer führt (jeder Frame ein neuer Supernova-Reset —
+// Fusionselemente zeigen dauerhaft 0, Bildschirm flackert). Realer Bug, 2026-07-07.
+export const DILATION_MAX_MULT = 50;
 export const ENDGAME_ENTROPY = 2500;
 
 // ── Meilensteine (je Ebene; Index 0/1 = QoL, danach Persistenz) ─────────────

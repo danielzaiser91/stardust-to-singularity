@@ -144,6 +144,22 @@ Kollaps war das Spiel *langsamer* als davor, weil die Passiveffekte am Run-Total
   `.toNumber()` aus einem Decimal gewonnen werden, taugen nur als STARTWERT für eine exakte
   Suche, nie als Endergebnis — sobald der Wert die Integer-Präzision von JS-Doubles verlässt.
 
+- **Ein unbegrenzt wachsender ZEIT-Multiplikator (`m.speed`) ist gefährlicher als ein
+  unbegrenzter Ressourcen-Multiplikator.** Die Zeitdilatation (Runde 6, 2026-07-07) wurde von
+  einem befristeten ×4-Button zu einem dauerhaften Bonus umgebaut, der mit dem — bewusst
+  unbegrenzten — Akkretions-Bonus aus "Füttere die Leere" mitwächst. Bei sehr hohem `fed`
+  (real gemeldet: Plasma-Anzeige `6.42e13941`) ergab das `speed ≈ 16,9 Mio.` Weil JEDER
+  Sekunden-Akkumulator im Spiel (Auto-Zündung, Auto-Supernova, Fusions-Durchsatz) implizit
+  annimmt, dass `gdt` (Spielzeit pro Tick) eine vernünftige Größenordnung hat, riss das den
+  Auto-Supernova-Trickle bei JEDEM gerenderten Frame über seine 100-%-Schwelle — ein neuer
+  Supernova-Reset 60×/Sekunde. Symptome: Fusionselemente zeigten dauerhaft 0 (vor jeder
+  sichtbaren Anzeige schon zurückgesetzt), Bildschirm flackerte sichtbar. Ein unbegrenzter
+  RESSOURCEN-Multiplikator (z. B. `perkDust = 10^Level`) ist dagegen harmlos — er macht Zahlen
+  nur größer, bricht aber keine Sekunden-Schwellenwerte. Fix: `dilationMult()` hart gedeckelt
+  (`DILATION_MAX_MULT = 50`). Lehre: JEDER Multiplikator, der in `gdt`/`speed` einfließt,
+  braucht eine harte Obergrenze, auch wenn die Quelle (hier: Akkretion) an anderer Stelle
+  bewusst unbegrenzt bleiben soll — die beiden Eigenschaften sind nicht dieselbe Entscheidung.
+
 ## Gemessene Timeline (aktives Optimalspiel, Sim-Bot, Seed 42)
 
 | Meilenstein | gemessen |

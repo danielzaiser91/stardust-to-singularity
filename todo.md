@@ -157,3 +157,28 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
       Claude-Code-Session mit Working Directory `C:\code\ai` statt `C:\code\ai\3d incremental`.
       Zielname `stardust-to-singularity` steht fest (passt zu `package.json`, GitHub-Repo,
       CLAUDE.md-Titel).
+
+## Erledigt (Stand 2026-07-07, achte Runde)
+
+- [x] ~~**Kritischer Regressions-Bug: Auto-Supernova verursachte Flackern + Fusionselemente immer
+      0.**~~ — vom User per Screenshot gemeldet, direkte Folge des heutigen Zeitdilatations-Umbaus
+      (Runde 6): `dilationMult(s)` wächst mit dem — selbst UNBEGRENZTEN — Akkretions-Bonus
+      (`(log10(fed)+1)^2`), landete also für Saves mit sehr hohem `fed` bei absurden Werten. Per
+      Test bestätigt: bei `fed=1e13000` (plausibel für den gemeldeten Save, Plasma stand bei
+      `6.42e13941`) ergibt sich `speed ≈ 16,9 Mio.` — `gdt` (Spielzeit/Frame) sprengt dadurch JEDEN
+      Sekunden-Akkumulator um Größenordnungen; der Auto-Supernova-Trickle überschreitet seine
+      100-%-Schwelle nicht einmal, sondern um Tausende PRO FRAME → ein neuer Supernova-Reset bei
+      praktisch jedem gerenderten Frame (60/s). Erklärt beide Symptome: Fusionselemente werden vor
+      jeder sichtbaren Anzeige sofort wieder auf 0 zurückgesetzt, und die ständigen Resets
+      verursachen das gemeldete Flackern. Fix: `DILATION_MAX_MULT = 50` in `constants.ts`,
+      `dilationMult()` hart gedeckelt. Live verifiziert (`fed=1e13000` nachgestellt): vorher wäre
+      das binnen 1 simulierter Sekunde ~60 Resets gewesen, nach dem Fix **0** — Wasserstoff
+      akkumuliert wieder normal statt bei 0 zu kleben.
+      **Dritte gemeldete Beobachtung ("Auto-Supernova zeigt nie Gelb") ist vermutlich KEIN Bug:**
+      Styling-Logik live geprüft (`autoNovaUnlocked` true → Button zeigt korrekt `.active`/Gelb;
+      false → korrekt `.dim`) — funktioniert wie im Code vorgesehen. Wahrscheinlichste Erklärung:
+      der Save hat kürzlich einen Collapse gemacht (heutige Runde 6: Collapse setzt
+      `stats.coalescences` zurück, der Ausgleichs-Bonus-Multiplikator muss erst durch neue
+      Verschmelzungen wieder auf die 10-effektive-Verschmelzungen-Schwelle aufholen) — in der Zeit
+      ist der Button absichtlich gesperrt/dim, kein separater Fehler. Müsste der User bestätigen,
+      falls er einen Collapse gemacht hat.

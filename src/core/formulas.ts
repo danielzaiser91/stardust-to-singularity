@@ -93,7 +93,8 @@ export function accretionMult(s: GameState): Decimal {
  *  sicher: log10(fed) müsste ~1e154 erreichen, bevor das Quadrat einen Double überläuft. */
 export function dilationMult(s: GameState): number {
   const excess = accretionMult(s).sub(1).toNumber();
-  return Number.isFinite(excess) ? 1 + C.DILATION_ACCRETION_FRAC * excess : 1;
+  const raw = Number.isFinite(excess) ? 1 + C.DILATION_ACCRETION_FRAC * excess : 1;
+  return Math.min(raw, C.DILATION_MAX_MULT);
 }
 
 /**
