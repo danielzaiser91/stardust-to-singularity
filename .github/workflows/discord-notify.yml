@@ -107,7 +107,7 @@ jobs:
 
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add "$MESSAGES_FILE"
+            git add -f "$MESSAGES_FILE"
             git commit -m "chore: track Discord message ID for v$VERSION [skip ci]"
             git push origin HEAD
           fi
