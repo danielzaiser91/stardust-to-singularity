@@ -33,6 +33,30 @@ function logFrac(cur: Decimal, req: Decimal | number): number {
   return Math.min(1, cur.log10().toNumber() / reqLog);
 }
 
+/**
+ * Welche Stufe als Nächstes ansteht (Karte zeigt IMMER genau das, kein manueller Toggle mehr):
+ * null → nichts mehr zu tun (Hart schon geschafft, oder Hart noch nicht freigeschaltet).
+ */
+function chNextTier(s: GameState, c: number): 1 | 2 | null {
+  const ctier = s.nova.completedTier[c];
+  if (ctier >= 2) return null;
+  if (ctier >= 1) return s.stats.coalescences >= C.MS_GALAXY[3] ? 2 : null;
+  return 1;
+}
+/** Für den Klapp-Indikator: nur freigeschaltete Challenges zählen — gesperrte Hart-Stufen
+ *  sollen den Spieler nicht grundlos ins Gelb schicken (siehe todo.md-Entscheidung). */
+function challengesOpenCount(s: GameState): number {
+  let n = 0;
+  for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
+    if (s.stats.supernovae < C.CH_UNLOCK_NOVAE(c)) continue;
+    if (chNextTier(s, c) !== null) n++;
+  }
+  return n;
+}
+function challengesAllDone(s: GameState): boolean {
+  return challengesOpenCount(s) === 0;
+}
+
 // Welche Währung der jeweilige Reset ausschüttet (bestimmt Icon/Farbe der Deckel-Zahl).
 const CAP_TOTAL_RES: Record<'ignite' | 'nova' | 'coalesce' | 'collapse', 'plasma' | 'shards' | 'dm' | 'entropy'> = {
   ignite: 'plasma', nova: 'shards', coalesce: 'dm', collapse: 'entropy',
@@ -563,10 +587,13 @@ export class NovaPanel implements Panel {
   private gardenTotal = el('div', 'sub center');
   private chRows: {
     card: HTMLElement; statusIcon: HTMLElement; lockedLine: HTMLElement;
-    toggle: HTMLElement; toggleBtns: [HTMLButtonElement, HTMLButtonElement];
+    activeLine: HTMLElement; activeValue: HTMLElement;
     restrictLine: HTMLElement; goalLine: HTMLElement; rewardLine: HTMLElement; rewardValue: HTMLElement;
-    startBtn: HTMLButtonElement; viewTier: 1 | 2;
+    startBtn: HTMLButtonElement;
   }[] = [];
+  private chIndicator = el('span', 'ch-indicator');
+  private chChevron = el('span', 'ch-chevron', '▾');
+  private chContainer = el('div', 'ch-container');
   private coalBar = bar('bar-gal');
   private coalLabel = el('div', 'sub center');
   private coalBtn!: HTMLButtonElement;
@@ -662,7 +689,23 @@ export class NovaPanel implements Panel {
     attachTip(this.gardenTotal, () => ({ title: t('nova.nebula'), body: t('nova.gardenTotalTip', { b: numTag(`×${fmtMult(C.NEBULA_DARK_BONUS)}`) }) }));
     this.root.append(ctl, grid, this.gardenTotal);
 
-    this.root.append(el('h3', '', t('nova.challenges')), el('div', 'sub', t('nova.chHow')));
+    const chHead = el('h3', 'ch-section-head');
+    chHead.append(el('span', '', t('nova.challenges')), this.chIndicator, this.chChevron);
+    chHead.addEventListener('click', () => {
+      const s = this.st();
+      s.ui.challengesCollapsed = !s.ui.challengesCollapsed;
+      this.update(s, M(s));
+    });
+    attachTip(this.chIndicator, () => {
+      const s = this.st();
+      const allDone = challengesAllDone(s);
+      return {
+        title: t('nova.challenges'),
+        body: allDone ? t('nova.chIndicatorDone') : t('nova.chIndicatorOpen', { n: challengesOpenCount(s) }),
+      };
+    });
+    this.root.append(chHead, this.chContainer);
+    this.chContainer.append(el('div', 'sub', t('nova.chHow')));
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
       const card = el('div', 'ch-card');
       const head = el('div', 'ch-head');
@@ -671,10 +714,10 @@ export class NovaPanel implements Panel {
 
       const lockedLine = el('div', 'ch-locked', '');
 
-      const toggle = el('div', 'seg ch-toggle');
-      const nBtn = btn('seg-btn', t('nova.chNormal'), () => { this.chRows[c].viewTier = 1; this.update(this.st(), M(this.st())); });
-      const hBtn = btn('seg-btn', t('nova.chHard'), () => { this.chRows[c].viewTier = 2; this.update(this.st(), M(this.st())); });
-      toggle.append(nBtn, hBtn);
+      const activeLine = el('div', 'ch-active');
+      const activeLabel = el('span', 'ch-active-label', `✓ ${t('misc.activeEffect')}:`);
+      const activeValue = el('span', 'ch-active-value', '');
+      activeLine.append(activeLabel, activeValue);
 
       const restrictLine = el('div', 'ch-restrict', '');
       const goalLine = el('div', 'ch-goal', '');
@@ -686,12 +729,15 @@ export class NovaPanel implements Panel {
       const startBtn = btn('ch-start', '', () => {
         const s = this.st();
         if (s.nova.challenge === c) A.exitChallenge(s);
-        else if (s.nova.challenge === -1) A.enterChallenge(s, c, this.chRows[c].viewTier);
+        else if (s.nova.challenge === -1) {
+          const tier = chNextTier(s, c);
+          if (tier) A.enterChallenge(s, c, tier);
+        }
       });
 
-      card.append(head, lockedLine, toggle, restrictLine, goalLine, rewardLine, startBtn);
-      this.chRows.push({ card, statusIcon, lockedLine, toggle, toggleBtns: [nBtn, hBtn], restrictLine, goalLine, rewardLine, rewardValue, startBtn, viewTier: 1 });
-      this.root.append(card);
+      card.append(head, lockedLine, activeLine, restrictLine, goalLine, rewardLine, startBtn);
+      this.chRows.push({ card, statusIcon, lockedLine, activeLine, activeValue, restrictLine, goalLine, rewardLine, rewardValue, startBtn });
+      this.chContainer.append(card);
     }
 
     // Coalescence-Box lebt HIER (Ebene darunter) — der Galaxy-Tab existiert ja erst danach
@@ -775,14 +821,17 @@ export class NovaPanel implements Panel {
     setText(this.gardenTotal, t(s.stats.coalescences >= C.MS_GALAXY[1] ? 'nova.gardenTotalFe' : 'nova.gardenTotal', {
       d: fmt(m.nebulaDustMult, sci), p: fmt(m.nebulaPlasmaMult, sci),
     }));
+
+    setVisible(this.chContainer, !s.ui.challengesCollapsed);
+    setClass(this.chChevron, 'collapsed', s.ui.challengesCollapsed);
+    setClass(this.chIndicator, 'done', challengesAllDone(s));
+
     for (let c = 0; c < C.CHALLENGE_COUNT; c++) {
       const r = this.chRows[c];
       const active = s.nova.challenge === c;
-      const activeTier = active ? s.nova.challengeTier : 0;
       const otherActive = s.nova.challenge !== -1 && !active;
       const ctier = s.nova.completedTier[c];
       const locked = s.stats.supernovae < C.CH_UNLOCK_NOVAE(c);
-      const hardUnlockable = !locked && ctier >= 1 && s.stats.coalescences >= C.MS_GALAXY[3];
 
       setClass(r.card, 'locked', locked);
       setClass(r.card, 'active', active);
@@ -790,41 +839,45 @@ export class NovaPanel implements Panel {
       // Gesperrt: nur Name + Freischalt-Hinweis, sonst nichts (reduziert Info, bevor sie relevant ist)
       setReserve(r.lockedLine, locked);
       setText(r.lockedLine, locked ? `🔒 ${t('nova.chLockedInfo', { v: C.CH_UNLOCK_NOVAE(c), c: s.stats.supernovae })}` : '');
-      setReserve(r.toggle, hardUnlockable);
-      setReserve(r.restrictLine, !locked);
-      setReserve(r.goalLine, !locked);
-      setReserve(r.rewardLine, !locked);
-      setReserve(r.startBtn, !locked);
       if (locked) {
+        setReserve(r.activeLine, false);
+        setReserve(r.restrictLine, false);
+        setReserve(r.goalLine, false);
+        setReserve(r.rewardLine, false);
+        setReserve(r.startBtn, false);
         setClass(r.card, 'completed', false);
         setClass(r.card, 'completed-hard', false);
         setText(r.statusIcon, '🔒');
         continue;
       }
 
-      // Ansicht folgt dem laufenden Versuch, sonst der zuletzt gewählten Stufe (auf Normal
-      // geklemmt, solange Hard nicht wählbar ist — z. B. nach einem Coalescence-Reset).
-      if (!active && !hardUnlockable) r.viewTier = 1;
-      const viewTier: 1 | 2 = active ? (activeTier as 1 | 2) : r.viewTier;
-      // Status/Färbung folgt der ANGEZEIGTEN Stufe, nicht dem Gesamt-Bestwert — sonst bleibt
-      // die Kachel beim Umschalten auf Hard fälschlich grün/✓, obwohl Hard noch offen ist.
-      const viewDone = viewTier === 2 ? ctier >= 2 : ctier >= 1;
-      setClass(r.card, 'completed', viewDone && viewTier === 1);
-      setClass(r.card, 'completed-hard', viewDone && viewTier === 2);
-      setText(r.statusIcon, active ? t('misc.active') : viewDone ? (viewTier === 2 ? '★' : '✓') : '');
-      setClass(r.toggleBtns[0], 'active', viewTier === 1);
-      setClass(r.toggleBtns[1], 'active', viewTier === 2);
-      setDisabled(r.toggleBtns[0], active);
-      setDisabled(r.toggleBtns[1], active);
+      // Kein manueller Normal/Hart-Umschalter mehr — die Karte zeigt automatisch, was als
+      // Nächstes ansteht (aktiver Versuch, sonst chNextTier). null = nichts mehr zu tun:
+      // entweder Hart schon geschafft, oder Hart noch nicht freigeschaltet.
+      const target = active ? (s.nova.challengeTier as 1 | 2) : chNextTier(s, c);
+      setClass(r.card, 'completed', ctier === 1);
+      setClass(r.card, 'completed-hard', ctier >= 2);
+      setText(r.statusIcon, active ? t('misc.active') : ctier >= 2 ? '★' : ctier >= 1 ? '✓' : '');
 
-      const goalMult = viewTier === 2 ? C.CH_GOAL_MULT_TIER2[c] : C.CH_GOAL_MULT[c];
-      setText(r.restrictLine, `⚠ ${t(`ch.${c}d`)}`);
-      setText(r.goalLine, `🎯 ${fmt(D(C.IGNITION_REQ).mul(goalMult), true)} ${t('dust.name')}`);
-      setText(r.rewardValue, t(viewTier === 2 ? `ch.${c}r2` : `ch.${c}r`));
+      // "Aktiver Effekt": der tatsächlich wirkende Bonus (höchste geschaffte Stufe) — getrennt
+      // von "Belohnung" unten (Vorschau der NÄCHSTEN Stufe), damit beides nie verwechselt wird.
+      setReserve(r.activeLine, ctier >= 1);
+      if (ctier >= 1) setText(r.activeValue, t(ctier >= 2 ? `ch.${c}r2` : `ch.${c}r`));
 
-      setText(r.startBtn, active ? t('nova.chExit') : t('nova.chEnter'));
-      setClass(r.startBtn, 'danger', active);
-      setDisabled(r.startBtn, otherActive);
+      const showTarget = target !== null;
+      setReserve(r.restrictLine, showTarget);
+      setReserve(r.goalLine, showTarget);
+      setReserve(r.rewardLine, showTarget);
+      setReserve(r.startBtn, showTarget);
+      if (showTarget) {
+        const goalMult = target === 2 ? C.CH_GOAL_MULT_TIER2[c] : C.CH_GOAL_MULT[c];
+        setText(r.restrictLine, `⚠ ${t(`ch.${c}d`)}`);
+        setText(r.goalLine, `🎯 ${fmt(D(C.IGNITION_REQ).mul(goalMult), true)} ${t('dust.name')}`);
+        setText(r.rewardValue, t(target === 2 ? `ch.${c}r2` : `ch.${c}r`));
+        setText(r.startBtn, active ? t('nova.chExit') : t(target === 2 ? 'nova.chStartHard' : 'nova.chStartNormal'));
+        setClass(r.startBtn, 'danger', active);
+        setDisabled(r.startBtn, otherActive);
+      }
     }
 
     // Coalescence

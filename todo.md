@@ -35,28 +35,19 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
         `nova.hexReTip`, `nova.hexReTipFe`, `nova.hexDarkTip`, `nova.hexDarks` in
         `src/i18n/de.ts` + `en.ts`.
 
-- [ ] **Challenge-Karten grundlegend überarbeiten (Normal/Hart-Toggle raus).** Ausgangsproblem:
-      Spieler ignorieren Hard tendenziell, weil die Normal-Kachel schon grün + Häkchen zeigt
-      ("fertig, weiter geht's") — das Hart-Toggle geht in der Kachel visuell unter. Statt nur
-      einen Hinweis obendrauf zu setzen, den manuellen Normal/Hart-Toggle-Button komplett
-      entfernen und durch ein Design ersetzen, das den Zustand automatisch zeigt. Nur zwei
-      Zustände statt manuellem Umschalten:
-      1. **Hart noch nicht freigeschaltet** — Karte zeigt wie bisher nur die normale Challenge.
-      2. **Hart freigeschaltet** (Normal ist dann per Definition immer schon geschafft) — Karte
-         zeigt automatisch die HARTE Challenge als nächstes Ziel: Einschränkung/Ziel-Text und
-         Start-Button-Label wechseln auf Hart (Label muss sichtbar machen, dass Hart gestartet
-         wird — kein Rätselraten, kein manueller Switch mehr nötig). Bei der Belohnung soll der
-         Sprung von der bereits aktiven (Normal-)Belohnung zur neuen (Hart-)Belohnung sichtbar
-         sein. Zwei Gestaltungs-Optionen abwägen (Beispiel Singulärer Fokus: Attraktoren ×8 → ×16):
-         - **Variante A:** Eine Zeile "Belohnung: ×8 → ×16", wobei ×16 (neu/Ziel) prominenter
-           gestylt ist als ×8 (bereits aktiv/besessen).
-         - **Variante B:** Zwei getrennte Bereiche — "Aktiver Effekt: ×8" (was gerade wirkt) und
-           "Belohnung: ×16" (schlicht wie aktuell, kein Vergleich nötig, da schon im eigenen
-           Bereich als Ziel erkennbar).
-      Wenn Hart ebenfalls geschafft ist: vollständig abgeschlossenen Endzustand zeigen (kein
-      weiterer Handlungsbedarf, aber Karte bleibt informativ). Betroffene Stelle:
-      `src/ui/panels.ts` Challenge-Karten (`hardUnlockable`-Logik, `.ch-toggle`-Segment,
-      `viewTier`-State komplett überdenken/entfernen).
+- [x] ~~**Challenge-Karten grundlegend überarbeiten (Normal/Hart-Toggle raus).**~~ — erledigt
+      (2026-07-07): manueller Toggle komplett entfernt, `chNextTier()` bestimmt automatisch die
+      anzuzeigende Stufe (null = nichts zu tun: Hart fertig ODER Hart noch nicht freigeschaltet).
+      Umgesetzt als **Variante B**: eigene "✓ Aktiver Effekt"-Zeile (bester geschaffter Bonus,
+      grün beschriftet) getrennt von "🏆 Belohnung" (Vorschau der nächsten Stufe) — kein
+      Zahlen-Vergleich in einer Zeile nötig. Start-Button-Label nennt die Zielstufe ("Normal
+      starten"/"Hart starten"). Vier Zustände live geprüft: nichts geschafft, Normal fertig
+      (Hart gesperrt → nur Aktiver-Effekt, kein Ziel), Normal fertig + Hart freigeschaltet
+      (Aktiver Effekt + Hart-Ziel/Belohnung/Start), Hart fertig (nur Aktiver Effekt, Endzustand).
+      Auch **Challenges-Sektion einklappbar** umgesetzt: Klick auf Überschrift toggelt
+      `s.ui.challengesCollapsed` (persistiert), Farb-Punkt + Tooltip zeigen den
+      Gesamtstatus (grün = alle freigeschalteten fertig, gelb = noch was offen — kippt exakt
+      dann auf Gelb, wenn Hart für irgendeine Challenge freigeschaltet wird, wie festgelegt).
 
 - [ ] **Meta-Texte raus, die den Spieler direkt ansprechen — durch immersive Texte ersetzen.**
       Fällt aus dem Ton des Spiels: z. B. der Maximum-Tooltip "Diesen Punkt zu sehen ist selten:

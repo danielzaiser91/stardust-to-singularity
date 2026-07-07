@@ -247,7 +247,19 @@ button.denied { animation: buy-denied 0.3s ease; border-color: var(--danger); }
 .ms-icon { width: 14px; flex-shrink: 0; text-align: center; }
 .ms-row.done .ms-icon { color: #7dffb0; }
 
-/* ── Challenges: eine Kachel pro Challenge, klare Hierarchie statt vollgestopfter Zeile ── */
+/* ── Challenges: einklappbare Sektion + eine Kachel pro Challenge ── */
+.ch-section-head {
+  display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;
+}
+.ch-section-head:hover { color: var(--text); }
+.ch-indicator {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  background: var(--amber); box-shadow: 0 0 6px rgba(255, 157, 77, 0.7);
+}
+.ch-indicator.done { background: #7dffb0; box-shadow: 0 0 6px rgba(125, 255, 176, 0.7); }
+.ch-chevron { margin-left: auto; font-size: 0.8rem; transition: transform 0.15s; color: var(--text-dim); }
+.ch-chevron.collapsed { transform: rotate(-90deg); }
+
 .ch-card {
   display: flex; flex-direction: column; gap: 5px;
   margin: 8px 0; padding: 10px 12px; border-radius: 12px;
@@ -267,8 +279,11 @@ button.denied { animation: buy-denied 0.3s ease; border-color: var(--danger); }
 
 .ch-locked { font-size: 0.8rem; color: var(--text-dim); }
 
-.ch-toggle { margin: 1px 0 3px; }
-.ch-toggle .seg-btn { flex: 1; min-width: 0; padding: 4px 8px; font-size: 0.72rem; }
+/* Was gerade wirkt (beste geschaffte Stufe) — bewusst vom Vorschau-Reward unten getrennt,
+   damit "das habe ich schon" nie mit "das kriege ich, wenn..." verwechselt wird. */
+.ch-active { font-size: 0.78rem; }
+.ch-active-label { color: #7dffb0; font-weight: 700; margin-right: 4px; }
+.ch-active-value { color: var(--text-dim); }
 
 /* Die drei entscheidenden Infos, klar nach Wichtigkeit sortiert und eingefärbt */
 .ch-restrict { font-size: 0.8rem; color: var(--amber); }
