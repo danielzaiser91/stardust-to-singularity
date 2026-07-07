@@ -543,3 +543,22 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
       Verschmelzungen wieder auf die 10-effektive-Verschmelzungen-Schwelle aufholen) — in der Zeit
       ist der Button absichtlich gesperrt/dim, kein separater Fehler. Müsste der User bestätigen,
       falls er einen Collapse gemacht hat.
+
+## Erledigt (Stand 2026-07-07, zwanzigste Runde)
+
+- [x] **Discord-Server angebunden + News-Automation eingerichtet.** User hat den Server erstellt
+      und permanenten Invite-Link, News-Kanal-ID sowie Webhook-URL geliefert (`/ai-implement-
+      discord-news-automation`). `DISCORD_URL` in `src/social.ts` gesetzt — der Discord-Button im
+      Abspann-Dialog (bisher unsichtbar) erscheint jetzt automatisch. GitHub-Actions-Secret
+      `DISCORD_WEBHOOK_URL` per API angelegt (verschlüsselt mit dem Repo-Public-Key, `pynacl`
+      via `python3 -m pip` nachinstalliert — die Systempython-`pip` zeigte auf einen anderen
+      Interpreter als `python3`, daher zunächst `ModuleNotFoundError` trotz "erfolgreicher"
+      Installation). Neuer Workflow `.github/workflows/discord-notify.yml` (Template D aus
+      `discord-news-setup.md`): läuft nach jedem erfolgreichen `Test & Deploy`-Lauf, postet
+      Patchnotes aus `.github/release-notes.json` in den News-Kanal, merkt sich die Message-ID pro
+      Version in `.github/discord-messages.json` (gleiche Version → editiert die bestehende
+      Nachricht statt einen neuen Post zu erzeugen). Webhook zusätzlich in `my_secrets.md` unter
+      "Discord Webhooks" hinterlegt (gleiches Format wie die anderen Projekte). Version auf 0.4.2
+      gebumpt, `release-notes.json`-Eintrag ergänzt. tsc/vitest (51/51)/Build grün; `DISCORD_URL`
+      live per dynamischem Modul-Import im Preview-Browser verifiziert (Basis-Pfad ist
+      `/stardust-to-singularity/`, nicht `/` — Vite dev-Server läuft mit `base` gesetzt).

@@ -1,4 +1,3 @@
-/** Community-Links fürs Abspann-Dialog. DISCORD_URL bleibt leer, bis der Server existiert —
- *  der Button erscheint automatisch, sobald hier eine URL eingetragen wird (s. DISCORD_SETUP.md). */
+/** Community-Links fürs Abspann-Dialog. */
 export const GITHUB_URL = 'https://github.com/danielzaiser91/stardust-to-singularity';
-export const DISCORD_URL = '';
+export const DISCORD_URL = 'https://discord.gg/5xehQF8nBQ';

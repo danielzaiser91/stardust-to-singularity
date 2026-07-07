@@ -1,0 +1,109 @@
+name: Discord News Notification
+
+on:
+  workflow_run:
+    workflows: ["Test & Deploy"]
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: write   # für den Commit der Message-ID-Map
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Get version and changelog
+        id: meta
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          NOTES_FILE=".github/release-notes.json"
+          if [ -f "$NOTES_FILE" ]; then
+            CHANGELOG=$(jq -r --arg v "$VERSION" '.[$v] // empty' "$NOTES_FILE")
+          fi
+          if [ -z "${CHANGELOG:-}" ]; then
+            CHANGELOG=$(git log -1 --pretty=format:"%s" 2>/dev/null || echo "New update deployed")
+          fi
+          echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "title=🚀 Neues Update live!" >> $GITHUB_OUTPUT
+
+      - name: Post or edit Discord message
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          TITLE: ${{ steps.meta.outputs.title }}
+          CHANGELOG: ${{ steps.meta.outputs.changelog }}
+        run: |
+          set -euo pipefail
+
+          MESSAGES_FILE=".github/discord-messages.json"
+          TMPFILE=$(mktemp)
+          trap 'rm -f "$TMPFILE"' EXIT
+
+          [ -f "$MESSAGES_FILE" ] || echo '{}' > "$MESSAGES_FILE"
+
+          EXISTING_MSG_ID=$(jq -r --arg v "$VERSION" '.[$v] // empty' "$MESSAGES_FILE")
+
+          EMBEDS=$(jq -n \
+            --arg title "$TITLE" \
+            --arg changelog "$CHANGELOG" \
+            --arg version "v$VERSION" \
+            --arg url "https://danielzaiser91.github.io/stardust-to-singularity/" \
+            '[{
+              "title": $title,
+              "description": ("**Stardust to Singularity** wurde aktualisiert!\n\n" + $changelog),
+              "url": $url,
+              "color": 4286489,
+              "fields": [
+                { "name": "🗡️ Version", "value": $version, "inline": true },
+                { "name": "🌐 Jetzt spielen", "value": ("[Öffnen](" + $url + ")"), "inline": true }
+              ],
+              "footer": { "text": "Stardust to Singularity" },
+              "timestamp": (now | todate)
+            }]')
+
+          if [ -n "$EXISTING_MSG_ID" ]; then
+            echo "Version $VERSION already posted (msg $EXISTING_MSG_ID) — editing."
+            jq -n --argjson embeds "$EMBEDS" '{"embeds": $embeds}' > "$TMPFILE"
+            curl -s -f -X PATCH \
+                 -H "Content-Type: application/json" \
+                 -d "@$TMPFILE" \
+                 "$DISCORD_WEBHOOK_URL/messages/$EXISTING_MSG_ID"
+          else
+            echo "Neue Version $VERSION — poste neue Nachricht."
+            jq -n \
+              --arg username "Stardust to Singularity" \
+              --argjson embeds "$EMBEDS" \
+              '{"username": $username, "embeds": $embeds}' > "$TMPFILE"
+            RESPONSE=$(curl -s -f \
+                            -H "Content-Type: application/json" \
+                            -d "@$TMPFILE" \
+                            "$DISCORD_WEBHOOK_URL?wait=true")
+            MSG_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
+
+            if [ -z "$MSG_ID" ]; then
+              echo "Error: keine Message-ID von Discord: $RESPONSE"
+              exit 1
+            fi
+
+            jq --arg v "$VERSION" --arg id "$MSG_ID" '.[$v] = $id' "$MESSAGES_FILE" \
+              > /tmp/discord-messages-new.json
+            mv /tmp/discord-messages-new.json "$MESSAGES_FILE"
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add "$MESSAGES_FILE"
+            git commit -m "chore: track Discord message ID for v$VERSION [skip ci]"
+            git push origin HEAD
+          fi
