@@ -477,6 +477,23 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
   tsc/vitest (51/51)/Build grün (53 Module statt 51 — zwei neue Dateien: `social.ts`,
   `ui/ending.ts`).
 
+## Erledigt (Stand 2026-07-07, neunzehnte Runde)
+
+- [x] ~~**"UI ausblenden"-Knopf (▾) manchmal nicht klickbar, von anderen Elementen verdeckt.**~~
+      — der Knopf hing bisher an der normalen Flex-Position im Ressourcen-Leisten (`margin-left:
+      auto`) und wurde nur auf Desktop (≥731px) per Media-Query fest im Eck verankert. Auf
+      schmaleren Fenstern/vielen aktiven Ressourcen-Pills (Dust+Plasma+Scherben+DM+Entropie+
+      Klasse+Pulsar = bis zu 7 Pills) bricht die Leiste per `flex-wrap` auf mehrere Zeilen um,
+      der Knopf rutscht mit — und landet unter `panel-host` (später im DOM, kein eigener
+      z-index, malt also einfach obenauf, wo sich die Boxen überschneiden). Fix: `position:
+      fixed; top:8px; right:8px; z-index:90` jetzt IMMER (nicht mehr nur ab 731px) — der
+      Desktop-spezifische Duplikat-Eintrag in der Media-Query wurde entfernt, da überflüssig.
+      Live auf 375px-Breite mit allen 7 Pills nachgestellt: `elementFromPoint` bestätigt den
+      Knopf selbst als oberstes Element an seiner Position (vorher hätte `panel-host` dort
+      gewonnen), Klick funktioniert zuverlässig.
+
+  tsc/vitest (51/51)/Build grün.
+
 ## Offen
 
 - [ ] **Challenges neu balancieren — aktuell viel zu leicht durch Automationen.** Sobald

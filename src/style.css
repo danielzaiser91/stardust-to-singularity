@@ -50,7 +50,11 @@ h3 { margin: 14px 0 6px; font-size: 0.95rem; letter-spacing: 0.08em; text-transf
   box-shadow: 0 0 14px rgba(255, 201, 100, 0.45);
   animation: cap-pulse 0.9s ease-in-out infinite;
 }
-.collapse-btn { margin-left: auto; }
+/* Fest im Eck verankert statt im Ressourcen-Flex mitzuwandern — sonst schiebt ein Umbruch der
+   Pill-Reihe (viele Ressourcen aktiv + schmales Fenster) den Knopf hinter panel-host, das ohne
+   eigenen z-index einfach als spätere DOM-Reihenfolge obenauf malt. War vorher nur auf Desktop
+   (≥731px) per Media-Query gefixt — jetzt immer, unabhängig von Fensterbreite. */
+.collapse-btn { position: fixed; top: 8px; right: 8px; margin: 0; z-index: 90; }
 
 /* ── Panel-Host (Desktop: rechts) ── */
 .panel-host {
@@ -472,7 +476,6 @@ button.denied { animation: buy-denied 0.3s ease; border-color: var(--danger); }
     padding: 0; background: none;
   }
   body.panels-collapsed .topbar { right: 8px; }
-  .collapse-btn { position: fixed; top: 8px; right: 8px; margin: 0; }
   .panel-host { top: 8px; }
 }
 
