@@ -599,3 +599,12 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
       1. Universum > Basis-Kosten`). tsc/vitest (52/52)/Build grün; live im Preview durchgespielt
       (Entropie granted, Cutscene ausgelöst, Skip getestet, NG+-Box nach Aufstieg mit ×10/×2
       bestätigt, neue Anforderung 2.5e4 nach dem 1. Universum bestätigt).
+
+- [x] **Abspann-Text schwer lesbar auf hellen Szenenausschnitten.** User: weißen Textfarbe
+      beibehalten, aber Backdrop dahinter + Position weiter Richtung Bildschirm-Unterkante (10-20%
+      vom Rand). `.ending-text` von flex-zentriert auf `position: absolute; bottom: 15%` umgestellt
+      (mit `translateX(-50%)` in Basis- UND `.show`-Transform, da beide gleichzeitig nötig sind),
+      dunkler halbtransparenter Backdrop (`rgba(6,10,24,0.6)`, `border-radius`) hinzugefügt,
+      Textfarbe (`var(--text)`, bereits nahezu Weiß) unverändert gelassen. Live im Preview
+      nachgestellt (Cutscene erneut ausgelöst) — Text jetzt lesbar auch vor dem hellen
+      Supernova-Glow, sitzt unten im Bildschirm.
