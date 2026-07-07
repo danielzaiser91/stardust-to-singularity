@@ -359,6 +359,15 @@ button.denied { animation: buy-denied 0.3s ease; border-color: var(--danger); }
 .set-row input[type=range] { accent-color: var(--cyan); width: 140px; }
 .stat-row { justify-content: space-between; font-variant-numeric: tabular-nums; }
 .version { margin-top: 12px; opacity: 0.5; }
+.discord-row { display: flex; justify-content: center; margin-top: 14px; }
+.discord-link {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%;
+  color: var(--text-dim); border: 1px solid var(--panel-border); background: rgba(40, 50, 96, 0.4);
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.08s;
+}
+.discord-link:hover { color: #fff; background: #5865f2; border-color: #5865f2; }
+.discord-link:active { transform: scale(0.92); }
 
 /* ── Gain am Clamp-Deckel: golden pulsierend ── */
 .capped {

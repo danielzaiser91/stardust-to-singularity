@@ -608,3 +608,18 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
       Textfarbe (`var(--text)`, bereits nahezu Weiß) unverändert gelassen. Live im Preview
       nachgestellt (Cutscene erneut ausgelöst) — Text jetzt lesbar auch vor dem hellen
       Supernova-Glow, sitzt unten im Bildschirm.
+
+- [x] **`__savegame3.txt` nach dem NG+-Kosten-Fix nachgezogen.** Der Save hatte `sing.entropy: 500`
+      — galt vor dem Fix, weil das Gate damals auf `totalEntropy` lief; seit dem Fix prüft
+      `newUniverse()` die GEBANKTE `entropy` (2500 nötig bei `universes: 0`). Skript erneut über
+      den echten Core-Code gelaufen, `entropy` auf 3000 gesetzt, diesmal zusätzlich `canNewUniverse()`
+      + `newUniverse()` selbst im Verify-Schritt aufgerufen (nicht nur deserialisiert) — Lehre aus
+      dem ersten Anlauf: Roundtrip-Verifikation muss die tatsächliche Gate-Funktion aufrufen, nicht
+      nur die Felder plausibel aussehen lassen.
+
+- [x] **Discord-Icon in den Einstellungen.** Neuer runder Icon-Link (`.discord-link`, 40px,
+      inline-SVG Discord-Logo) unten im Settings-Panel unter Version/Credits, verlinkt
+      `DISCORD_URL` aus `src/social.ts` in einem neuen Tab. i18n-Tooltip `set.discord` (DE/EN)
+      ergänzt. Live verifiziert per `preview_inspect`/`preview_snapshot` (Screenshot-Tool hing in
+      dieser Runde wiederholt — Verifikation über DOM-Inspektion statt Bild: korrekter `href`,
+      korrektes `title`, SVG 22×22 zentriert im 40×40-Kreis).

@@ -213,6 +213,7 @@ export const en: Record<string, string> = {
   'set.importOk': 'Save imported!', 'set.importErr': 'Invalid save string.',
   'set.reset': 'HARD RESET', 'set.resetConfirm': 'Delete ALL progress forever? Type YES to confirm.',
   'set.stats': 'Statistics',
+  'set.discord': 'Join the Discord server',
   'stat.played': 'Time played', 'stat.clicks': 'Clicks', 'stat.comets': 'Comets caught',
   'stat.ignitions': 'Ignitions', 'stat.supernovae': 'Supernovae', 'stat.coalescences': 'Coalescences',
   'stat.collapses': 'Collapses', 'stat.dustEver': 'Dust across all time',
