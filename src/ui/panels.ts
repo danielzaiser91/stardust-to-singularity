@@ -608,7 +608,8 @@ export class NovaPanel implements Panel {
       const bb = btn('seg-btn', t(`nova.cell${b}`), () => { this.brush = b; this.syncBrush(); });
       attachTip(bb, () => ({
         title: t(`nova.cell${b}`),
-        body: (b === 1 ? resTag('dust', t('nova.cell1d')) : b === 2 ? resTag('plasma', t('nova.cell2d')) : t('nova.cell3d'))
+        body: (b === 1 ? resTag('dust', t('nova.cell1d')) : b === 2 ? resTag('plasma', t('nova.cell2d'))
+          : t('nova.cell3d', { v: numTag(`×${fmtMult(C.NEBULA_DARK_BONUS)}`) }))
           + (b === 2
             ? `\n${this.st().stats.coalescences >= C.MS_GALAXY[1]
               ? t('nova.reFeOn', { v: numTag(`×${fmtMult(C.NEBULA_REFLECTION_MULT)}`), n: C.MS_GALAXY[1] })
@@ -662,14 +663,14 @@ export class NovaPanel implements Panel {
         const bonus = numTag(`×${fmtMult(C.NEBULA_DARK_BONUS)}`);
         if (type === 3) {
           const boosted = F.HEX_NEIGHBORS[i].filter(n => s.nova.cells[n] === 1 || s.nova.cells[n] === 2).length;
-          return { title: t('nova.cell3'), body: `${t('nova.cell3d')}\n${t('nova.hexDarkTip', { n: boosted, b: bonus })}` };
+          return { title: t('nova.cell3'), body: `${t('nova.cell3d', { v: bonus })}\n${t('nova.hexDarkTip', { n: boosted })}` };
         }
         const darks = F.HEX_NEIGHBORS[i].filter(n => s.nova.cells[n] === 3).length;
         const v = numTag(`×${fmtMult(F.nebulaCellMult(s, i, m.nebulaNodeMult))}`);
         const feOn = s.stats.coalescences >= C.MS_GALAXY[1];
         return {
           title: t(`nova.cell${type}`),
-          body: `${t(type === 1 ? 'nova.hexEmTip' : feOn ? 'nova.hexReTipFe' : 'nova.hexReTip', { v })}\n${t('nova.hexDarks', { n: darks, b: bonus })}`
+          body: `${t(type === 1 ? 'nova.hexEmTip' : feOn ? 'nova.hexReTipFe' : 'nova.hexReTip', { v })}\n${t('nova.hexDarks', { n: darks })}`
             + (type === 2 && !feOn ? `\n${t('nova.reFeLocked', { v: numTag(`×${fmtMult(C.NEBULA_REFLECTION_MULT)}`), n: C.MS_GALAXY[1] })}` : ''),
         };
       }, { marker: false });

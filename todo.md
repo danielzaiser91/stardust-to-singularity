@@ -20,20 +20,11 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
       `buy-wrap`/`cap-badge`-Muster wie bei Generatoren/Kompression jetzt auch für die
       Fusionsreaktor-Buttons in `StarPanel`, Bedingung `s.star.reactors[e] >= MAX_COUNTER`.
 
-- [ ] **Nebelgarten-Tooltips kürzen.** Die Hex-Node-Tooltips (Emissions-/Reflexions-/
-      Dunkelnebel) erklären aktuell zu ausführlich, u. a. mit "Dieser Nebel..."-Einleitung. Der
-      ×2-pro-Nachbar-Mechanismus des Dunkelnebels ist selbsterklärend genug, muss nicht in
-      jedem einzelnen Node-Tooltip wiederholt werden. Neues Ziel:
-      - "Dieser Nebel..."-Einleitung weg.
-      - Stattdessen kurz + prominent der EFFEKTIVE Gesamt-Multiplikator statt der Herleitung,
-        z. B. "×8 Plasma- & Eisen-Gewinn".
-      - Dunkelnebel-Tooltip knapp: "×2 für alle Nachbarn, die kein Dunkelnebel sind."
-      - Generell: kurze Texte, maximaler Informationsgehalt, wichtigste Info zuerst + prominent
-        (gleiche Linie wie die Tooltip-Überarbeitung vom 2026-07-06 — resTag/numTag-Hervorhebung
-        nutzen wo sinnvoll).
-      - Betroffene Stellen: `src/ui/panels.ts` Hex-Grid-Tooltips, i18n-Keys `nova.hexEmTip`,
-        `nova.hexReTip`, `nova.hexReTipFe`, `nova.hexDarkTip`, `nova.hexDarks` in
-        `src/i18n/de.ts` + `en.ts`.
+- [x] ~~**Nebelgarten-Tooltips kürzen.**~~ — erledigt (2026-07-07): "Dieser Nebel..."-Einleitung
+      raus, Tooltips zeigen jetzt direkt den Effekt (`{v} Staub-Produktion` etc.). Dunkelnebel:
+      "{v} für alle Nachbarn, die kein Dunkelnebel sind" (v = numTag-hervorgehobener Bonus).
+      `hexDarks`/`hexDarkTip` auf reine Live-Zahl gekürzt (Nachbarn-Anzahl), ohne die
+      ×2-Erklärung zu wiederholen.
 
 - [x] ~~**Challenge-Karten grundlegend überarbeiten (Normal/Hart-Toggle raus).**~~ — erledigt
       (2026-07-07): manueller Toggle komplett entfernt, `chNextTier()` bestimmt automatisch die
@@ -49,20 +40,15 @@ Längerfristige/optionale Punkte stehen in [BACKLOG.md](BACKLOG.md).
       Gesamtstatus (grün = alle freigeschalteten fertig, gelb = noch was offen — kippt exakt
       dann auf Gelb, wenn Hart für irgendeine Challenge freigeschaltet wird, wie festgelegt).
 
-- [ ] **Meta-Texte raus, die den Spieler direkt ansprechen — durch immersive Texte ersetzen.**
-      Fällt aus dem Ton des Spiels: z. B. der Maximum-Tooltip "Diesen Punkt zu sehen ist selten:
-      gut gespielt!" (`misc.capReachedTip`, 2026-07-06 eingeführt) spricht den Spieler direkt an
-      wie eine Erfolgsmeldung/UI-Copy, statt in der Spielwelt zu bleiben (Staub/Sterne/Physik-
-      Fiktion). Zwei Teilaufgaben:
-      1. Gezielt `misc.capReachedTip` (und ggf. ähnliche Stellen wie Achievement-/Lore-Toasts)
-         auf direkte Anrede prüfen und durch einen Text ersetzen, der in der Fiktion bleibt
-         (z. B. Beschreibung eines physikalischen Grenzzustands statt Meta-Kommentar zum
-         Spielverhalten).
-      2. **Generell einmal alle Texte durchgehen** (`src/i18n/de.ts` + `en.ts`, beide Sprachen
-         synchron halten) und wo nötig durch bessere, zum Setting passende, immersive
-         Formulierungen ersetzen — nicht nur die eine Stelle. Kandidaten zuerst prüfen: alles,
-         was diese Session neu/geändert wurde (Tooltip-Überarbeitung, Cap-Badges,
-         Automation-Beschreibungen), da dort am ehesten Meta-Ton reingerutscht ist.
+- [x] ~~**Meta-Texte raus, die den Spieler direkt ansprechen.**~~ — erledigt (2026-07-07):
+      `misc.capReachedTip` ("...gut gespielt!") ersetzt durch eine Beschreibung des physikalischen
+      Grenzzustands ("Am Rand der Zahlendarstellung — diese Größenordnung lässt sich technisch
+      nicht weiter steigern."), bleibt in der Fiktion statt den Spieler zu loben. Breiter
+      Grep über `de.ts`/`en.ts` nach ähnlichen Mustern (gespielt/Respekt/beeindruckend/well
+      played/impressive/congrat*) fand keine weiteren Treffer — war offenbar die einzige Stelle
+      dieser Art. Die restlichen heute geänderten Texte (Automation-Beschreibungen, Cap-Badge,
+      Reward-Label) sind sachliche System-/Mechanik-Beschreibungen wie der Rest des
+      Upgrade-Texts im Spiel, keine Meta-Kommentare — keine weitere Umformulierung nötig.
 
 - [ ] **Challenges-Sektion einklappbar machen.** Der "CHALLENGES"-Bereich im Supernova-Panel
       (`panels.ts`, `NovaPanel`) soll ein-/ausklappbar sein (Klick auf die Überschrift o. ä.),
